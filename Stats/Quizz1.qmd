@@ -1,0 +1,226 @@
+---
+title: "Stat-5405 Quiz on Data Visualization"
+author: "Pooja Raj Lakshmi | Student ID: 33251787"
+date: "2025-09-03"
+format: pdf
+editor: visual
+---
+
+## Introduction
+
+The dataset `international-tourist-arrivals-by-region-of-origin.csv` contains information about international tourist trips by region of departure. These trips include visitors who arrive from abroad and stay overnight.\
+In this analysis, we aim to:
+
+1\. Plot international tourist arrivals by region and year\
+2. Interpret patterns in the data\
+3. Discuss the usefulness of applying a logarithmic transformation
+
+## Data Importation
+
+```{r}
+getwd()
+```
+
+Loading the csv and previewing first few records of the data
+
+```{r}
+# Loading CSV
+data <- read.csv("international-tourist-arrivals-by-region-of-origin.csv")
+
+# Preview data
+head(data)
+```
+
+## Data Exploration
+
+The dataframe contains 196 observations and 4 variables:
+
+-   `Entity` (region of origin)
+
+-   `Code` (entirely missing values)
+
+-   `Year` (1995 onward)
+
+-   `International.tourist.arrivals.by-region-of-origin` (counts of international tourist trips with overnight stays).
+
+Each row represents the number of arrivals from a specific region in a given year. The `Code` column contains no useful information and can be safely excluded from the analysis. The dataset is otherwise complete, with no missing values in the key variables.
+
+```{r}
+str(data)
+```
+
+```{r}
+library(dplyr)
+glimpse(data)
+```
+
+```{r}
+# Summarizing data
+summary(data)
+```
+
+```{r}
+# Missing data
+colSums(is.na(data))
+```
+
+```{r}
+# Getting distinct values of categorical column i.e. Entity
+unique(data$Entity)
+length(unique(data$Entity))
+```
+
+```{r}
+dim(data)      # rows and columns
+nrow(data)     # number of rows
+ncol(data)     # number of columns
+```
+
+## Data Preparation
+
+Removing the column Code since its null and doesn't capture any useful information. Also, renaming the columns for the ease of usability.
+
+```{r}
+# Keeping the original data intact, creating a cleaned copy
+
+tourism_data <- data %>%
+  select(-Code) %>%   # removing Code column
+  rename(
+    Region = Entity,
+    Arrivals = International.tourist.arrivals.by.region.of.origin
+  ) %>%  
+  select(Year, Region, Arrivals)
+
+# Checking the cleaned structure
+glimpse(tourism_data)
+```
+
+## Data Analysis
+
+1.  Plot the number of International tourist arrivals by region of origin by Year, for each\
+    region. Put all six regions on one plot, and use different colors and line types for each region. Annotate the axes appropriately. Use reference lines (using the abline function in R). Add a legend and a title.
+
+As was noticed in data exploration, our dataframe has raw counts as big as 878514600. For a number this big, y-axis will end up in scientific notation (8e+08). Hence to fix the readability, re-scaling the y-axis (Arrivals column).
+
+I have created an overlapping area plot showing international tourist arrivals (in millions) by region of origin for 1995–2022. The x-axis shows Year, the y-axis shows actual arrivals (in millions). Different colors distinguish regions, and a legend/title annotate the chart appropriately.
+
+```{r}
+# ---- Libraries ----
+library(ggplot2)
+library(dplyr)
+
+# ---- Data prep ----
+tourism_data <- tourism_data %>% mutate(Arrivals_millions = Arrivals / 1e6)
+
+# ---- Custom palette (sea-green / blue shades) ----
+my_colors <- c(
+  "Africa (UNWTO)"                   = "#A8D5BA", 
+  "Americas (UNWTO)"                 = "#B0E0E6", 
+  "East Asia and the Pacific (UNWTO)"= "#20B2AA", 
+  "Europe (UNWTO)"                   = "#4682B4", 
+  "Middle East (UNWTO)"              = "#5F9EA0", 
+  "South Asia (UNWTO)"               = "#00CED1"  
+)
+
+# ---- Plot ----
+ggplot(tourism_data, aes(x = Year, y = Arrivals_millions)) +
+  # shaded areas
+  geom_area(aes(fill = Region), position = "identity", alpha = 0.7, color = NA) +
+  # outlines
+  geom_line(aes(color = Region), linewidth = 1) +
+  
+  # reference lines (abline equivalents)
+  geom_hline(yintercept = 400, linetype = "dotted", color = "grey30") +   
+  geom_vline(xintercept = 2008, linetype = "dashed", color = "black") +   
+  
+  # labels
+  labs(
+    title = "International Tourist Arrivals by Region of Origin (1995–2022)",
+    subtitle = "Visitors arriving from abroad and staying overnight",
+    x = "Year",
+    y = "Number of Arrivals (in millions)",
+    fill = "Region",
+    color = "Region"
+  ) +
+  # scaling years and arrivals
+  scale_x_continuous(
+    breaks = seq(min(tourism_data$Year, na.rm = TRUE),
+                 max(tourism_data$Year, na.rm = TRUE), 5)
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, max(tourism_data$Arrivals_millions, na.rm = TRUE), 200),
+    labels = function(x) paste0(x, " million")
+  ) +
+  # custom palette
+  scale_fill_manual(values = my_colors) +
+  scale_color_manual(values = my_colors) +
+
+  theme_minimal(base_size = 10) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "right",
+    legend.box = "vertical"
+  )
+```
+
+2.  Takeaway from graph?
+
+    Europe Dominates Global Tourism, By 2018, Europe contributed **over 600 million trips**, making it the **largest source market** for global tourism.
+
+    East Asia and the Pacific grew from under **100 million** in the mid-1990s to **over 300 million by 2018**, showcasing a promising fastest growth rate among all regions.
+
+    The Americas show **steady growth**, reaching **\~200–250 million by 2018**, but their growth is not as steep as Asia’s.
+
+    Africa, South Asia and Middle East regions start from very low counts but show **gradual upward trends**. South Asia in particular, while still small, has seen recent acceleration.
+
+    The sharp drop around **2020** corresponds to the **COVID-19 pandemic**, which halted international travel.
+
+    Smaller dips (like 2008–2009) reflect the **global financial crisis**.
+
+```{r}
+# Checking arrivals from all regions in 2010 for validation
+tourism_data %>%
+  filter(Year == 2010) %>%
+  select(Region, Arrivals, Arrivals_millions)
+```
+
+3.  Would it be a good idea to use the logarithm of the counts? Why or why not?
+
+    On a log10 scale, 600 million ≈ **8.78** whereaslog10 20 million ≈ **7.30.** The gap is now **just 1.5 units** although the difference between the two is huge. Which is why instead of growing linearly, log shrinks big numbers and grows very slowly.
+
+    In our dataset, Europe Region is very large whereas Africa is so small that it almost looks flat. So when we will do the log, the scale will compress the gap between big and small values. Hence using logarithmic transformation could be only useful where we want to highlight relative growth rates across regions.
+
+    Hence, the raw counts are more informative for understanding absolute tourism impact, since log-transformed values are less intuitive, but a log scale might be useful if the goal is to compare **growth patterns across regions**.
+
+```{r}
+
+ggplot(tourism_data, aes(x = Year, y = Arrivals_millions)) +
+  geom_area(aes(fill = Region), position = "identity", alpha = 0.7, color = NA) +
+  geom_line(aes(color = Region), linewidth = 1) +
+  labs(
+    title = "International Tourist Arrivals by Region of Origin (1995–2022)",
+    subtitle = "Logarithmic scale on y-axis highlights relative growth",
+    x = "Year",
+    y = "Log of Arrivals (millions)",
+    fill = "Region",
+    color = "Region"
+  ) +
+  scale_x_continuous(
+    breaks = seq(min(tourism_data$Year, na.rm = TRUE),
+                 max(tourism_data$Year, na.rm = TRUE), 5)
+  ) +
+  scale_y_log10(  
+    labels = function(x) paste0(x, " million")
+  ) +
+  scale_fill_manual(values = my_colors) +
+  scale_color_manual(values = my_colors) +
+  theme_minimal(base_size = 10) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "right",
+    legend.box = "vertical"
+  )
+```
+
+```{}
+```

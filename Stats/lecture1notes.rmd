@@ -1,0 +1,137 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+#for this file, first i clicked in r notebook and saved it using .Rmd extension.
+
+#for quarto, click on quarto document, and then name it and write author plus you can choose the type, html or pdf. once you have done it click on render. render is for compiler like we do in jupyter notebook, it will give the output in the format you want
+
+
+#r is case sensitive but spaces are usually ignored.
+
+# you can take a look at the history of commands in history and then chhose the command and click on to source, this will re-write the command 
+
+#in r, vector is a sequence of vales of the same type (all numeric, all character, all logical, etc.). for instance :-
+#x <- c(10, 20, 30, 40)     # numeric vector
+#y <- c("a", "b", "c")      # character vector
+#z <- c(TRUE, FALSE, TRUE)  # logical vector
+
+#longley is a data already available in rstudio. if we want to print the data, first we need to load the data using below then we will print the data
+data(longley)
+
+
+
+
+#on doing the printing of data, you see that we have column names as GNP.deflator. Whenever there is a dot it means in actual data we had a space in the actual column name
+print(longley)
+
+#barplot creates a plot. so basically what is happening below is from longley dataframe we are extracting column GNP ($ is used for extracting column or variable from dataframe and then plotting it). In barplot we dont get count, avg or sum of the column but instead each GNP of the row will be plotted and the height of the plot is the value of GNP for that row. If we have same GNP in different rows then we will have two bars of the same height.
+barplot(longley$GNP)
+
+
+
+
+#the date command gives you the current time and date in the character string format. character string basically means text inside quotes "hello world", "2025-09-01" etc
+print(date())
+
+
+
+
+#concatenate and prints at the same time but by default cat adds a space between multiple arguments.
+cat("Hello","world")
+#in case you dont want a space then use sep= argument.sep="" tells R to use nothing between the values.
+cat("Hello","world!",sep="")
+#You can also use any character as a separator:
+cat("Hello","world!",sep="-")
+#if you want in next line then remove , and add \n
+cat("hello\nworld!")
+
+#cat() fuction and c() fucntion are different. cat does concatenate and print values, it does not create vector whereas c() does combine and creates a vector. so if you want to print then you need that variable name or vector name.
+
+
+
+
+#view directory
+dir()
+#get the directory
+getwd()
+#change the directory using setwd(), so basically getwd() gives you /Users/pokeapokemon then in setwd copy this and then the exact folders underneath your file is
+setwd("/Users/pokeapokemon/playground_pooja/Stats")
+#do below to check where are you now
+getwd()
+#again doing dir so that we know our file is in there
+dir()
+#going back to pokeapokemon
+#below will take you to one folder down
+setwd("..")
+#confirming folder
+getwd()
+#going another folder down
+setwd("..")
+#confirming again
+getwd()
+dir()
+
+#another way to get to the folder is below using the same folder down and up approach:-
+setwd("../..")
+getwd()
+setwd("..")
+getwd()
+setwd("..")
+getwd()
+dir()
+setwd("Users")
+getwd()
+dir()
+setwd("/Users/pokeapokemon")
+setwd("/Users/pokeapokemon/playground_pooja/Stats")
+getwd()
+dir()
+
+#write.csv() - write it in terminal to export in csv
+write.csv(longley,file = "longley_copy.csv")
+dir()
+read.csv("longley_copy.csv")
+assinging it to a variable
+data <- read.csv("longley_copy.csv") 
+View(data)
+
+#object in current enviornment
+ls()
+
+data(trees)
+#head gives you top three
+head(trees, 3)
+#gives you bottom 5
+tail(trees, 5)
+#1st gives bottom three and then out of three 1st bottom is printed as answer
+head(tail(trees, 3),1)
+#gives dimension of the dataframe
+data(trees)
+View(trees)
+#basically dim means last index and total columns of the dataframe
+dim(trees)
+#number of rows
+nrow(trees)
+#number of columns
+ncol(trees)
+# str stands for “structure” and is used to give a compact overview of an object
+str(trees) 
+#Lists all the named colors available in R. You can use these color names in plotting functions like plot(), barplot()
+colors()
+#press esc to exit from demo
+demo(graphics)
+
+#class gives you the object type, in this case its dataframe
+class(trees)
+#below will give numeric
+x <- 10
+class(x)
+
+
+#get column name
+colnames(trees)
+
+#its an expression and isme 1:2 is row and after comma is column
+trees[1:2,]
+trees[1:2,2:3]

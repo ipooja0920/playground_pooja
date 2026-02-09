@@ -1,0 +1,84 @@
+title: scratch paper
+
+---
+
+
+### Bionomial Distribution
+
+```{r}
+dbinom(35,100,p=.3)
+```
+
+
+
+```{r}
+rbinom(100,4,.5)
+```
+
+
+```{r}
+pbinom(3,4,.5)
+```
+
+### floating points number are never equal so we cannot use == but instead get the difference or nearest
+```{r}
+(pbinom(3,4,.5)-pbinom(2,4,.5)) -dbinom(3,4,.5)
+```
+
+
+
+###qbinom(.25,100,.5)
+[1] 47 if i flipped my coin 100 times to get 25th percentile  then its 47
+
+
+
+```{r}
+dpois(0:10,5)
+```
+
+```{r}
+0:10
+```
+
+
+```{r}
+rpois(100,5)
+```
+
+```{r}
+rnorm(100,0,1)
+```
+
+###draw 10 numbers from norm distribution and do that for 1000 times
+
+```{r}
+hist(replicate(1000,mean(rnorm(10,0,1))))
+```
+
+```{r}
+x<-replicate(1000,mean(rnorm(10,0,1)))
+ggplot()+geom_histogram(aes(x=x),bins=50)
+```
+
+```{r}
+x<-replicate(1000,sd(rnorm(10,0,1)))
+ggplot()+geom_histogram(aes(x=x),bins=50)
+```
+
+
+```{r}
+x<-rnorm(10,0,1)
+m<-mean(x)
+s<-sd(x)
+m/s/sqrt(10)
+```
+
+
+```{r}
+adelie<-penquins |> filter(species=="Adele") |> drop_na()
+gentoo<-penquins |> filter(species=="Gentoo") |> drop_na()
+adelie_m <- mean(adelie$body_mass_g)
+gentoo_m <- mean(adelie$body_mass_g)
+```
+
+http://localhost:4938/web.viewer.html

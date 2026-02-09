@@ -1,0 +1,52 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+barplot(longley$GNP)
+
+print(date())
+
+cat("Hello")
+cat("world!", file="test.txt")
+
+#?write.csv() - write it in terminal to export in csv
+
+#you can take a look at the history of commands in history and then chhose the command and click on tosource
+
+write.csv(longley,file = "longley_copy.csv")
+read.csv(longley_copy.csv)
+
+data <- read.csv("longley_copy.csv") assinging it to a variable
+
+view(data) to view the data
+
+qmd commands :- console
+head(trees, 3) -> top 3
+
+dim(trees) -> how big the data is
+
+nrow(trees)
+
+ncol(trees)
+
+str(trees) 
+
+colors() - gives all the colors
+
+
+
+why csv???
+
+demo(graphics) 
+
+#
+commands :- 
+# dir
+
+# ls
+# source
+# date
+# print

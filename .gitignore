@@ -1,0 +1,25 @@
+# Mac OS
+.DS_Store
+
+# Jupyter Checkpoints
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Quarto
+quarto_test_files/
+*.html
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+
+# Data files (optional - uncomment if you don't want to track large data files)
+# *.csv
+# *.parquet

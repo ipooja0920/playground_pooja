@@ -1,0 +1,77 @@
+ 
+ ---
+
+ title: Test of Quarto
+
+ ---
+
+ Here is ome text.
+
+
+```{r}
+x<-c(1,2,3) #c is an operator
+print(x)
+```
+
+
+```{r}
+x<-c(1,2,3)
+z<-c('1','2','3')
+```
+
+```{r}
+table(factor(x))
+```
+
+```{r}
+xf<-factor(x,labels+c("L","M","H"))
+print(xf)
+```
+
+```{r}
+c(1,2,3,4)<c(3,2,1,4) #so in R it does subsequent comparison
+c(1,2,3,4)<c(3,2,1) #this will run when the length is equal
+```
+
+```{r}
+getwd()
+##setwd
+```
+
+
+```{r}
+library(palmerpenguins)
+class(penguins)
+#as.data.frame(penquins)
+```
+
+```{r}
+colnames(penguins)
+```
+
+```{r}
+table(penguins["species"])
+```
+
+```{r}
+install.packages("tidyverse",repos="https://cran.wustl.edu")
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+colnames(penguins_raw)
+```
+
+```{r}
+penguins_raw |> mean(`Body Mass (g)`)
+```
+
+```{r}
+penguins_raw |> count(`Species`)
+simple_penguins <- penguins_raw
+mutate(SimpleSpecies = word(1))
+simple_penguins |> count(`SimpleSpecies`)
+```
