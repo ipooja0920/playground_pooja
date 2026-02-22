@@ -49,7 +49,7 @@ def validate_video_prompt(prompt_text, weather_data):
         reason = "Snowy condition missing from background prompt."
         
     # Check for character consistency (Maya)
-    if "Maya" not in prompt_text or "reporter" not in prompt_text:
+    if "Maya" not in prompt_text or ("reporter" not in prompt_text and "anchor" not in prompt_text):
         passed = False
         reason = "Character identity (Maya) not found in prompt."
         

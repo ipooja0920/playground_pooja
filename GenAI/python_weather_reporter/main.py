@@ -51,7 +51,9 @@ def main():
         print("Tests Passed! Proceeding to Video Generation...")
 
         # 7. Generate Video
-        video_path, final_prompt = generate_weather_video(weather_data, script_text)
+        video_path, final_prompt = generate_weather_video(
+            weather_data, script_text, project_id=project_id, location=location
+        )
 
         if video_path and os.path.exists(video_path):
             print(f"Video saved locally: {os.path.abspath(video_path)}")
