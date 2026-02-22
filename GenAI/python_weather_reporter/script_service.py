@@ -27,7 +27,7 @@ def generate_script(weather_data):
     report_date = weather_data.get("date", date.today().strftime("%B %d, %Y"))
 
     prompt = f"""
-    Generate a catchy, energetic weather report script for a female TV reporter named Maya.
+    Generate a catchy, energetic weather report script for a female TV news anchor named Maya.
     The script must be exactly 8 seconds long when spoken (strictly 15-20 words, no more).
 
     Today's date: {report_date}
@@ -38,14 +38,21 @@ def generate_script(weather_data):
     High: {weather_data['high_c']}°C
     Low: {weather_data['low_c']}°C
 
+    IMPORTANT — The studio background display already shows all temperature numbers
+    (current temp, high, and low) as on-screen graphics. Do NOT repeat any of those
+    exact numbers in the spoken script — the viewer can see them. Instead, use
+    descriptive language for temperature (e.g. "chilly", "bitter cold", "a warm afternoon")
+    and focus the script on the condition and a clear, punchy advisory.
+
     Rules:
     - Open with a time-appropriate greeting ("Good {time_of_day}, Storrs!")
-    - Naturally weave in the condition and at least one temperature
-    - End with a punchy, weather-relevant sign-off line
+    - Describe the condition vividly — do NOT quote the temperature numbers from the display
+    - End with a single punchy, weather-relevant sign-off (one call to action only)
     - Use vivid, conversational language — no jargon
     - Plain text only, no stage directions, labels, or quotes
+    - Do NOT repeat any phrase or advisory twice
 
-    Example style: "Good morning Storrs! It's a crisp 8 degrees with clouds rolling in — high of 14 today. Bundle up!"
+    Example style: "Good morning Storrs! It's a bitterly cold and overcast start — heavy clouds rolling in. Bundle up tight!"
     """
 
     response = model.generate_content(prompt)
