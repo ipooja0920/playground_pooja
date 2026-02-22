@@ -1,0 +1,17 @@
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-generativeai
+google-cloud-texttospeech
+python-dotenv
+pydantic
+pydantic-settings
+requests
+tenacity
+gTTS
+moviepy
+Pillow
+numpy
+pydub
+structlog
