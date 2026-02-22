@@ -15,7 +15,7 @@ editor: visual
 fig-cap-location: top
 ---
 
-```{}
+```         
 ```
 
 ```{r}
@@ -148,6 +148,8 @@ Comment:
 2.  **Volume** (cubic ft) is strongly **right skew**—many small volumes and a long upper tail (e.g., one near 77). Very few trees between **60–70**, which matches the raw check returning none.
 3.  **Girth** (in) is **mildly right skew** with most of the values in **low teens**. Both 18-inch trees fall into (16,18\], leaving (18,20\] empty; one large tree (\~20.6 in) sits in (20,22\].
 4.  The histograms show **Volume** is **right-skewed**, while **Girth** is **concentrated** in the **low teens** with a mild right tail. A scatterplot of Girth vs .Volume (also Height) and the correlation `r≈0.97r\approx0.97r≈0.97` indicate a **very strong positive relationship between Volume and Girth**.
+
+<!-- -->
 
 b.  Add a kernel density plot to each histogram in (a), and overlay the histogram with a normal distribution.
 

@@ -1,144 +1,64 @@
-"""
-Daily AI Weather Reporter — CLI Entry Point
-Generates a weather broadcast for Storrs, Connecticut.
+import vertexai
+import os
+from weather_service import get_weather
+from script_service import generate_script, read_latest_weather_from_csv, save_script_locally
+from video_service import generate_weather_video, generate_video_prompt
+from validator import run_all_tests
+from sync_weather import sync_to_local_csv
 
-Usage:
-    python main.py                    # Full pipeline (script + audio + video)
-    python main.py --no-video         # Script + audio only
-    python main.py --no-audio         # Script only (text)
-    python main.py --dry-run          # Fetch + generate script, no uploads
-"""
-
-import argparse
-import logging
-import sys
-
-from config.settings import get_settings
-from pipeline import Pipeline
-
-
-def setup_logging(verbose: bool = False) -> None:
-    """Configure structured logging."""
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s | %(levelname)-7s | %(name)-30s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    # Reduce noise from third-party libs
-    logging.getLogger("googleapiclient").setLevel(logging.WARNING)
-    logging.getLogger("oauth2client").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
+CSV_FILE = "weather_report.csv"
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Daily AI Weather Reporter — Storrs, CT",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
-    )
-    parser.add_argument(
-        "--no-audio",
-        action="store_true",
-        help="Skip audio generation",
-    )
-    parser.add_argument(
-        "--no-video",
-        action="store_true",
-        help="Skip video generation",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Fetch weather + generate script only (no uploads, no audio/video)",
-    )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable debug logging",
-    )
-    args = parser.parse_args()
+    # 1. Initialization
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = "us-central1"
 
-    setup_logging(args.verbose)
-    logger = logging.getLogger("main")
+    if not project_id:
+        print("Error: GOOGLE_CLOUD_PROJECT environment variable not set.")
+        return
 
-    # Load settings
-    try:
-        settings = get_settings()
-    except Exception as e:
-        logger.error(f"Failed to load settings: {e}")
-        logger.error("Make sure .env file exists. See .env.example")
-        sys.exit(1)
+    vertexai.init(project=project_id, location=location)
 
-    logger.info("=" * 60)
-    logger.info("  DAILY AI WEATHER REPORTER")
-    logger.info(f"  Location: {settings.location_display}")
-    logger.info(f"  Coordinates: {settings.latitude}, {settings.longitude}")
-    logger.info("=" * 60)
+    # 2. Fetch Weather & Save to Local CSV
+    print("Fetching weather for Storrs...")
+    weather_data = get_weather("Storrs, CT")
+    if not weather_data:
+        print("Failed to fetch weather data.")
+        return
 
-    # Run pipeline
-    enable_audio = not args.no_audio and not args.dry_run
-    enable_video = not args.no_video and not args.dry_run
+    sync_to_local_csv(weather_data, CSV_FILE)
 
-    pipeline = Pipeline(
-        settings=settings,
-        enable_audio=enable_audio,
-        enable_video=enable_video,
-        dry_run=args.dry_run,
-    )
+    # 3. Read Today's Data from Local CSV
+    print("Reading today's weather data from CSV...")
+    weather_data = read_latest_weather_from_csv(CSV_FILE)
+    if not weather_data:
+        print("Failed to read weather data from CSV.")
+        return
 
-    report = pipeline.run()
+    # 4. Generate Script
+    print("Generating script...")
+    script_text = generate_script(weather_data)
+    print(f"Generated Script: {script_text}")
 
-    # Print summary
-    manifest = report.manifest
-    logger.info("")
-    logger.info("=" * 60)
-    logger.info("  PIPELINE RESULTS")
-    logger.info("=" * 60)
-    logger.info(f"  Status:       {manifest.status}")
-    logger.info(f"  Degradation:  {manifest.degradation_level}")
-    logger.info(f"  Run ID:       {manifest.run_id}")
+    # 5. Save Script Locally
+    save_script_locally(script_text)
 
-    if manifest.stage_timings:
-        logger.info("  Stage Timings:")
-        for stage, secs in manifest.stage_timings.items():
-            logger.info(f"    {stage:20s} {secs:6.2f}s")
+    # 6. Generate Video Prompt & Validate
+    video_prompt = generate_video_prompt(weather_data, script_text)
 
-    total = None
-    if manifest.started_at and manifest.completed_at:
-        total = (manifest.completed_at - manifest.started_at).total_seconds()
-        logger.info(f"  Total:        {total:.2f}s")
+    if run_all_tests(script_text, video_prompt, weather_data):
+        print("Tests Passed! Proceeding to Video Generation...")
 
-    if manifest.errors:
-        logger.warning("  Errors:")
-        for err in manifest.errors:
-            logger.warning(f"    - {err}")
+        # 7. Generate Video
+        video_path, final_prompt = generate_weather_video(weather_data, script_text)
 
-    if report.script_text:
-        logger.info(f"  Script:       {report.script_word_count} words")
-
-    if report.script_drive_id:
-        logger.info(f"  Script ID:    {report.script_drive_id}")
-    if report.audio_drive_id:
-        logger.info(f"  Audio ID:     {report.audio_drive_id}")
-    if report.video_drive_id:
-        logger.info(f"  Video ID:     {report.video_drive_id}")
-
-    logger.info("=" * 60)
-
-    # Print script preview in dry-run mode
-    if args.dry_run and report.script_text:
-        print("\n--- SCRIPT PREVIEW ---\n")
-        print(report.script_text)
-        print("\n--- END PREVIEW ---")
-
-    # Exit code based on status
-    if manifest.status == "failed":
-        sys.exit(1)
-    elif manifest.status == "partial":
-        sys.exit(0)  # Partial success is still success
+        if video_path and os.path.exists(video_path):
+            print(f"Video saved locally: {os.path.abspath(video_path)}")
+        else:
+            print("Video generation failed or output file not found.")
     else:
-        sys.exit(0)
+        print("Tests Failed. Video will not be generated.")
 
 
 if __name__ == "__main__":
