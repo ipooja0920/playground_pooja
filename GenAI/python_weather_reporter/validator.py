@@ -42,6 +42,8 @@ def validate_video_prompt(prompt_text, weather_data):
     - Maya (character) is present
     - The studio display shows each data label exactly once (TEMP, HIGH, LOW, weather type)
     - No data value is duplicated in the display string
+    - UConn Storrs campus landmark present and matches the weather condition
+    - UConn News logo and Today's Weather Forecast title are included
     """
     condition = weather_data['condition'].lower()
     passed = True
@@ -71,6 +73,55 @@ def validate_video_prompt(prompt_text, weather_data):
             passed = False
             reason = f"Display label '{label}' appears {count} times in the prompt — should appear exactly once."
             break
+
+    # Check UConn Storrs campus landmark matches weather condition
+    # Each condition requires at least one of its expected landmark keywords
+    landmark_checks = {
+        ("sunny", "clear"): (
+            ["Homer Babbidge", "central green", "golden sunlight"],
+            "Sunny prompt missing UConn landmark (Homer Babbidge Library or central green)."
+        ),
+        ("overcast", "cloud"): (
+            ["Georgian brick", "brick", "central green"],
+            "Cloudy prompt missing UConn landmark (Georgian brick buildings or central green)."
+        ),
+        ("heavy rain", "rain", "shower"): (
+            ["UConn green", "UConn Storrs", "central UConn"],
+            "Rainy prompt missing UConn landmark (UConn green or campus buildings)."
+        ),
+        ("drizzle", "light rain"): (
+            ["Wilbur Cross", "tree-lined", "UConn Storrs"],
+            "Drizzle prompt missing UConn landmark (Wilbur Cross Building or tree-lined pathways)."
+        ),
+        ("snow", "blizzard"): (
+            ["Homer Babbidge", "central green", "UConn Storrs"],
+            "Snowy prompt missing UConn landmark (Homer Babbidge Library or central green)."
+        ),
+        ("thunder", "storm"): (
+            ["Homer Babbidge", "lightning", "UConn Storrs"],
+            "Stormy prompt missing UConn landmark (Homer Babbidge Library)."
+        ),
+        ("fog", "mist"): (
+            ["campus buildings", "UConn Storrs", "silhouette"],
+            "Foggy prompt missing UConn landmark (campus buildings silhouette)."
+        ),
+    }
+
+    for condition_keys, (expected_keywords, fail_reason) in landmark_checks.items():
+        if any(ck in condition for ck in condition_keys):
+            if not any(kw in prompt_text for kw in expected_keywords):
+                passed = False
+                reason = fail_reason
+            break
+
+    # Check overlay graphics are present
+    if "UConn News" not in prompt_text:
+        passed = False
+        reason = "UConn News logo missing from video prompt."
+
+    if "Today's Weather Forecast" not in prompt_text:
+        passed = False
+        reason = "Today's Weather Forecast title missing from video prompt."
 
     return passed, reason
 
