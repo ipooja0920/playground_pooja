@@ -156,6 +156,17 @@ def generate_video_prompt(weather_data, script_text):
     # Display string — each value appears exactly once
     display_text = f"TEMP: {temp}°C  |  HIGH: {high}°C  |  LOW: {low}°C  |  {weather_label}"
 
+    # Append active NWS alert overlay if Extreme or Severe
+    alert = weather_data.get("alert")
+    alert_overlay = ""
+    if alert and alert.get("severity") in ("Extreme", "Severe"):
+        alert_event = alert["event"].upper()
+        alert_overlay = (
+            f"Directly below the lower-third title bar is a flashing red alert banner reading "
+            f"'WARNING: {alert_event} IN EFFECT' in bold white text on a solid red background "
+            f"spanning the full width of the frame — urgent and clearly visible. "
+        )
+
     prompt = (
         f"A professional 4K 16:9 broadcast shot of {ANCHOR_CHARACTER} "
         "She is positioned slightly to the right of the frame, standing upright and looking "
@@ -172,6 +183,7 @@ def generate_video_prompt(weather_data, script_text):
         "rectangle — small, unobtrusive, and clearly legible. "
         "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast' "
         "in bold white text on a semi-transparent navy blue bar spanning the full width of the frame. "
+        f"{alert_overlay}"
         "The video starts immediately as she begins speaking and ends exactly at the 8-second "
         "mark as she finishes her last word — no dialogue is cut off. "
         "Camera is static and locked at eye level. "

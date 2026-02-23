@@ -17,11 +17,20 @@ def validate_script_content(script_text, weather_data):
         return True, "PASS (Manual only - no Project ID)"
     client = genai.Client(vertexai=True, project=project_id, location="us-central1")
 
+    alert = weather_data.get("alert")
+    alert_line = ""
+    if alert and alert.get("severity") in ("Extreme", "Severe"):
+        alert_line = (
+            f"\n    Active NWS Alert: {alert['event']} (Severity: {alert['severity']})"
+            f"\n    7. There is an active {alert['severity']} alert ({alert['event']}). "
+            f"The script MUST mention this alert or warn listeners urgently. FAIL if it is not mentioned at all."
+        )
+
     prompt = f"""
     Evaluate the following weather report script based on the provided data.
 
     Script: "{script_text}"
-    Weather data: Location={weather_data['location']}, Condition={weather_data['condition']}, Current Temp={weather_data['temp_c']}°C, High={weather_data['high_c']}°C, Low={weather_data['low_c']}°C
+    Weather data: Location={weather_data['location']}, Condition={weather_data['condition']}, Current Temp={weather_data['temp_c']}°C, High={weather_data['high_c']}°C, Low={weather_data['low_c']}°C{alert_line}
 
     Checklist:
     1. Is the script in English?
@@ -30,6 +39,7 @@ def validate_script_content(script_text, weather_data):
     4. Any specific temperature numbers mentioned in the script must match current temp, high, or low from the data.
     5. Is the tone appropriate for a TV weather anchor? Weather segments are intentionally energetic, casual, and punchy — informal expressions like "bundle up", "serious cold", "stay dry" are acceptable and expected. Only FAIL if the tone is offensive, inappropriate, or wildly unprofessional.
     6. Is any full phrase or advisory repeated twice in the same script? (e.g. "stay warm, stay warm" or two identical sign-off lines). If yes, FAIL.
+    7. If an active Extreme or Severe NWS alert is listed above, the script must mention it in some way (e.g. "Blizzard Warning", "storm warning", "dangerous conditions"). FAIL ONLY if the alert is completely absent — do not fail just because the wording isn't dramatic enough.
 
     Respond with 'PASS' if all criteria are met, otherwise respond with 'FAIL' followed by a brief reason.
     """

@@ -12,12 +12,13 @@ def sync_to_local_csv(weather_data, filename="weather_report.csv"):
         "Date": now.strftime("%Y-%m-%d %H:%M:%S"),
         "Condition": weather_data['condition'],
         "Temp (C)": weather_data['temp_c'],
+        "Feels Like (C)": weather_data.get('feels_like_c', ''),
         "High (C)": weather_data['high_c'],
         "Low (C)": weather_data['low_c'],
         "Sunny": weather_data['is_sunny'],
         "Rainy": weather_data['is_rainy'],
         "Stormy": weather_data['is_stormy'],
-        "Snowy": weather_data['is_snowy']
+        "Snowy": weather_data['is_snowy'],
     }])
 
     if os.path.exists(filename):
