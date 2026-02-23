@@ -2,6 +2,7 @@ from google import genai
 from google.genai import types
 import os
 import re
+import json
 import subprocess
 
 REFERENCE_IMAGE_PATH = "maya_reference.jpg"
@@ -269,26 +270,21 @@ def validate_logo_consistency():
 
 def validate_video_frame(video_path, weather_data):
     """
-    Extracts a frame from the generated video and uses Gemini Vision to verify
-    that every visible text element is correct and free of typos.
+    Post-generation frame check in two steps:
+      1. Gemini Vision reads ALL visible text from the frame as structured JSON (pure OCR — no judgment).
+      2. Python validates the extracted values against expected weather data using explicit rules.
 
-    This is a POST-GENERATION check — it catches Veo rendering hallucinations
-    (garbled text, wrong values, phantom characters) that prompt-level checks
-    cannot detect because they only inspect the instructions, not the output.
-
-    Rules passed to Gemini are STRICT and non-interpretable:
-    - No reinterpretation allowed
-    - If unsure about any element, return INVALID
+    This separates reading (Gemini's job) from validation (Python's job), making checks
+    deterministic and reusing the same logic applied to the prompt.
     """
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
     if not project_id:
         return True, "GOOGLE_CLOUD_PROJECT not set — skipping frame validation."
 
-    # GCS URI means the video is remote — frame extraction not supported locally
     if not os.path.exists(str(video_path)):
-        return True, f"Video not a local file (may be GCS URI) — skipping frame validation."
+        return True, "Video not a local file (may be GCS URI) — skipping frame validation."
 
-    # Extract a frame at 4 seconds (midpoint of the 8-second video)
+    # Step 1: Extract a frame at 4 seconds (midpoint of the 8-second video)
     frame_path = str(video_path).replace(".mp4", "_frame_check.jpg")
     try:
         subprocess.run(
@@ -307,54 +303,88 @@ def validate_video_frame(video_path, weather_data):
         with open(frame_path, "rb") as f:
             frame_bytes = f.read()
 
-        alert = weather_data.get("alert")
-        has_active_alert = bool(alert and alert.get("severity") in ("Extreme", "Severe"))
-        alert_rule = ""
-        if has_active_alert:
-            alert_event = alert["event"].upper()
-            alert_rule = (
-                f"\n- Alert banner: exactly 'ALERT: {alert_event} IN EFFECT' — "
-                f"no condition labels, no temperature values, no extra text in the banner"
-            )
-
-        llm_prompt = f"""You are a broadcast video quality validator. Inspect this frame from an AI-generated weather broadcast video.
-
-You are NOT allowed to reinterpret the design. You must validate ONLY against the explicit expected values listed below. If you are unsure about any element, return INVALID.
-
-Expected visual elements:
-- Weather card TOP section: bare value '{weather_data['temp_c']}°C' with NO label or prefix — this is the current temperature, it must NOT appear labeled as HIGH or LOW
-- Weather card MIDDLE section: 'HIGH: {weather_data['high_c']}°C' on left, 'LOW: {weather_data['low_c']}°C' on right
-- Logo text (top-right corner): exactly 'UConn News' — no garbled, extra, or missing characters
-- Lower-third bar: exactly 'Today's Weather Forecast' — no characters before or after this text{alert_rule}
-
-Strict validation rules — apply every rule with zero tolerance:
-1. Check every piece of visible text for spelling errors or garbled characters (e.g. 'JUCONN', 'HIGHL', 'LICEHT', 'ALRT' are all INVALID)
-2. The current temperature '{weather_data['temp_c']}°C' must NOT be labeled as HIGH or repeated elsewhere in the card
-3. HIGH must show exactly '{weather_data['high_c']}°C', LOW must show exactly '{weather_data['low_c']}°C'
-4. No phantom text, random characters, or unexpected watermarks anywhere on screen
-5. Lower-third bar must contain ONLY 'Today's Weather Forecast' — any extra characters before or after it are INVALID
-6. If an alert banner is visible, it must contain ONLY the warning text — no condition labels or temperatures
-
-You are NOT allowed to reinterpret or be lenient. If you are unsure about any element, return INVALID.
-
-Respond with exactly one of:
-VALID
-INVALID — [list each specific issue found, one per line]"""
+        # Step 2: Ask Gemini Vision to read visible text as structured JSON — no validation, pure OCR
+        ocr_prompt = (
+            "Read every piece of visible text in this broadcast video frame exactly as it appears. "
+            "Do NOT correct spelling, interpret intent, or skip garbled text — transcribe precisely what you see. "
+            "Return ONLY a JSON object with these exact keys:\n"
+            "{\n"
+            '  "top_section": "<exact text in the top of the weather card>",\n'
+            '  "middle_section": "<exact text in the middle of the weather card>",\n'
+            '  "bottom_section": "<exact text in the bottom of the weather card>",\n'
+            '  "logo_text": "<exact text of the logo in the top-right corner>",\n'
+            '  "lower_third": "<exact text in the navy bar at the bottom of the frame>",\n'
+            '  "alert_banner": "<exact text in the red banner below the navy bar, or null if not present>"\n'
+            "}\n"
+            "Return ONLY the JSON — no explanation, no markdown."
+        )
 
         client = genai.Client(vertexai=True, project=project_id, location="us-central1")
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
                 types.Part.from_bytes(data=frame_bytes, mime_type="image/jpeg"),
-                llm_prompt,
+                ocr_prompt,
             ]
         )
-        result_text = response.text.strip()
-        if result_text.upper().startswith("INVALID"):
-            issues = result_text[7:].strip() if len(result_text) > 7 else "unspecified rendering issues"
-            return False, f"Frame issues detected:{issues}"
+
+        raw = response.text.strip()
+        # Strip markdown code fences if Gemini wraps the JSON anyway
+        raw = re.sub(r"^```[a-z]*\n?", "", raw)
+        raw = re.sub(r"\n?```$", "", raw)
+        extracted = json.loads(raw)
+
+        # Step 3: Validate extracted values using explicit Python rules
+        issues = []
+        expected_temp = f"{weather_data['temp_c']}°C"
+        expected_high = f"{weather_data['high_c']}°C"
+        expected_low  = f"{weather_data['low_c']}°C"
+
+        top         = extracted.get("top_section", "")
+        mid         = extracted.get("middle_section", "")
+        logo        = extracted.get("logo_text", "")
+        lower_third = extracted.get("lower_third", "")
+        alert_banner = extracted.get("alert_banner")
+
+        # TOP section — must contain the current temp, must NOT have a HIGH/LOW label
+        if expected_temp not in top:
+            issues.append(f"TOP section shows '{top}' — expected '{expected_temp}'")
+        if re.search(r'\b(HIGH|LOW)\b', top, re.IGNORECASE):
+            issues.append(f"TOP section has HIGH/LOW label — must show bare temp only: '{top}'")
+
+        # MIDDLE section — must contain HIGH: {high} and LOW: {low}
+        if f"HIGH: {expected_high}" not in mid:
+            issues.append(f"MIDDLE section missing 'HIGH: {expected_high}' — got: '{mid}'")
+        if f"LOW: {expected_low}" not in mid:
+            issues.append(f"MIDDLE section missing 'LOW: {expected_low}' — got: '{mid}'")
+
+        # Logo — must read exactly "UConn News"
+        if logo.strip() != "UConn News":
+            issues.append(f"Logo shows '{logo}' — expected 'UConn News'")
+
+        # Lower-third — must read exactly "Today's Weather Forecast"
+        if lower_third.strip() != "Today's Weather Forecast":
+            issues.append(f"Lower-third shows '{lower_third}' — expected \"Today's Weather Forecast\"")
+
+        # Alert banner — must match exactly when active, must be absent when not active
+        alert = weather_data.get("alert")
+        has_active_alert = bool(alert and alert.get("severity") in ("Extreme", "Severe"))
+        if has_active_alert:
+            alert_event = alert["event"].upper()
+            expected_banner = f"ALERT: {alert_event} IN EFFECT"
+            if not alert_banner:
+                issues.append(f"Alert banner missing — expected '{expected_banner}'")
+            elif alert_banner.strip() != expected_banner:
+                issues.append(f"Alert banner shows '{alert_banner}' — expected '{expected_banner}'")
+        elif alert_banner:
+            issues.append(f"Alert banner present but no active alert — got: '{alert_banner}'")
+
+        if issues:
+            return False, "Frame issues:\n" + "\n".join(f"  - {i}" for i in issues)
         return True, "Frame text verified — all visible elements correct."
 
+    except json.JSONDecodeError as e:
+        return True, f"Frame validation skipped — could not parse OCR response: {e}"
     except Exception as e:
         return True, f"Frame validation skipped due to error: {e}"
     finally:

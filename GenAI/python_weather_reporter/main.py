@@ -59,15 +59,18 @@ def main():
 
     if run_all_tests(script_text, video_prompt, weather_data):
         print("Tests Passed! Proceeding to Video Generation...")
+        print(f"\nVideo Prompt:\n{video_prompt}\n")
 
         # 7. Generate Video — retry up to 3 times if frame validation fails
+        # Prompt is built once above and reused for all retries unchanged
         MAX_VISUAL_RETRIES = 3
         for visual_attempt in range(1, MAX_VISUAL_RETRIES + 1):
             if visual_attempt > 1:
                 print(f"\nFrame validation failed — regenerating video (visual attempt {visual_attempt}/{MAX_VISUAL_RETRIES})...")
 
             video_path, final_prompt = generate_weather_video(
-                weather_data, script_text, project_id=project_id, location=location
+                weather_data, script_text, project_id=project_id, location=location,
+                prompt=video_prompt
             )
 
             if not video_path or not os.path.exists(str(video_path)):

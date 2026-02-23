@@ -279,11 +279,12 @@ def generate_video_prompt(weather_data, script_text):
 
 
 def generate_weather_video(weather_data, script_text, output_path="output_video.mp4",
-                           project_id=None, location="us-central1"):
+                           project_id=None, location="us-central1", prompt=None):
     """
     Calls Vertex AI Veo 3.0 to generate an 8-second weather report video.
-    Loads (or generates) Maya's reference image and passes it as an ASSET reference
-    to Veo so the anchor looks consistent across every daily video.
+    Accepts an optional pre-built prompt — if provided, it is used as-is for all
+    retries so the prompt stays identical across attempts. If not provided, it is
+    built once from weather_data + script_text.
     """
     project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
     if not project_id:
@@ -292,10 +293,13 @@ def generate_weather_video(weather_data, script_text, output_path="output_video.
 
     try:
         client = genai.Client(vertexai=True, project=project_id, location=location)
-        prompt = generate_video_prompt(weather_data, script_text)
+        prompt_was_provided = prompt is not None
+        if not prompt_was_provided:
+            prompt = generate_video_prompt(weather_data, script_text)
 
         print("\nGenerating video with Veo 3.0...")
-        print(f"Prompt:\n{prompt}\n")
+        if not prompt_was_provided:
+            print(f"Prompt:\n{prompt}\n")
 
         # Generate/load Maya's reference image and UConn News logo (used for consistency checks)
         generate_or_load_reference_image(project_id, location)
