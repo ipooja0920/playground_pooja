@@ -157,7 +157,7 @@ The background is dynamically matched to the weather condition. For snowy condit
 
 ## Validation Tests
 
-All checks run before video generation. **Hard FAILs** block video generation; **Soft WARNs** are logged but do not block.
+Pre-generation checks (1–5) run before video is created. **Hard FAILs** block video generation; **Soft WARNs** are logged but do not block. Post-generation check (6) runs after each video and triggers a visual retry if it fails.
 
 ### 1. Script Validation (Hard — FAIL blocks video)
 Uses **Gemini 2.0 Flash** to verify the spoken script:
@@ -169,7 +169,7 @@ Uses **Gemini 2.0 Flash** to verify the spoken script:
 - If an Extreme or Severe NWS alert is active: FAIL only if the alert is **completely absent** from the script
 
 ### 2. Prompt Validation (Hard — FAIL blocks video)
-Manual + LLM checks on the Veo 3.0 prompt, organised into sections:
+Manual checks on the Veo 3.0 prompt, organised into sections:
 
 **Core checks:**
 - Weather condition keywords present in prompt
@@ -189,7 +189,7 @@ Manual + LLM checks on the Veo 3.0 prompt, organised into sections:
 - Explicit prohibition of condition badges, extra boxes, and floating labels
 - `bold white sans-serif` typography specified
 - `Today's Weather Forecast` appears exactly once
-- `WARNING:` appears exactly once if alert active, zero times if no alert
+- `ALERT:` appears exactly once if alert active, zero times if no alert
 - Alert bar positioned `directly below` the title bar (when applicable)
 
 **Logo placement:**
@@ -211,10 +211,7 @@ Checks that `maya_reference.jpg` exists locally.
 ### 5. Logo Consistency Check (Soft — WARN only)
 Checks that `uconn_news_logo.png` exists locally. If missing, it will be auto-generated on the next video run via Imagen 3.
 
----
-
-## Post-Generation Frame Validation
-
+### 6. Frame Validation (Post-gen — FAIL triggers visual retry)
 After each video is generated, `validate_video_frame()` extracts a frame at 4 seconds via `ffmpeg` and sends it to **Gemini Vision** for strict visual inspection. This catches Veo rendering hallucinations (garbled text, wrong labels, phantom characters) that prompt-level checks cannot detect because they only inspect the instructions, not the actual rendered output.
 
 **Rules passed to Gemini Vision are zero-tolerance:**
