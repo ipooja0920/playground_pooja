@@ -74,40 +74,45 @@ def validate_video_prompt(prompt_text, weather_data):
     if "Maya" not in prompt_text or ("reporter" not in prompt_text and "anchor" not in prompt_text):
         return False, "Character identity (Maya) not found in prompt."
 
-    # 2a. Case-insensitive duplicate check for label words with colon across the FULL prompt
-    # Catches if "HIGH:", "TEMP:", "LOW:" (formatted labels) appear more than once
-    for label in ["TEMP", "HIGH", "LOW"]:
+    # 2a. Extract the display section for all subsequent checks
+    display_section_match = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
+    display_section = display_section_match.group(1) if display_section_match else ""
+
+    # 2b. TEMP: label must NOT appear — display card has no TEMP prefix, just the bare value
+    if re.search(r'\bTEMP:', prompt_text, re.IGNORECASE):
+        return False, (
+            "'TEMP:' label found in prompt — the display card should show the current temperature "
+            "as a bare value only (e.g. '-2°C') with no label. Remove 'TEMP:' entirely."
+        )
+
+    # 2c. HIGH: and LOW: each appear exactly once across the full prompt
+    for label in ["HIGH", "LOW"]:
         count = len(re.findall(rf"\b{label}:", prompt_text, re.IGNORECASE))
         if count > 1:
             return False, (
-                f"'{label}:' appears {count} times in the full prompt (case-insensitive). "
-                f"Each data label must appear exactly once — check for duplicate visual descriptions."
+                f"'{label}:' appears {count} times in the full prompt — must appear exactly once."
             )
 
-    # 2b. Anti-pattern check: detect explanation sentences that list labels bare (e.g.
-    # "Each data label (TEMP, HIGH, LOW, weather type)...") — these caused Veo to render
-    # duplicate label text in the video even though the colon-form only appeared once.
-    if re.search(r'\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b', prompt_text, re.IGNORECASE):
-        # All three bare label words found — check if this is OUTSIDE the display string
-        display_section_match = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
-        prompt_without_display = (
-            prompt_text.replace(display_section_match.group(0), "")
-            if display_section_match else prompt_text
-        )
-        if re.search(r'\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b', prompt_without_display, re.IGNORECASE):
-            return False, (
-                "Label words TEMP, HIGH, LOW all appear outside the display section. "
-                "Remove any explanation sentence that lists these labels — it causes Veo to render them twice."
-            )
-
-    # 2c. Display section — no duplicate label words inside the quoted display string
-    display_section_match_2 = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
-    display_section = display_section_match_2.group(1) if display_section_match_2 else ""
+    # 2d. No value repeats twice in the display section — extract all °C numbers and check uniqueness
     if display_section:
-        for label in ["TEMP", "HIGH", "LOW"]:
-            count = len(re.findall(rf"\b{label}\b", display_section, re.IGNORECASE))
-            if count > 1:
-                return False, f"Display label '{label}' appears {count} times in the display string — should appear exactly once."
+        temp_values = re.findall(r'-?\d+°C', display_section)
+        if len(temp_values) != len(set(temp_values)):
+            seen = [v for v in temp_values if temp_values.count(v) > 1]
+            return False, (
+                f"Temperature value(s) {set(seen)} appear more than once in the display card. "
+                "Each value (current temp, HIGH, LOW) must be unique and shown only once."
+            )
+
+    # 2e. Anti-pattern: bare HIGH/LOW labels must not appear outside the display section
+    prompt_without_display = (
+        prompt_text.replace(display_section_match.group(0), "")
+        if display_section_match else prompt_text
+    )
+    if re.search(r'\b(HIGH|LOW)\b.*\b(HIGH|LOW)\b', prompt_without_display, re.IGNORECASE):
+        return False, (
+            "Label words HIGH/LOW appear outside the display section — "
+            "remove any explanation sentence that lists these labels."
+        )
 
     # 3. Overlay graphics checks
     if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:
@@ -141,7 +146,7 @@ def validate_video_prompt(prompt_text, weather_data):
         {visual_text}
 
         Rules:
-        - Check for misspelled words (e.g. "Foreciast" instead of "Forecast", "Broadcat" instead of "Broadcast").
+        - Check for any misspelled words in the visual text.
         - Check for obvious grammar errors in title cards and labels.
         - Ignore temperature values, degree symbols, and weather abbreviations like CLOUDY, SUNNY, RAINY.
         - Ignore narrative/descriptive language — only check text that would be visually displayed on screen.
@@ -288,7 +293,7 @@ if __name__ == "__main__":
     mock_script = "Good morning Storrs! Crisp and clear out there — a beautiful start to the day. Get outside!"
     mock_prompt = (
         "Maya the anchor in a sunny studio. "
-        "Behind her is a display showing bold dynamic data in large text: \"TEMP: 15°C  |  HIGH: 20°C  |  LOW: 10°C  |  SUNNY\". "
+        "Behind her is a display showing bold dynamic data in large text: \"15°C  |  HIGH: 20°C  |  LOW: 10°C  |  SUNNY\". "
         "Overlay graphics: 'UConn News' in bold white text on navy blue. "
         "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast'. "
         "The video starts immediately. Camera is static. "
