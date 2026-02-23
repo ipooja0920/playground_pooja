@@ -74,56 +74,83 @@ def validate_video_prompt(prompt_text, weather_data):
     if "Maya" not in prompt_text or ("reporter" not in prompt_text and "anchor" not in prompt_text):
         return False, "Character identity (Maya) not found in prompt."
 
-    # 2a. Extract the display section for all subsequent checks
-    display_section_match = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
-    display_section = display_section_match.group(1) if display_section_match else ""
+    # 2a. Extract the three display card sections
+    top_match = re.search(r"TOP SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
+    mid_match = re.search(r"MIDDLE SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
+    bot_match = re.search(r"BOTTOM SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
+    top_section = top_match.group(1) if top_match else ""
+    mid_section = mid_match.group(1) if mid_match else ""
+    bot_section = bot_match.group(1) if bot_match else ""
 
-    # 2b. TEMP: label must NOT appear — display card has no TEMP prefix, just the bare value
+    if not top_section or not mid_section or not bot_section:
+        return False, (
+            "Display card three-section structure (TOP SECTION / MIDDLE SECTION / BOTTOM SECTION) "
+            "not found in prompt — temperature card must be described as three explicit sections."
+        )
+
+    # 2b. TOP section must contain only the current temperature — no HIGH/LOW
+    if weather_data:
+        expected_temp = f"{weather_data['temp_c']}°C"
+        if expected_temp not in top_section:
+            return False, f"TOP section should contain only the current temperature '{expected_temp}', found: '{top_section}'."
+    if re.search(r'\b(HIGH|LOW)\b', top_section, re.IGNORECASE):
+        return False, f"TOP section must show ONLY the current temperature — 'HIGH' or 'LOW' must not appear here."
+
+    # 2c. MIDDLE section — HIGH and LOW each exactly once, spelled correctly, values match weather_data
+    high_count = len(re.findall(r'\bHIGH\b', mid_section, re.IGNORECASE))
+    low_count = len(re.findall(r'\bLOW\b', mid_section, re.IGNORECASE))
+    if high_count != 1:
+        return False, f"'HIGH' must appear exactly once in MIDDLE section, found {high_count} times."
+    if low_count != 1:
+        return False, f"'LOW' must appear exactly once in MIDDLE section, found {low_count} times."
+    if re.search(r'\bHIGHH+\b', prompt_text, re.IGNORECASE):
+        return False, "Misspelling detected: 'HIGHH' found in prompt — should be 'HIGH'."
+    if re.search(r'\bLOWW+\b', prompt_text, re.IGNORECASE):
+        return False, "Misspelling detected: 'LOWW' found in prompt — should be 'LOW'."
+    if weather_data:
+        expected_high = f"{weather_data['high_c']}°C"
+        expected_low = f"{weather_data['low_c']}°C"
+        if expected_high not in mid_section:
+            return False, f"MIDDLE section HIGH value should be '{expected_high}', not found in: '{mid_section}'."
+        if expected_low not in mid_section:
+            return False, f"MIDDLE section LOW value should be '{expected_low}', not found in: '{mid_section}'."
+
+    # 2d. BOTTOM section must contain only the weather condition — no extra labels or numbers
+    if re.search(r'\b(HIGH|LOW)\b', bot_section, re.IGNORECASE):
+        return False, f"BOTTOM section must show ONLY the weather condition — 'HIGH' or 'LOW' must not appear here."
+    if re.search(r'-?\d+°C', bot_section):
+        return False, f"BOTTOM section must show ONLY the weather condition — no temperature values allowed here."
+
+    # 2e. TEMP: label must not appear anywhere
     if re.search(r'\bTEMP:', prompt_text, re.IGNORECASE):
-        return False, (
-            "'TEMP:' label found in prompt — the display card should show the current temperature "
-            "as a bare value only (e.g. '-2°C') with no label. Remove 'TEMP:' entirely."
-        )
+        return False, "'TEMP:' label found — temperature card shows bare value only, no TEMP: prefix."
 
-    # 2c. HIGH: and LOW: each appear exactly once across the full prompt
-    for label in ["HIGH", "LOW"]:
-        count = len(re.findall(rf"\b{label}:", prompt_text, re.IGNORECASE))
-        if count > 1:
-            return False, (
-                f"'{label}:' appears {count} times in the full prompt — must appear exactly once."
-            )
-
-    # 2d. No value repeats twice in the display section — extract all °C numbers and check uniqueness
-    if display_section:
-        temp_values = re.findall(r'-?\d+°C', display_section)
-        if len(temp_values) != len(set(temp_values)):
-            seen = [v for v in temp_values if temp_values.count(v) > 1]
-            return False, (
-                f"Temperature value(s) {set(seen)} appear more than once in the display card. "
-                "Each value (current temp, HIGH, LOW) must be unique and shown only once."
-            )
-
-    # 2e. Anti-pattern: bare HIGH/LOW labels must not appear outside the display section
-    prompt_without_display = (
-        prompt_text.replace(display_section_match.group(0), "")
-        if display_section_match else prompt_text
+    # 2f. HIGH: and LOW: must not appear outside the display card block
+    display_block_match = re.search(
+        r'divided into three clearly separated sections.*?shown exactly once\.',
+        prompt_text, re.DOTALL | re.IGNORECASE
     )
-    if re.search(r'\b(HIGH|LOW)\b.*\b(HIGH|LOW)\b', prompt_without_display, re.IGNORECASE):
-        return False, (
-            "Label words HIGH/LOW appear outside the display section — "
-            "remove any explanation sentence that lists these labels."
-        )
+    prompt_without_display = (
+        prompt_text.replace(display_block_match.group(0), "")
+        if display_block_match else prompt_text
+    )
+    if re.search(r'\bHIGH:', prompt_without_display, re.IGNORECASE):
+        return False, "'HIGH:' label appears outside the display card section."
+    if re.search(r'\bLOW:', prompt_without_display, re.IGNORECASE):
+        return False, "'LOW:' label appears outside the display card section."
 
     # 3. Overlay graphics checks
     if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:
         return False, "Overlay graphics (Logo or Title) missing from video prompt."
 
-    # 4. Focused LLM spelling + grammar check on the extracted visual text elements only
-    # (display text, logo badge text, title text) — not the full narrative prompt
+    # 4. Focused LLM spelling + grammar check on extracted visual text only
     visual_text_parts: list[str] = []
-    display_match = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
-    if display_match:
-        visual_text_parts.append("Studio display: " + display_match.group(1))
+    if top_section:
+        visual_text_parts.append(f"Temperature card TOP: {top_section}")
+    if mid_section:
+        visual_text_parts.append(f"Temperature card MIDDLE: {mid_section}")
+    if bot_section:
+        visual_text_parts.append(f"Temperature card BOTTOM: {bot_section}")
     overlay_match = re.search(r'Overlay graphics:(.*?)(?:The video starts|Camera is)', prompt_text, re.DOTALL | re.IGNORECASE)
     if overlay_match:
         visual_text_parts.append("Overlay/logo text: " + overlay_match.group(1).strip())
@@ -289,11 +316,17 @@ def run_all_tests(script_text, prompt_text, weather_data):
 
 
 if __name__ == "__main__":
-    mock_data = {"location": "Storrs", "condition": "Sunny", "temp_c": 15, "high_c": 20, "low_c": 10}
+    mock_data = {"location": "Storrs", "condition": "Sunny", "temp_c": 15, "high_c": 20, "low_c": 10, "feels_like_c": 14, "alert": None}
     mock_script = "Good morning Storrs! Crisp and clear out there — a beautiful start to the day. Get outside!"
     mock_prompt = (
-        "Maya the anchor in a sunny studio. "
-        "Behind her is a display showing bold dynamic data in large text: \"15°C  |  HIGH: 20°C  |  LOW: 10°C  |  SUNNY\". "
+        "Maya the anchor reporter in a sunny studio. "
+        "Behind her and to her left is a sleek new-age glass-textured broadcast studio display panel "
+        "divided into three clearly separated sections (top to bottom): "
+        "TOP SECTION — shows only '15°C' (current temperature, large and bold); "
+        "MIDDLE SECTION — shows only 'HIGH: 20°C  LOW: 10°C' (HIGH on the left, LOW on the right); "
+        "BOTTOM SECTION — shows only 'SUNNY' (weather condition). "
+        "The card must contain ONLY these three sections — no extra numbers, no timestamps, "
+        "no random strings, no duplicate values, HIGH and LOW each spelled correctly and shown exactly once. "
         "Overlay graphics: 'UConn News' in bold white text on navy blue. "
         "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast'. "
         "The video starts immediately. Camera is static. "

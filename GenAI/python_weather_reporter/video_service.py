@@ -160,8 +160,10 @@ def generate_video_prompt(weather_data, script_text):
     """
     Builds a detailed Veo prompt.
     - Maya is positioned slightly right so the background display is clearly visible on the left.
-    - The studio display shows each data point exactly once with no labels repeated: current temp
-      (no TEMP: prefix), HIGH, LOW, and weather condition.
+    - The studio display uses a strict three-section card (top/middle/bottom):
+        TOP    — current temperature only
+        MIDDLE — HIGH: value  LOW: value
+        BOTTOM — weather condition only
     - Anchor appearance is locked via ANCHOR_CHARACTER for daily visual consistency.
     """
     condition = weather_data['condition']
@@ -171,8 +173,10 @@ def generate_video_prompt(weather_data, script_text):
     high = weather_data['high_c']
     low = weather_data['low_c']
 
-    # Display string — no TEMP: label, just the value. Each entry appears exactly once.
-    display_text = f"{temp}°C  |  HIGH: {high}°C  |  LOW: {low}°C  |  {weather_label}"
+    # Three-section temperature card — each section is distinct and contains only its own content
+    top_text = f"{temp}°C"
+    mid_text = f"HIGH: {high}°C  LOW: {low}°C"
+    bottom_text = weather_label
 
     # Append active NWS alert overlay if Extreme or Severe
     alert = weather_data.get("alert")
@@ -192,11 +196,13 @@ def generate_video_prompt(weather_data, script_text):
         "frame is clearly visible to viewers. "
         f"She delivers the following 8-second weather report with clear lip-sync, natural "
         f"speech rhythm, and subtle professional hand gestures: \"{script_text}\". "
-        f"Behind her and to her left is a sleek new-age glass-textured broadcast studio display "
-        f"showing bold dynamic data in large text: \"{display_text}\". "
-        "IMPORTANT — each value on the studio display panel appears exactly once and nowhere else on screen. "
-        "The first number is the current temperature with no label, followed by the forecast maximum, the forecast minimum, and the weather condition. "
-        "Do not repeat any number, temperature value, or condition label a second time anywhere in the frame. "
+        "Behind her and to her left is a sleek new-age glass-textured broadcast studio display panel "
+        "divided into three clearly separated sections (top to bottom): "
+        f"TOP SECTION — shows only '{top_text}' (current temperature, large and bold); "
+        f"MIDDLE SECTION — shows only '{mid_text}' (HIGH on the left, LOW on the right); "
+        f"BOTTOM SECTION — shows only '{bottom_text}' (weather condition). "
+        "The card must contain ONLY these three sections — no extra numbers, no timestamps, "
+        "no random strings, no duplicate values, HIGH and LOW each spelled correctly and shown exactly once. "
         f"Studio environment: {studio_env}. "
         "Overlay graphics: in the top-right corner of the frame is a clean professional broadcast "
         "logo badge with the text 'UConn News' in bold white sans-serif text on a navy blue rounded "
