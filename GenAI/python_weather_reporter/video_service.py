@@ -228,7 +228,7 @@ def generate_video_prompt(weather_data, script_text):
             f"Directly below the navy lower-third title bar, and touching it, is a single full-width solid red alert banner "
             f"reading 'WARNING: {alert_event} IN EFFECT' in bold white sans-serif text — "
             f"same font family as the title bar, urgent and clearly visible. "
-            f"This alert bar appears exactly once and only directly beneath 'Today's Weather Forecast'. "
+            f"This alert bar appears exactly once and only directly beneath the navy title bar above. "
         )
 
     prompt = (
