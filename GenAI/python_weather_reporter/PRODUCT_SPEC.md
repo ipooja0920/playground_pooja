@@ -131,7 +131,7 @@ A single full-width semi-transparent navy blue bar at the very bottom of the fra
 
 ### Alert Banner (Extreme/Severe only)
 When an active NWS Extreme or Severe alert is present, a single full-width solid red bar appears **directly below** (touching) the navy lower-third:
-- Text: `WARNING: {ALERT EVENT} IN EFFECT` in bold white sans-serif — same font family as the title bar
+- Text: `ALERT: {ALERT EVENT} IN EFFECT` in bold white sans-serif — same font family as the title bar
 - Appears **exactly once**, only when an active alert is present
 
 ---

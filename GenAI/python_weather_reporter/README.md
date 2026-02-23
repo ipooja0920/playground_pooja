@@ -77,7 +77,7 @@ Video is only generated if all **Hard** checks pass.
 
 ## Key Features
 
-- **NWS Alert overlay**: When a Blizzard Warning or other Extreme/Severe alert is active, a full-width red banner appears directly below the lower-third: `WARNING: {ALERT} IN EFFECT` in bold white sans-serif
+- **NWS Alert overlay**: When a Blizzard Warning or other Extreme/Severe alert is active, a full-width red banner appears directly below the lower-third: `ALERT: {ALERT EVENT} IN EFFECT` in bold white sans-serif
 - **Snow condition differentiation**: Three distinct snowy backgrounds — blizzard/whiteout, light/patchy snow drifting, moderate snow actively falling
 - **UConn branding**: Homer Babbidge Library and campus landmarks in background; AI-generated `UConn News` logo (Imagen 3) in top-right corner; `Today's Weather Forecast` lower-third in bold white sans-serif on navy bar
 - **AI-generated logo**: `UConn News` broadcast logo auto-generated via Imagen 3 on first run — flat navy + red design, locked static in top-right at 80px padding / 400px wide

@@ -171,18 +171,18 @@ def validate_video_prompt(prompt_text, weather_data):
     if "bold white sans-serif" not in prompt_text.lower():
         return False, "Lower-third typography must specify 'bold white sans-serif'."
 
-    # 5e. Text duplication: title appears exactly once; WARNING appears only when alert is active
+    # 5e. Text duplication: title appears exactly once; ALERT: appears only when alert is active
     forecast_count = len(re.findall(r"Today's Weather Forecast", prompt_text, re.IGNORECASE))
     if forecast_count != 1:
         return False, f"'Today's Weather Forecast' must appear exactly once in prompt, found {forecast_count} times."
 
     alert_data = weather_data.get("alert") if weather_data else None
     has_active_alert = bool(alert_data and alert_data.get("severity") in ("Extreme", "Severe"))
-    warning_count = len(re.findall(r'\bWARNING:', prompt_text, re.IGNORECASE))
-    if has_active_alert and warning_count != 1:
-        return False, f"Active alert present — 'WARNING:' must appear exactly once in prompt, found {warning_count} times."
-    if not has_active_alert and warning_count > 0:
-        return False, f"No active alert — 'WARNING:' must not appear in prompt, found {warning_count} times."
+    alert_count = len(re.findall(r'\bALERT:', prompt_text, re.IGNORECASE))
+    if has_active_alert and alert_count != 1:
+        return False, f"Active alert present — 'ALERT:' must appear exactly once in prompt, found {alert_count} times."
+    if not has_active_alert and alert_count > 0:
+        return False, f"No active alert — 'ALERT:' must not appear in prompt, found {alert_count} times."
 
     # 5f. Layout: alert bar must be positioned directly beneath the title bar (not floating elsewhere)
     if has_active_alert:
@@ -313,7 +313,7 @@ def validate_video_frame(video_path, weather_data):
         if has_active_alert:
             alert_event = alert["event"].upper()
             alert_rule = (
-                f"\n- Alert banner: exactly 'WARNING: {alert_event} IN EFFECT' — "
+                f"\n- Alert banner: exactly 'ALERT: {alert_event} IN EFFECT' — "
                 f"no condition labels, no temperature values, no extra text in the banner"
             )
 
@@ -328,7 +328,7 @@ Expected visual elements:
 - Lower-third bar: exactly 'Today's Weather Forecast' — no characters before or after this text{alert_rule}
 
 Strict validation rules — apply every rule with zero tolerance:
-1. Check every piece of visible text for spelling errors or garbled characters (e.g. 'JUCONN', 'HIGHL', 'LICEHT', 'WARNNG' are all INVALID)
+1. Check every piece of visible text for spelling errors or garbled characters (e.g. 'JUCONN', 'HIGHL', 'LICEHT', 'ALRT' are all INVALID)
 2. The current temperature '{weather_data['temp_c']}°C' must NOT be labeled as HIGH or repeated elsewhere in the card
 3. HIGH must show exactly '{weather_data['high_c']}°C', LOW must show exactly '{weather_data['low_c']}°C'
 4. No phantom text, random characters, or unexpected watermarks anywhere on screen

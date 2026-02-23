@@ -226,9 +226,9 @@ def generate_video_prompt(weather_data, script_text):
         alert_event = alert["event"].upper()
         alert_overlay = (
             f"Directly below the navy lower-third title bar, and touching it, is a single full-width solid red alert banner "
-            f"reading only 'WARNING: {alert_event} IN EFFECT' in bold white sans-serif text — "
+            f"reading only 'ALERT: {alert_event} IN EFFECT' in bold white sans-serif text — "
             f"same font family as the title bar, urgent and clearly visible. "
-            f"The alert banner contains ONLY this warning text — no weather condition labels, no temperature values. "
+            f"The alert banner contains ONLY this alert text — no weather condition labels, no temperature values. "
             f"This alert bar appears exactly once and only directly beneath the navy title bar above. "
         )
 
