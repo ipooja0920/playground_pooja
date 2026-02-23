@@ -112,8 +112,6 @@ def validate_video_prompt(prompt_text, weather_data):
     # 3. Overlay graphics checks
     if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:
         return False, "Overlay graphics (Logo or Title) missing from video prompt."
-    if "husky" not in prompt_text.lower():
-        return False, "UConn Husky mascot icon missing from logo badge description."
 
     # 4. Focused LLM spelling + grammar check on the extracted visual text elements only
     # (display text, logo badge text, title text) — not the full narrative prompt
@@ -291,7 +289,7 @@ if __name__ == "__main__":
     mock_prompt = (
         "Maya the anchor in a sunny studio. "
         "Behind her is a display showing bold dynamic data in large text: \"TEMP: 15°C  |  HIGH: 20°C  |  LOW: 10°C  |  SUNNY\". "
-        "Overlay graphics: UConn Husky mascot icon beside 'UConn News' in bold white text on navy blue. "
+        "Overlay graphics: 'UConn News' in bold white text on navy blue. "
         "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast'. "
         "The video starts immediately. Camera is static. "
         "Studio environment: golden sunlight over the Homer Babbidge Library and the central green at UConn Storrs campus."

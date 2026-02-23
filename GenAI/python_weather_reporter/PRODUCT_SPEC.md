@@ -1,5 +1,11 @@
 # Product Specification: AI Weather Reporter (Storrs)
 
+## Daily Output Videos
+Generated videos are archived on Google Drive:
+**[google.com/drive → Storrs AI Weather Reporter](https://drive.google.com/drive/folders/1xDH0A_1ai49FuV9e8O05ecEJYm2UXf3m)**
+
+---
+
 ## Overview
 A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores it locally, generates an 8-second spoken weather report script, and produces a professional broadcast-style video featuring a consistent AI anchor (Maya) using Vertex AI Veo 3.0. The video is generated only after all validation tests pass.
 
