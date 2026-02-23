@@ -265,10 +265,20 @@ def generate_weather_video(weather_data, script_text, output_path="output_video.
                     break
 
             if operation.error:
-                print(f"Attempt {attempt} failed: {operation.error}")
+                print(f"Attempt {attempt} failed with error: {operation.error}")
                 if attempt == 3:
                     return None, None
                 continue
+
+            # Debug: show full operation state when done but no video returned
+            print(f"  operation.done={operation.done}")
+            print(f"  operation.error={operation.error}")
+            print(f"  operation.response={operation.response}")
+            if operation.response:
+                videos = getattr(operation.response, 'generated_videos', None)
+                print(f"  generated_videos={videos}")
+                if videos:
+                    print(f"  video[0]={videos[0]}")
 
             if operation.response and operation.response.generated_videos:
                 video = operation.response.generated_videos[0].video

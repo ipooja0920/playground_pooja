@@ -24,6 +24,9 @@ venv/
 # *.csv
 # *.parquet
 
+# Weather reporter — secrets (never commit)
+GenAI/python_weather_reporter/.env
+
 # Weather reporter — generated runtime outputs (auto-created on each run)
 GenAI/python_weather_reporter/weather_report.csv
 GenAI/python_weather_reporter/weather_script.txt
