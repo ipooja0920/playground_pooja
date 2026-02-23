@@ -35,7 +35,7 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `weather_service.py` | Fetches weather from wttr.in + live NWS alerts for Storrs, CT |
 | `sync_weather.py` | Appends weather data to local `weather_report.csv` |
 | `script_service.py` | Generates 8-second script via Gemini 2.0 Flash; reads/writes CSV and `.txt` |
-| `video_service.py` | Builds the Veo 3.0 prompt and generates the video; manages Maya's reference image |
+| `video_service.py` | Builds the Veo 3.0 prompt and generates the video; manages Maya's reference image and UConn News logo |
 | `validator.py` | Runs all validation checks before video generation |
 | `sheets_service.py` | Google Sheets integration — OAuth2 helper to append weather data to a Drive spreadsheet |
 | `.env` | Local secrets file (gitignored) — stores `GOOGLE_CLOUD_PROJECT` |
@@ -45,7 +45,8 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 |------|-------------|
 | `weather_report.csv` | Appended daily — stores fetched weather history |
 | `weather_script.txt` | Latest generated spoken script |
-| `maya_reference.jpg` | Maya's anchor reference image (auto-generated once, reused for consistency) |
+| `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3, reused for consistency) |
+| `uconn_news_logo.png` | UConn News broadcast logo (auto-generated once via Imagen 3, reused for brand consistency) |
 | `output_video.mp4` | Final generated video (if all tests pass) |
 
 ---
@@ -89,24 +90,48 @@ Maya's appearance is locked via a constant `ANCHOR_CHARACTER` string in `video_s
 
 A reference image (`maya_reference.jpg`) is auto-generated via Imagen 3 on first run and reused to maintain visual consistency across daily videos.
 
+The UConn News logo (`uconn_news_logo.png`) is similarly auto-generated once via Imagen 3 and reused in every run for brand consistency — see [Overlay Graphics](#overlay-graphics).
+
 ---
 
 ## Studio Display
 
-Each video shows a side panel with weather data displayed as:
+Each video shows a glass-textured side panel divided into **three explicit sections** (top to bottom):
+
 ```
-TEMP: {temp}°C  |  HIGH: {high}°C  |  LOW: {low}°C  |  {WEATHER_LABEL}
+TOP    — {temp}°C               (current temperature, large and bold)
+MIDDLE — HIGH: {high}°C  LOW: {low}°C
+BOTTOM — {WEATHER_LABEL}        (e.g. SUNNY, CLOUDY, LIGHT SNOW)
 ```
-- Each label (`TEMP`, `HIGH`, `LOW`) appears **exactly once** (validated case-insensitively)
+
+- Each section is distinct and contains **only its own content** — no cross-section duplication
+- `HIGH` and `LOW` appear **exactly once** each, only in the MIDDLE section
+- `TEMP:` label is never used — the bare temperature value is shown directly
 - Weather label is mapped from the raw condition string (e.g. `"Overcast"` → `CLOUDY`, `"Light rain"` → `LIGHT RAIN`, `"Light snow, mist"` → `LIGHT SNOW`)
 - The spoken script describes conditions in words only — no temperature numbers — since they are already visible on screen
 
 ---
 
 ## Overlay Graphics
-- **Top-right**: `UConn News` logo badge with a UConn Husky mascot icon (white husky dog head silhouette) in bold white on navy blue rounded rectangle
-- **Bottom**: Lower-third title card reading `Today's Weather Forecast` in white on semi-transparent navy bar
-- **Alert banner** (Extreme/Severe only): Flashing red bar directly below the lower-third reading `WARNING: {ALERT EVENT} IN EFFECT` in bold white on solid red, full-width
+
+### UConn News Logo (Top-Left)
+The official `UConn News` broadcast logo is auto-generated via Imagen 3 on first run and reused every day:
+- **Position**: Top-left corner, 80px padding from top and left edges
+- **Size**: ~400px wide, original aspect ratio maintained
+- **Style**: Bold white geometric sans-serif on deep navy blue background with subtle red accent
+- **Constraints**: Static across all frames — no movement, no animation, no duplication, no color or text modification
+- Logo is described in full detail in the Veo prompt and validated before every video generation
+
+### Lower-Third Title Bar (Bottom)
+A single full-width semi-transparent navy blue bar at the very bottom of the frame:
+- Centered text: `Today's Weather Forecast` in bold white sans-serif (Helvetica Neue / Roboto Condensed style)
+- No condition badges, extra boxes, floating labels, or duplicate title elements anywhere in the frame
+- Appears **exactly once**
+
+### Alert Banner (Extreme/Severe only)
+When an active NWS Extreme or Severe alert is present, a single full-width solid red bar appears **directly below** (touching) the navy lower-third:
+- Text: `WARNING: {ALERT EVENT} IN EFFECT` in bold white sans-serif — same font family as the title bar
+- Appears **exactly once**, only when an active alert is present
 
 ---
 
@@ -131,7 +156,7 @@ The background is dynamically matched to the weather condition. For snowy condit
 
 ## Validation Tests
 
-All 4 checks run before video generation. **Hard FAILs** block video generation.
+All checks run before video generation. **Hard FAILs** block video generation; **Soft WARNs** are logged but do not block.
 
 ### 1. Script Validation (Hard — FAIL blocks video)
 Uses **Gemini 2.0 Flash** to verify the spoken script:
@@ -143,21 +168,50 @@ Uses **Gemini 2.0 Flash** to verify the spoken script:
 - If an Extreme or Severe NWS alert is active: FAIL only if the alert is **completely absent** from the script
 
 ### 2. Prompt Validation (Hard — FAIL blocks video)
-Manual + LLM checks on the Veo 3.0 prompt:
-- **Manual**: Weather condition keywords present in prompt
-- **Manual**: Maya's name and anchor role present
-- **Manual**: Display labels `TEMP`, `HIGH`, `LOW` each appear **exactly once** (case-insensitive, colon-scoped)
-- **Manual**: No bare `TEMP`/`HIGH`/`LOW` labels outside the display data section
-- **Manual**: UConn landmark keywords present for the given condition
-- **Manual**: `UConn News` overlay and `Today's Weather Forecast` title card present
-- **Manual**: For snowy conditions — active snowfall keyword present (`falling`, `drifting`, `swirling`, `snowflakes`, `blizzard rages`, or `curtains of snow`)
-- **LLM (Gemini 2.0 Flash)**: Checks for misspellings in visual text sections only
+Manual + LLM checks on the Veo 3.0 prompt, organised into sections:
+
+**Core checks:**
+- Weather condition keywords present in prompt
+- Maya's name and anchor role present
+- Prompt specifies 4K resolution and 16:9 aspect ratio
+
+**Three-section display card:**
+- Three explicit sections (TOP / MIDDLE / BOTTOM) present
+- TOP section contains only the current temperature — no HIGH/LOW
+- MIDDLE section: `HIGH` and `LOW` each appear exactly once, values match weather data
+- BOTTOM section: condition label only — no temperature values or extra labels
+- `TEMP:` label must not appear anywhere (bare value shown directly)
+- `HIGH:` / `LOW:` must not appear outside the display card block
+
+**Lower-third layout (6-point check):**
+- Navy blue full-width bar specified
+- Explicit prohibition of condition badges, extra boxes, and floating labels
+- `bold white sans-serif` typography specified
+- `Today's Weather Forecast` appears exactly once
+- `WARNING:` appears exactly once if alert active, zero times if no alert
+- Alert bar positioned `directly below` the title bar (when applicable)
+
+**Logo placement:**
+- `UConn News` logo present in prompt, positioned in the top-left corner
+- 80px padding and ~400px width specified
+- Logo is static — prompt explicitly says do NOT move / resize / animate / duplicate
+- Logo appears exactly once; no color changes or text modification stated
+
+**LLM check:**
+- Gemini 2.0 Flash checks visual text sections (card, overlay) for misspellings
+
+**Landmark / environment check:**
+- UConn landmark keywords present for the given condition (Homer Babbidge Library, central green, etc.)
+- For snowy conditions — active snowfall keyword present (`falling`, `drifting`, `swirling`, `snowflakes`, `blizzard rages`, or `curtains of snow`)
 
 ### 3. No-Repetition Check (Soft — WARN only)
 Checks that temperature numbers shown on the studio display are not also spoken aloud in the script.
 
 ### 4. Character Consistency Check (Soft — WARN only)
 Checks that `maya_reference.jpg` exists locally.
+
+### 5. Logo Consistency Check (Soft — WARN only)
+Checks that `uconn_news_logo.png` exists locally. If missing, it will be auto-generated on the next video run via Imagen 3.
 
 ---
 

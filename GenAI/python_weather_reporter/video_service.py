@@ -15,6 +15,47 @@ ANCHOR_CHARACTER = (
 )
 
 REFERENCE_IMAGE_PATH = "maya_reference.jpg"
+LOGO_PATH = "uconn_news_logo.png"
+
+
+def generate_or_load_logo(project_id, location="us-central1"):
+    """
+    Generates the UConn News broadcast logo using Imagen 3 if it doesn't exist yet.
+    The logo is stored locally and referenced in every video generation prompt for brand consistency.
+    """
+    if os.path.exists(LOGO_PATH):
+        print(f"Using existing UConn News logo: {LOGO_PATH}")
+        return LOGO_PATH
+
+    print("Generating UConn News logo for the first time...")
+    try:
+        client = genai.Client(vertexai=True, project=project_id, location=location)
+        logo_prompt = (
+            "A professional broadcast news logo for 'UConn News'. "
+            "Modern television news branding — clean, bold, and authoritative with university-style professionalism. "
+            "Bold geometric sans-serif typography reading exactly 'UConn News' — no additional words, no slogons, no extra graphics. "
+            "White text on a deep navy blue background with a subtle red accent bar or underline. "
+            "Flat, clean, vector-style design with sharp edges — no gradients, no weather icons, no decorative elements. "
+            "Horizontal layout, compact and balanced, suitable for top-corner placement in a broadcast frame. "
+            "High contrast, 4K resolution, professional broadcast quality."
+        )
+        response = client.models.generate_images(
+            model="imagen-3.0-generate-001",
+            prompt=logo_prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio="4:3",
+            ),
+        )
+        if response.generated_images:
+            image_bytes = response.generated_images[0].image.image_bytes
+            with open(LOGO_PATH, "wb") as f:
+                f.write(image_bytes)
+            print(f"UConn News logo saved: {os.path.abspath(LOGO_PATH)}")
+            return LOGO_PATH
+    except Exception as e:
+        print(f"Could not generate logo: {e}")
+    return None
 
 
 def generate_or_load_reference_image(project_id, location="us-central1"):
@@ -184,9 +225,10 @@ def generate_video_prompt(weather_data, script_text):
     if alert and alert.get("severity") in ("Extreme", "Severe"):
         alert_event = alert["event"].upper()
         alert_overlay = (
-            f"Directly below the lower-third title bar is a flashing red alert banner reading "
-            f"'WARNING: {alert_event} IN EFFECT' in bold white text on a solid red background "
-            f"spanning the full width of the frame — urgent and clearly visible. "
+            f"Directly below the navy lower-third title bar, and touching it, is a single full-width solid red alert banner "
+            f"reading 'WARNING: {alert_event} IN EFFECT' in bold white sans-serif text — "
+            f"same font family as the title bar, urgent and clearly visible. "
+            f"This alert bar appears exactly once and only directly beneath 'Today's Weather Forecast'. "
         )
 
     prompt = (
@@ -204,11 +246,15 @@ def generate_video_prompt(weather_data, script_text):
         "The card must contain ONLY these three sections — no extra numbers, no timestamps, "
         "no random strings, no duplicate values, HIGH and LOW each spelled correctly and shown exactly once. "
         f"Studio environment: {studio_env}. "
-        "Overlay graphics: in the top-right corner of the frame is a clean professional broadcast "
-        "logo badge with the text 'UConn News' in bold white sans-serif text on a navy blue rounded "
-        "rectangle — small, unobtrusive, and clearly legible. "
-        "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast' "
-        "in bold white text on a semi-transparent navy blue bar spanning the full width of the frame. "
+        "Overlay graphics: in the top-left corner of the frame is the official 'UConn News' broadcast logo — "
+        "bold white sans-serif text on a deep navy blue background with a subtle red accent. "
+        "Logo placement: 80px padding from the top and left edges, approximately 400px wide, "
+        "maintaining its original aspect ratio. "
+        "The logo is static and identical across all frames — do NOT move, resize, animate, or duplicate it. "
+        "It appears exactly once in the top-left corner only, with no color changes and no text modification. "
+        "At the very bottom of the frame is a single lower-third title bar: a full-width semi-transparent navy blue bar "
+        "containing only the centered text 'Today's Weather Forecast' in bold white sans-serif (Helvetica Neue or Roboto Condensed style). "
+        "No condition badges, no extra boxes, no floating labels, no duplicate title elements anywhere else in the frame. "
         f"{alert_overlay}"
         "The video starts immediately as she begins speaking and ends exactly at the 8-second "
         "mark as she finishes her last word — no dialogue is cut off. "
@@ -237,8 +283,9 @@ def generate_weather_video(weather_data, script_text, output_path="output_video.
         print("\nGenerating video with Veo 3.0...")
         print(f"Prompt:\n{prompt}\n")
 
-        # Generate/load Maya's reference image (used for validation consistency check)
+        # Generate/load Maya's reference image and UConn News logo (used for consistency checks)
         generate_or_load_reference_image(project_id, location)
+        generate_or_load_logo(project_id, location)
 
         operation = client.models.generate_videos(
             model=VEO_MODEL,

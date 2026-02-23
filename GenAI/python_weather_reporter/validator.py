@@ -4,6 +4,7 @@ import os
 import re
 
 REFERENCE_IMAGE_PATH = "maya_reference.jpg"
+LOGO_PATH = "uconn_news_logo.png"
 
 
 def validate_script_content(script_text, weather_data):
@@ -191,7 +192,44 @@ def validate_video_prompt(prompt_text, weather_data):
         except Exception as e:
             print(f"Warning: LLM prompt validation failed due to error: {e}")
 
-    # 3. Landmark Checks
+    # 5. Lower-third layout validation (6-point check)
+    # 5a. Format: prompt must specify 4K and 16:9 aspect ratio
+    if "4K" not in prompt_text or "16:9" not in prompt_text:
+        return False, "Video format (4K, 16:9) not specified in prompt."
+
+    # 5b. Lower-third structure: single full-width navy blue bar containing the title
+    if "navy blue" not in prompt_text.lower():
+        return False, "Lower-third bar must specify a navy blue background."
+    if not re.search(r'full.width', prompt_text, re.IGNORECASE):
+        return False, "Lower-third bar must be described as full-width."
+
+    # 5c. Forbidden elements: prompt must explicitly prohibit badges and extra boxes
+    if not re.search(r'no condition badges|no extra boxes|no floating labels', prompt_text, re.IGNORECASE):
+        return False, "Prompt must explicitly forbid condition badges and extra elements in the lower-third."
+
+    # 5d. Typography: lower-third must specify bold white sans-serif font
+    if "bold white sans-serif" not in prompt_text.lower():
+        return False, "Lower-third typography must specify 'bold white sans-serif'."
+
+    # 5e. Text duplication: title appears exactly once; WARNING appears only when alert is active
+    forecast_count = len(re.findall(r"Today's Weather Forecast", prompt_text, re.IGNORECASE))
+    if forecast_count != 1:
+        return False, f"'Today's Weather Forecast' must appear exactly once in prompt, found {forecast_count} times."
+
+    alert_data = weather_data.get("alert") if weather_data else None
+    has_active_alert = bool(alert_data and alert_data.get("severity") in ("Extreme", "Severe"))
+    warning_count = len(re.findall(r'\bWARNING:', prompt_text, re.IGNORECASE))
+    if has_active_alert and warning_count != 1:
+        return False, f"Active alert present — 'WARNING:' must appear exactly once in prompt, found {warning_count} times."
+    if not has_active_alert and warning_count > 0:
+        return False, f"No active alert — 'WARNING:' must not appear in prompt, found {warning_count} times."
+
+    # 5f. Layout: alert bar must be positioned directly beneath the title bar (not floating elsewhere)
+    if has_active_alert:
+        if not re.search(r'directly below|directly beneath', prompt_text, re.IGNORECASE):
+            return False, "Alert bar must be positioned 'directly below' the lower-third title bar."
+
+    # 6. Landmark Checks
     landmark_checks = {
         ("sunny", "clear"): (
             ["Homer Babbidge", "central green", "golden sunlight"],
@@ -228,11 +266,45 @@ def validate_video_prompt(prompt_text, weather_data):
                 "Settled snow alone is not enough — Veo needs to render live snowfall."
             )
 
-    # 4. Overlay graphics check
-    if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:
-        return False, "Overlay graphics (Logo or Title) missing from video prompt."
+    # 7. Logo placement validation
+    # 7a. Logo must be present and positioned in the top-left corner
+    if "UConn News" not in prompt_text:
+        return False, "UConn News logo missing from video prompt."
+    if "top-left corner" not in prompt_text.lower():
+        return False, "UConn News logo must be positioned in the top-left corner."
+
+    # 7b. Placement spec: 80px padding and 400px width must be specified
+    if "80px" not in prompt_text:
+        return False, "UConn News logo must specify 80px padding from top and left edges."
+    if "400px" not in prompt_text:
+        return False, "UConn News logo must specify approximately 400px width."
+
+    # 7c. Static constraint: prompt must say the logo does not move, animate, or duplicate
+    if not re.search(r'do NOT (move|resize|animate|duplicate)', prompt_text, re.IGNORECASE):
+        return False, "Prompt must explicitly state logo is static (do NOT move/resize/animate/duplicate)."
+
+    # 7d. Logo must appear exactly once — no duplication
+    if not re.search(r'appears exactly once', prompt_text, re.IGNORECASE):
+        return False, "Prompt must state UConn News logo appears exactly once."
+
+    # 7e. No color or text modification
+    if not re.search(r'no color changes|no text modification', prompt_text, re.IGNORECASE):
+        return False, "Prompt must explicitly state no color changes and no text modification to the logo."
 
     return True, "Prompt looks good."
+
+
+def validate_logo_consistency():
+    """
+    Checks that the UConn News logo file exists locally.
+    If missing, it will be auto-generated on the next video run.
+    """
+    if os.path.exists(LOGO_PATH):
+        return True, f"UConn News logo found: {LOGO_PATH}"
+    return False, (
+        f"UConn News logo not found at '{LOGO_PATH}'. "
+        "It will be auto-generated on the next video run."
+    )
 
 
 def validate_no_repetition(script_text, video_prompt, weather_data):
@@ -312,6 +384,11 @@ def run_all_tests(script_text, prompt_text, weather_data):
     print(f"Character Consistency:   {'PASS' if char_pass else 'WARN'} — {char_msg}")
     # Also a soft warning — Veo will generate the reference image if missing
 
+    # 5. Logo consistency (logo file exists)
+    logo_pass, logo_msg = validate_logo_consistency()
+    print(f"Logo Consistency:        {'PASS' if logo_pass else 'WARN'} — {logo_msg}")
+    # Soft warning — logo will be auto-generated on next video run if missing
+
     return all_passed
 
 
@@ -319,7 +396,7 @@ if __name__ == "__main__":
     mock_data = {"location": "Storrs", "condition": "Sunny", "temp_c": 15, "high_c": 20, "low_c": 10, "feels_like_c": 14, "alert": None}
     mock_script = "Good morning Storrs! Crisp and clear out there — a beautiful start to the day. Get outside!"
     mock_prompt = (
-        "Maya the anchor reporter in a sunny studio. "
+        "A professional 4K 16:9 TV news broadcast shot of Maya the anchor reporter in a sunny studio. "
         "Behind her and to her left is a sleek new-age glass-textured broadcast studio display panel "
         "divided into three clearly separated sections (top to bottom): "
         "TOP SECTION — shows only '15°C' (current temperature, large and bold); "
@@ -327,9 +404,15 @@ if __name__ == "__main__":
         "BOTTOM SECTION — shows only 'SUNNY' (weather condition). "
         "The card must contain ONLY these three sections — no extra numbers, no timestamps, "
         "no random strings, no duplicate values, HIGH and LOW each spelled correctly and shown exactly once. "
-        "Overlay graphics: 'UConn News' in bold white text on navy blue. "
-        "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast'. "
-        "The video starts immediately. Camera is static. "
+        "Overlay graphics: in the top-left corner of the frame is the official 'UConn News' broadcast logo — "
+        "bold white sans-serif text on a deep navy blue background with a subtle red accent. "
+        "Logo placement: 80px padding from the top and left edges, approximately 400px wide, maintaining its original aspect ratio. "
+        "The logo is static and identical across all frames — do NOT move, resize, animate, or duplicate it. "
+        "It appears exactly once in the top-left corner only, with no color changes and no text modification. "
+        "At the very bottom of the frame is a single lower-third title bar: a full-width semi-transparent navy blue bar "
+        "containing only the centered text 'Today's Weather Forecast' in bold white sans-serif (Helvetica Neue or Roboto Condensed style). "
+        "No condition badges, no extra boxes, no floating labels, no duplicate title elements anywhere else in the frame. "
+        "The video starts immediately. Camera is static. 4K resolution, professional broadcast quality. "
         "Studio environment: golden sunlight over the Homer Babbidge Library and the central green at UConn Storrs campus."
     )
     run_all_tests(mock_script, mock_prompt, mock_data)
