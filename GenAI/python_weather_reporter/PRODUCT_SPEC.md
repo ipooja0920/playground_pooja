@@ -60,8 +60,9 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 3. Read Today's Data script_service.py   →  reads latest row from CSV + live NWS alert
 4. Generate Script   script_service.py   →  Gemini 2.0 Flash → weather_script.txt
 5. Build Video Prompt video_service.py   →  constructs Veo 3.0 prompt with display data + alert overlay
-6. Validate          validator.py        →  4 checks (see below) — hard fails block video generation
-7. Generate Video    video_service.py    →  Veo 3.0 → output_video.mp4 (up to 3 retries)
+6. Validate          validator.py        →  5 checks (see below) — hard fails block video generation
+7. Generate Video    video_service.py    →  Veo 3.0 → output_video.mp4 (up to 3 API retries)
+8. Frame Validation  validator.py        →  Gemini Vision checks rendered frame — regenerates up to 3 times if INVALID
 ```
 
 ---
@@ -114,9 +115,9 @@ BOTTOM — {WEATHER_LABEL}        (e.g. SUNNY, CLOUDY, LIGHT SNOW)
 
 ## Overlay Graphics
 
-### UConn News Logo (Top-Left)
+### UConn News Logo (Top-Right)
 The official `UConn News` broadcast logo is auto-generated via Imagen 3 on first run and reused every day:
-- **Position**: Top-left corner, 80px padding from top and left edges
+- **Position**: Top-right corner, 80px padding from top and right edges
 - **Size**: ~400px wide, original aspect ratio maintained
 - **Style**: Bold white geometric sans-serif on deep navy blue background with subtle red accent
 - **Constraints**: Static across all frames — no movement, no animation, no duplication, no color or text modification
@@ -192,13 +193,10 @@ Manual + LLM checks on the Veo 3.0 prompt, organised into sections:
 - Alert bar positioned `directly below` the title bar (when applicable)
 
 **Logo placement:**
-- `UConn News` logo present in prompt, positioned in the top-left corner
+- `UConn News` logo present in prompt, positioned in the top-right corner
 - 80px padding and ~400px width specified
 - Logo is static — prompt explicitly says do NOT move / resize / animate / duplicate
 - Logo appears exactly once; no color changes or text modification stated
-
-**LLM check:**
-- Gemini 2.0 Flash checks visual text sections (card, overlay) for misspellings
 
 **Landmark / environment check:**
 - UConn landmark keywords present for the given condition (Homer Babbidge Library, central green, etc.)
@@ -212,6 +210,19 @@ Checks that `maya_reference.jpg` exists locally.
 
 ### 5. Logo Consistency Check (Soft — WARN only)
 Checks that `uconn_news_logo.png` exists locally. If missing, it will be auto-generated on the next video run via Imagen 3.
+
+---
+
+## Post-Generation Frame Validation
+
+After each video is generated, `validate_video_frame()` extracts a frame at 4 seconds via `ffmpeg` and sends it to **Gemini Vision** for strict visual inspection. This catches Veo rendering hallucinations (garbled text, wrong labels, phantom characters) that prompt-level checks cannot detect because they only inspect the instructions, not the actual rendered output.
+
+**Rules passed to Gemini Vision are zero-tolerance:**
+- No reinterpretation allowed — validate only against explicit expected values
+- If unsure about any element, return INVALID
+- Checks: current temp (no HIGH/LOW label), HIGH/LOW values, `UConn News` logo text, `Today's Weather Forecast` lower-third, alert banner text (if active)
+
+If the frame is INVALID, `main.py` regenerates the video (up to **3 visual retries** — separate from the 3 Veo API retries). If all retries fail, the pipeline logs a warning and exits.
 
 ---
 

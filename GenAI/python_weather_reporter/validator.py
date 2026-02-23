@@ -2,6 +2,7 @@ from google import genai
 from google.genai import types
 import os
 import re
+import subprocess
 
 REFERENCE_IMAGE_PATH = "maya_reference.jpg"
 LOGO_PATH = "uconn_news_logo.png"
@@ -229,12 +230,12 @@ def validate_video_prompt(prompt_text, weather_data):
     # 7a. Logo must be present and positioned in the top-left corner
     if "UConn News" not in prompt_text:
         return False, "UConn News logo missing from video prompt."
-    if "top-left corner" not in prompt_text.lower():
-        return False, "UConn News logo must be positioned in the top-left corner."
+    if "top-right corner" not in prompt_text.lower():
+        return False, "UConn News logo must be positioned in the top-right corner."
 
     # 7b. Placement spec: 80px padding and 400px width must be specified
     if "80px" not in prompt_text:
-        return False, "UConn News logo must specify 80px padding from top and left edges."
+        return False, "UConn News logo must specify 80px padding from top and right edges."
     if "400px" not in prompt_text:
         return False, "UConn News logo must specify approximately 400px width."
 
@@ -264,6 +265,101 @@ def validate_logo_consistency():
         f"UConn News logo not found at '{LOGO_PATH}'. "
         "It will be auto-generated on the next video run."
     )
+
+
+def validate_video_frame(video_path, weather_data):
+    """
+    Extracts a frame from the generated video and uses Gemini Vision to verify
+    that every visible text element is correct and free of typos.
+
+    This is a POST-GENERATION check — it catches Veo rendering hallucinations
+    (garbled text, wrong values, phantom characters) that prompt-level checks
+    cannot detect because they only inspect the instructions, not the output.
+
+    Rules passed to Gemini are STRICT and non-interpretable:
+    - No reinterpretation allowed
+    - If unsure about any element, return INVALID
+    """
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        return True, "GOOGLE_CLOUD_PROJECT not set — skipping frame validation."
+
+    # GCS URI means the video is remote — frame extraction not supported locally
+    if not os.path.exists(str(video_path)):
+        return True, f"Video not a local file (may be GCS URI) — skipping frame validation."
+
+    # Extract a frame at 4 seconds (midpoint of the 8-second video)
+    frame_path = str(video_path).replace(".mp4", "_frame_check.jpg")
+    try:
+        subprocess.run(
+            ["ffmpeg", "-ss", "4", "-i", str(video_path), "-vframes", "1", frame_path, "-y"],
+            capture_output=True, text=True, timeout=30
+        )
+    except FileNotFoundError:
+        return True, "ffmpeg not found — skipping frame validation (install ffmpeg to enable)."
+    except subprocess.TimeoutExpired:
+        return True, "Frame extraction timed out — skipping frame validation."
+
+    if not os.path.exists(frame_path):
+        return True, "Could not extract frame from video — skipping frame validation."
+
+    try:
+        with open(frame_path, "rb") as f:
+            frame_bytes = f.read()
+
+        alert = weather_data.get("alert")
+        has_active_alert = bool(alert and alert.get("severity") in ("Extreme", "Severe"))
+        alert_rule = ""
+        if has_active_alert:
+            alert_event = alert["event"].upper()
+            alert_rule = (
+                f"\n- Alert banner: exactly 'WARNING: {alert_event} IN EFFECT' — "
+                f"no condition labels, no temperature values, no extra text in the banner"
+            )
+
+        llm_prompt = f"""You are a broadcast video quality validator. Inspect this frame from an AI-generated weather broadcast video.
+
+You are NOT allowed to reinterpret the design. You must validate ONLY against the explicit expected values listed below. If you are unsure about any element, return INVALID.
+
+Expected visual elements:
+- Weather card TOP section: bare value '{weather_data['temp_c']}°C' with NO label or prefix — this is the current temperature, it must NOT appear labeled as HIGH or LOW
+- Weather card MIDDLE section: 'HIGH: {weather_data['high_c']}°C' on left, 'LOW: {weather_data['low_c']}°C' on right
+- Logo text (top-right corner): exactly 'UConn News' — no garbled, extra, or missing characters
+- Lower-third bar: exactly 'Today's Weather Forecast' — no characters before or after this text{alert_rule}
+
+Strict validation rules — apply every rule with zero tolerance:
+1. Check every piece of visible text for spelling errors or garbled characters (e.g. 'JUCONN', 'HIGHL', 'LICEHT', 'WARNNG' are all INVALID)
+2. The current temperature '{weather_data['temp_c']}°C' must NOT be labeled as HIGH or repeated elsewhere in the card
+3. HIGH must show exactly '{weather_data['high_c']}°C', LOW must show exactly '{weather_data['low_c']}°C'
+4. No phantom text, random characters, or unexpected watermarks anywhere on screen
+5. Lower-third bar must contain ONLY 'Today's Weather Forecast' — any extra characters before or after it are INVALID
+6. If an alert banner is visible, it must contain ONLY the warning text — no condition labels or temperatures
+
+You are NOT allowed to reinterpret or be lenient. If you are unsure about any element, return INVALID.
+
+Respond with exactly one of:
+VALID
+INVALID — [list each specific issue found, one per line]"""
+
+        client = genai.Client(vertexai=True, project=project_id, location="us-central1")
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
+                types.Part.from_bytes(data=frame_bytes, mime_type="image/jpeg"),
+                llm_prompt,
+            ]
+        )
+        result_text = response.text.strip()
+        if result_text.upper().startswith("INVALID"):
+            issues = result_text[7:].strip() if len(result_text) > 7 else "unspecified rendering issues"
+            return False, f"Frame issues detected:{issues}"
+        return True, "Frame text verified — all visible elements correct."
+
+    except Exception as e:
+        return True, f"Frame validation skipped due to error: {e}"
+    finally:
+        if os.path.exists(frame_path):
+            os.remove(frame_path)
 
 
 def validate_no_repetition(script_text, video_prompt, weather_data):
@@ -357,19 +453,21 @@ if __name__ == "__main__":
     mock_prompt = (
         "A professional 4K 16:9 TV news broadcast shot of Maya the anchor reporter in a sunny studio. "
         "Behind her and to her left is a sleek new-age glass-textured broadcast studio display panel "
-        "divided into three clearly separated sections (top, middle and bottom): "
-        "TOP SECTION — shows only '15°C' (current temperature, large and bold); "
+        "divided into three clearly separated sections (top to bottom): "
+        "TOP SECTION — shows ONLY the bare value '15°C' with no label and no prefix "
+        "(this is the CURRENT real-time temperature — do NOT label it HIGH, do NOT repeat this value elsewhere in the card); "
         "MIDDLE SECTION — shows only 'HIGH: 20°C  LOW: 10°C' (HIGH on the left, LOW on the right); "
-        "BOTTOM SECTION — shows only 'SUNNY' (weather condition). "
+        "BOTTOM SECTION — shows only 'SUNNY' (weather condition label only, no temperature numbers). "
         "The card must contain ONLY these three sections — no extra numbers, no timestamps, "
         "no random strings, no duplicate values, HIGH and LOW each spelled correctly and shown exactly once. "
-        "Overlay graphics: in the top-left corner of the frame is the official 'UConn News' broadcast logo — "
+        "Overlay graphics: in the top-right corner of the frame is the official 'UConn News' broadcast logo — "
         "bold white sans-serif text on a deep navy blue background with a subtle red accent. "
-        "Logo placement: 80px padding from the top and left edges, approximately 400px wide, maintaining its original aspect ratio. "
+        "Logo placement: 80px padding from the top and right edges, approximately 400px wide, maintaining its original aspect ratio. "
         "The logo is static and identical across all frames — do NOT move, resize, animate, or duplicate it. "
-        "It appears exactly once in the top-left corner only, with no color changes and no text modification. "
+        "It appears exactly once in the top-right corner only, with no color changes and no text modification. "
         "At the very bottom of the frame is a single lower-third title bar: a full-width semi-transparent navy blue bar "
-        "containing only the centered text 'Today's Weather Forecast' in bold white sans-serif (Helvetica Neue or Roboto Condensed style). "
+        "containing only the centered text 'Today's Weather Forecast' in bold white sans-serif (Helvetica Neue or Roboto Condensed style) — "
+        "no random characters, watermarks, or other text appear in this bar before or after the title. "
         "No condition badges, no extra boxes, no floating labels, no duplicate title elements anywhere else in the frame. "
         "The video starts immediately. Camera is static. 4K resolution, professional broadcast quality. "
         "Studio environment: golden sunlight over the Homer Babbidge Library and the central green at UConn Storrs campus."

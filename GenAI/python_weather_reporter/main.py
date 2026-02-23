@@ -13,7 +13,7 @@ if _env_file.exists():
             os.environ.setdefault(_k.strip(), _v.strip())
 from script_service import generate_script, read_latest_weather_from_csv, save_script_locally
 from video_service import generate_weather_video, generate_video_prompt
-from validator import run_all_tests
+from validator import run_all_tests, validate_video_frame
 from sync_weather import sync_to_local_csv
 
 CSV_FILE = "weather_report.csv"
@@ -60,15 +60,31 @@ def main():
     if run_all_tests(script_text, video_prompt, weather_data):
         print("Tests Passed! Proceeding to Video Generation...")
 
-        # 7. Generate Video
-        video_path, final_prompt = generate_weather_video(
-            weather_data, script_text, project_id=project_id, location=location
-        )
+        # 7. Generate Video — retry up to 3 times if frame validation fails
+        MAX_VISUAL_RETRIES = 3
+        for visual_attempt in range(1, MAX_VISUAL_RETRIES + 1):
+            if visual_attempt > 1:
+                print(f"\nFrame validation failed — regenerating video (visual attempt {visual_attempt}/{MAX_VISUAL_RETRIES})...")
 
-        if video_path and os.path.exists(video_path):
+            video_path, final_prompt = generate_weather_video(
+                weather_data, script_text, project_id=project_id, location=location
+            )
+
+            if not video_path or not os.path.exists(str(video_path)):
+                print("Video generation failed or output file not found.")
+                break
+
             print(f"Video saved locally: {os.path.abspath(video_path)}")
-        else:
-            print("Video generation failed or output file not found.")
+
+            # 8. Post-generation: validate actual rendered frame for text accuracy
+            frame_pass, frame_msg = validate_video_frame(video_path, weather_data)
+            print(f"Frame Validation:        {'PASS' if frame_pass else 'FAIL'} — {frame_msg}")
+
+            if frame_pass:
+                break
+
+            if visual_attempt == MAX_VISUAL_RETRIES:
+                print("Frame validation failed after all attempts. Check the output video manually.")
     else:
         print("Tests Failed. Video will not be generated.")
 
