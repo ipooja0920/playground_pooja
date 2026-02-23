@@ -177,7 +177,7 @@ def validate_video_prompt(prompt_text, weather_data):
         ),
         ("snow", "blizzard"): (
             ["Homer Babbidge", "central green", "UConn Storrs"],
-            "Snowy prompt missing UConn landmark."
+            "Snowy prompt missing UConn Storrs landmark (Homer Babbidge Library or central green)."
         ),
     }
 
@@ -186,6 +186,17 @@ def validate_video_prompt(prompt_text, weather_data):
             if not any(kw.lower() in prompt_text.lower() for kw in expected_keywords):
                 return False, fail_reason
             break
+
+    # Extra check for snowy conditions: active snowfall must be visible through the window
+    # (not just settled snow — Veo must show snow falling/drifting past the glass)
+    if "snow" in condition or "blizzard" in condition:
+        active_snow_keywords = ["falling", "drifting", "swirling", "snowflakes", "blizzard rages", "curtains of snow"]
+        if not any(kw.lower() in prompt_text.lower() for kw in active_snow_keywords):
+            return False, (
+                "Snowy prompt must show active snowfall through the studio windows "
+                "(e.g. 'snowflakes falling', 'drifting past the glass', 'blizzard rages outside'). "
+                "Settled snow alone is not enough — Veo needs to render live snowfall."
+            )
 
     # 4. Overlay graphics check
     if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:

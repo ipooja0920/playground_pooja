@@ -106,11 +106,28 @@ def _get_studio_environment(condition):
             "— the tree-lined pathways and the Wilbur Cross Building in the misty background; "
             "cool diffused blue-grey studio lighting creating a calm quiet atmosphere"
         )
-    elif "snow" in c or "blizzard" in c:
+    elif "blizzard" in c or ("heavy" in c and "snow" in c):
         return (
-            "gentle snowflakes blanket the UConn Storrs campus visible through the studio windows "
-            "— the Homer Babbidge Library, the central green, and bare oak trees dusted in white "
-            "against a pale grey sky; soft cool-white diffused studio lighting"
+            "through the studio's floor-to-ceiling windows a full blizzard rages across the UConn "
+            "Storrs campus — thick curtains of snow are actively falling and swirling past the glass, "
+            "nearly obscuring the Homer Babbidge Library and the central green in whiteout conditions; "
+            "bare oak trees barely visible as snow piles up on the campus paths; "
+            "cold harsh white studio lighting matching the blizzard outside"
+        )
+    elif "light snow" in c or ("light" in c and "snow" in c) or "patchy" in c:
+        return (
+            "light snowflakes drift and fall gently past the studio's wide windows, dusting the "
+            "UConn Storrs campus — the Homer Babbidge Library and the central green are lightly "
+            "frosted in white, bare oak trees catching the snowflakes against a soft grey sky; "
+            "cool diffused white studio lighting with a quiet wintry feel"
+        )
+    elif "snow" in c:
+        return (
+            "snowflakes are actively falling past the studio's floor-to-ceiling windows across the "
+            "UConn Storrs campus — the Homer Babbidge Library, the central green, and the Georgian "
+            "brick buildings are blanketed in fresh snow with more falling steadily; "
+            "bare oak trees heavy with snow against a flat white sky; "
+            "cool soft-white studio lighting"
         )
     elif "fog" in c or "mist" in c:
         return (
