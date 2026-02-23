@@ -3,6 +3,9 @@ import time
 from google import genai
 from google.genai import types
 
+# Single source of truth for the Veo model — only this constant is used for video generation
+VEO_MODEL = "veo-3.0-generate-preview"
+
 # Locked anchor character — this exact description is used everywhere to keep Maya identical
 ANCHOR_CHARACTER = (
     "a photorealistic female broadcast news anchor named Maya, mid-30s, with shoulder-length "
@@ -74,7 +77,11 @@ def _get_weather_label(condition):
     elif "sunny" in c or "clear" in c:
         return "SUNNY"
     else:
-        return condition.upper()
+        # Strip redundant words that are already used as labels in the display
+        label = condition.upper()
+        for redundant in ["HIGH", "LOW", "TEMP"]:
+            label = label.replace(redundant, "").strip()
+        return label
 
 
 def _get_studio_environment(condition):
@@ -157,12 +164,11 @@ def generate_video_prompt(weather_data, script_text):
         f"She delivers the following 8-second weather report with accurate lip-sync, natural "
         f"speech rhythm, and subtle professional hand gestures: \"{script_text}\". "
         f"Behind her and to her left is a sleek new-age glass-textured broadcast studio display "
-        f"showing bold dynamic data in large text exactly once: \"{display_text}\". "
-        "Each data label (TEMP, HIGH, LOW, weather type) appears exactly once on the display — "
-        "no value is duplicated. "
+        f"showing bold dynamic data in large text: \"{display_text}\". "
         f"Studio environment: {studio_env}. "
         "Overlay graphics: in the top-right corner of the frame is a clean professional broadcast "
-        "logo badge reading 'UConn News' in bold white sans-serif text on a navy blue rounded "
+        "logo badge featuring a small UConn Husky mascot icon (white husky dog head silhouette) "
+        "beside the text 'UConn News' in bold white sans-serif text on a navy blue rounded "
         "rectangle — small, unobtrusive, and clearly legible. "
         "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast' "
         "in bold white text on a semi-transparent navy blue bar spanning the full width of the frame. "
@@ -197,7 +203,7 @@ def generate_weather_video(weather_data, script_text, output_path="output_video.
         generate_or_load_reference_image(project_id, location)
 
         operation = client.models.generate_videos(
-            model="veo-3.0-generate-preview",
+            model=VEO_MODEL,
             prompt=prompt,
             config=types.GenerateVideosConfig(
                 aspect_ratio="16:9",
@@ -211,7 +217,7 @@ def generate_weather_video(weather_data, script_text, output_path="output_video.
             if attempt > 1:
                 print(f"\nRetrying video generation (attempt {attempt}/3)...")
                 operation = client.models.generate_videos(
-                    model="veo-3.0-generate-preview",
+                    model=VEO_MODEL,
                     prompt=prompt,
                     config=types.GenerateVideosConfig(
                         aspect_ratio="16:9",

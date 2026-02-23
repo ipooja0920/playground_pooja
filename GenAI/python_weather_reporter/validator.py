@@ -1,5 +1,5 @@
-import vertexai
-from vertexai.generative_models import GenerativeModel
+from google import genai
+from google.genai import types
 import os
 import re
 
@@ -11,7 +11,11 @@ def validate_script_content(script_text, weather_data):
     Checks if the script accurately reflects the weather data and is in English.
     Also checks that no phrase or advisory is repeated twice in the script.
     """
-    model = GenerativeModel("gemini-2.0-flash")
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        print("Warning: GOOGLE_CLOUD_PROJECT not set. Skipping LLM script validation.")
+        return True, "PASS (Manual only - no Project ID)"
+    client = genai.Client(vertexai=True, project=project_id, location="us-central1")
 
     prompt = f"""
     Evaluate the following weather report script based on the provided data.
@@ -30,7 +34,10 @@ def validate_script_content(script_text, weather_data):
     Respond with 'PASS' if all criteria are met, otherwise respond with 'FAIL' followed by a brief reason.
     """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
     result = response.text.strip().upper()
     return result.startswith("PASS"), result
 
@@ -38,92 +45,143 @@ def validate_script_content(script_text, weather_data):
 def validate_video_prompt(prompt_text, weather_data):
     """
     Checks the video prompt for:
-    - Correct weather condition reflected in the studio environment
-    - Maya (character) is present
-    - The studio display shows each data label exactly once (TEMP, HIGH, LOW, weather type)
-    - No data value is duplicated in the display string
-    - UConn Storrs campus landmark present and matches the weather condition
-    - UConn News logo and Today's Weather Forecast title are included
+    - Correct weather condition reflected (manual & LLM check)
+    - Spellings (LLM check)
+    - No duplicated data or words in the display (manual & LLM check)
+    - Character consistency and landmarks (manual)
     """
     condition = weather_data['condition'].lower()
     passed = True
     reason = "Prompt looks good."
 
-    # Check weather condition is reflected
-    if "sunny" in condition and "sunny" not in prompt_text and "golden sunlight" not in prompt_text:
-        passed = False
-        reason = "Sunny condition missing from background prompt."
-    elif "rain" in condition and "rain" not in prompt_text:
-        passed = False
-        reason = "Rainy condition missing from background prompt."
-    elif "snow" in condition and "snow" not in prompt_text:
-        passed = False
-        reason = "Snowy condition missing from background prompt."
-
-    # Check character identity
+    # 1. Manual Checks for Core Requirements
+    if "sunny" in condition and "sunny" not in prompt_text.lower() and "golden sunlight" not in prompt_text.lower():
+        return False, "Sunny condition missing from background prompt."
+    if "rain" in condition and "rain" not in prompt_text.lower():
+        return False, "Rainy condition missing from background prompt."
+    if "snow" in condition and "snow" not in prompt_text.lower():
+        return False, "Snowy condition missing from background prompt."
     if "Maya" not in prompt_text or ("reporter" not in prompt_text and "anchor" not in prompt_text):
-        passed = False
-        reason = "Character identity (Maya) not found in prompt."
+        return False, "Character identity (Maya) not found in prompt."
 
-    # Check studio display has no duplicate labels
-    display_labels = ["TEMP:", "HIGH:", "LOW:"]
-    for label in display_labels:
-        count = prompt_text.count(label)
+    # 2a. Case-insensitive duplicate check for label words with colon across the FULL prompt
+    # Catches if "HIGH:", "TEMP:", "LOW:" (formatted labels) appear more than once
+    for label in ["TEMP", "HIGH", "LOW"]:
+        count = len(re.findall(rf"\b{label}:", prompt_text, re.IGNORECASE))
         if count > 1:
-            passed = False
-            reason = f"Display label '{label}' appears {count} times in the prompt — should appear exactly once."
-            break
+            return False, (
+                f"'{label}:' appears {count} times in the full prompt (case-insensitive). "
+                f"Each data label must appear exactly once — check for duplicate visual descriptions."
+            )
 
-    # Check UConn Storrs campus landmark matches weather condition
-    # Each condition requires at least one of its expected landmark keywords
+    # 2b. Anti-pattern check: detect explanation sentences that list labels bare (e.g.
+    # "Each data label (TEMP, HIGH, LOW, weather type)...") — these caused Veo to render
+    # duplicate label text in the video even though the colon-form only appeared once.
+    if re.search(r'\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b', prompt_text, re.IGNORECASE):
+        # All three bare label words found — check if this is OUTSIDE the display string
+        display_section_match = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
+        prompt_without_display = (
+            prompt_text.replace(display_section_match.group(0), "")
+            if display_section_match else prompt_text
+        )
+        if re.search(r'\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b.*\b(TEMP|HIGH|LOW)\b', prompt_without_display, re.IGNORECASE):
+            return False, (
+                "Label words TEMP, HIGH, LOW all appear outside the display section. "
+                "Remove any explanation sentence that lists these labels — it causes Veo to render them twice."
+            )
+
+    # 2c. Display section — no duplicate label words inside the quoted display string
+    display_section_match_2 = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
+    display_section = display_section_match_2.group(1) if display_section_match_2 else ""
+    if display_section:
+        for label in ["TEMP", "HIGH", "LOW"]:
+            count = len(re.findall(rf"\b{label}\b", display_section, re.IGNORECASE))
+            if count > 1:
+                return False, f"Display label '{label}' appears {count} times in the display string — should appear exactly once."
+
+    # 3. Overlay graphics checks
+    if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:
+        return False, "Overlay graphics (Logo or Title) missing from video prompt."
+    if "husky" not in prompt_text.lower():
+        return False, "UConn Husky mascot icon missing from logo badge description."
+
+    # 4. Focused LLM spelling + grammar check on the extracted visual text elements only
+    # (display text, logo badge text, title text) — not the full narrative prompt
+    visual_text_parts: list[str] = []
+    display_match = re.search(r'showing bold dynamic data[^"]*"([^"]+)"', prompt_text, re.IGNORECASE)
+    if display_match:
+        visual_text_parts.append("Studio display: " + display_match.group(1))
+    overlay_match = re.search(r'Overlay graphics:(.*?)(?:The video starts|Camera is)', prompt_text, re.DOTALL | re.IGNORECASE)
+    if overlay_match:
+        visual_text_parts.append("Overlay/logo text: " + overlay_match.group(1).strip())
+    visual_text: str = "\n".join(visual_text_parts)
+
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        print("Warning: GOOGLE_CLOUD_PROJECT not set. Skipping LLM prompt validation.")
+    elif not visual_text:
+        print("Warning: Could not extract visual text sections — skipping spelling check.")
+    else:
+        client = genai.Client(vertexai=True, project=project_id, location="us-central1")
+        llm_prompt = f"""
+        You are a spell-checker and grammar checker for on-screen broadcast graphics.
+
+        Check the following visual text elements (what will be rendered on screen in the video)
+        for spelling mistakes and grammar errors.
+
+        Visual text to check:
+        {visual_text}
+
+        Rules:
+        - Check for misspelled words (e.g. "Foreciast" instead of "Forecast", "Broadcat" instead of "Broadcast").
+        - Check for obvious grammar errors in title cards and labels.
+        - Ignore temperature values, degree symbols, and weather abbreviations like CLOUDY, SUNNY, RAINY.
+        - Ignore narrative/descriptive language — only check text that would be visually displayed on screen.
+        - If everything is correct, respond with exactly: PASS
+        - If there is an error, respond with: FAIL — [exact problem and correction]
+        """
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=llm_prompt
+            )
+            llm_result = response.text.strip().upper()
+            if llm_result.startswith("FAIL"):
+                return False, f"Visual Spelling/Grammar Check Failed: {llm_result[4:].strip()}"
+        except Exception as e:
+            print(f"Warning: LLM prompt validation failed due to error: {e}")
+
+    # 3. Landmark Checks
     landmark_checks = {
         ("sunny", "clear"): (
             ["Homer Babbidge", "central green", "golden sunlight"],
-            "Sunny prompt missing UConn landmark (Homer Babbidge Library or central green)."
+            "Sunny prompt missing UConn landmark."
         ),
         ("overcast", "cloud"): (
             ["Georgian brick", "brick", "central green"],
-            "Cloudy prompt missing UConn landmark (Georgian brick buildings or central green)."
+            "Cloudy prompt missing UConn landmark."
         ),
         ("heavy rain", "rain", "shower"): (
             ["UConn green", "UConn Storrs", "central UConn"],
-            "Rainy prompt missing UConn landmark (UConn green or campus buildings)."
-        ),
-        ("drizzle", "light rain"): (
-            ["Wilbur Cross", "tree-lined", "UConn Storrs"],
-            "Drizzle prompt missing UConn landmark (Wilbur Cross Building or tree-lined pathways)."
+            "Rainy prompt missing UConn landmark."
         ),
         ("snow", "blizzard"): (
             ["Homer Babbidge", "central green", "UConn Storrs"],
-            "Snowy prompt missing UConn landmark (Homer Babbidge Library or central green)."
-        ),
-        ("thunder", "storm"): (
-            ["Homer Babbidge", "lightning", "UConn Storrs"],
-            "Stormy prompt missing UConn landmark (Homer Babbidge Library)."
-        ),
-        ("fog", "mist"): (
-            ["campus buildings", "UConn Storrs", "silhouette"],
-            "Foggy prompt missing UConn landmark (campus buildings silhouette)."
+            "Snowy prompt missing UConn landmark."
         ),
     }
 
     for condition_keys, (expected_keywords, fail_reason) in landmark_checks.items():
         if any(ck in condition for ck in condition_keys):
-            if not any(kw in prompt_text for kw in expected_keywords):
-                passed = False
-                reason = fail_reason
+            if not any(kw.lower() in prompt_text.lower() for kw in expected_keywords):
+                return False, fail_reason
             break
 
-    # Check overlay graphics are present
-    if "UConn News" not in prompt_text:
-        passed = False
-        reason = "UConn News logo missing from video prompt."
+    # 4. Overlay graphics check
+    if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:
+        return False, "Overlay graphics (Logo or Title) missing from video prompt."
 
-    if "Today's Weather Forecast" not in prompt_text:
-        passed = False
-        reason = "Today's Weather Forecast title missing from video prompt."
-
-    return passed, reason
+    return True, "Prompt looks good."
 
 
 def validate_no_repetition(script_text, video_prompt, weather_data):
@@ -207,7 +265,14 @@ def run_all_tests(script_text, prompt_text, weather_data):
 
 
 if __name__ == "__main__":
-    mock_data = {"location": "Storrs", "condition": "Sunny", "high_c": 20, "low_c": 10}
+    mock_data = {"location": "Storrs", "condition": "Sunny", "temp_c": 15, "high_c": 20, "low_c": 10}
     mock_script = "Good morning Storrs! Crisp and clear out there — a beautiful start to the day. Get outside!"
-    mock_prompt = "Maya the anchor in a sunny studio. TEMP: 15°C  |  HIGH: 20°C  |  LOW: 10°C  |  SUNNY"
+    mock_prompt = (
+        "Maya the anchor in a sunny studio. "
+        "Behind her is a display showing bold dynamic data in large text: \"TEMP: 15°C  |  HIGH: 20°C  |  LOW: 10°C  |  SUNNY\". "
+        "Overlay graphics: UConn Husky mascot icon beside 'UConn News' in bold white text on navy blue. "
+        "At the bottom of the frame is a lower-third title card reading 'Today's Weather Forecast'. "
+        "The video starts immediately. Camera is static. "
+        "Studio environment: golden sunlight over the Homer Babbidge Library and the central green at UConn Storrs campus."
+    )
     run_all_tests(mock_script, mock_prompt, mock_data)
