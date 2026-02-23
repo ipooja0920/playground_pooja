@@ -148,7 +148,6 @@ Manual + LLM checks on the Veo 3.0 prompt:
 - **Manual**: Maya's name and anchor role present
 - **Manual**: Display labels `TEMP`, `HIGH`, `LOW` each appear **exactly once** (case-insensitive, colon-scoped)
 - **Manual**: No bare `TEMP`/`HIGH`/`LOW` labels outside the display data section
-- **Manual**: UConn Husky mascot referenced in logo badge
 - **Manual**: UConn landmark keywords present for the given condition
 - **Manual**: `UConn News` overlay and `Today's Weather Forecast` title card present
 - **Manual**: For snowy conditions — active snowfall keyword present (`falling`, `drifting`, `swirling`, `snowflakes`, `blizzard rages`, or `curtains of snow`)
@@ -178,6 +177,25 @@ Checks that `maya_reference.jpg` exists locally.
 - **Retries**: Up to 3 attempts before failure; full operation state logged on empty response
 - **Person generation**: `allow_adult`
 - Output saved to `output_video.mp4` locally (or GCS URI if Veo returns a cloud path)
+
+### Known Failure Modes
+
+#### RAI (Responsible AI) Filtering
+Veo 3.0 runs every generation request through Google's **Responsible AI (RAI)** safety system — an automated content moderation layer that screens prompts and generated videos against Google's usage policies. If the content is flagged, the operation returns `done=True` with `rai_media_filtered_count=1` and no video.
+
+Common triggers observed in this pipeline:
+- Active NWS Extreme/Severe alert overlay (e.g. `"WARNING: BLIZZARD WARNING IN EFFECT"`) combined with dramatic weather language
+- The RAI filter is non-deterministic — the same prompt may pass on one run and be blocked on another
+
+If blocked, try:
+1. Waiting and retrying (RAI decisions can vary by time of day)
+2. Retrying once the active weather alert has lifted
+3. Submitting feedback to Google via the support code in the response (`rai_media_filtered_reasons`)
+
+#### GCP Capacity
+`veo-3.0-generate-preview` is a limited-capacity preview model. At peak times, the operation may return `done=True` with an empty response and no video (and no RAI reason given). This is a quota/capacity constraint on Google's infrastructure — not a code issue. Options to resolve:
+1. Retry during off-peak hours (late night / early morning EST)
+2. Change the generation location from `us-central1` to another region (e.g. `us-east4`, `europe-west4`) — capacity availability varies by region
 
 ---
 
