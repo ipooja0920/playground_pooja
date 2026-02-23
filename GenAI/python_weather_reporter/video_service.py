@@ -117,6 +117,10 @@ def _get_weather_label(condition):
         return "CLOUDY"
     elif "sunny" in c or "clear" in c:
         return "SUNNY"
+    elif "sleet" in c or "ice" in c or "freezing" in c:
+        return "WINTRY MIX"
+    elif "precipitation" in c or "mixed" in c:
+        return "MIXED PRECIP"
     else:
         # Strip redundant words that are already used as labels in the display
         label = condition.upper()
@@ -188,6 +192,13 @@ def _get_studio_environment(condition):
             "windows — the Homer Babbidge Library, the sunlit central green, and blue skies above "
             "the iconic Georgian brick buildings; bright warm-white studio lighting with a clean "
             "energetic feel"
+        )
+    elif "sleet" in c or "ice" in c or "freezing" in c or "precipitation" in c or "mixed" in c:
+        return (
+            "a wintry grey sky hangs over the UConn Storrs campus visible through the studio "
+            "windows — the Homer Babbidge Library and the central green dusted with frost, "
+            "bare oak trees under a heavy overcast sky with light frozen precipitation; "
+            "cold diffused white studio lighting with a bleak wintry feel"
         )
     else:
         return (
