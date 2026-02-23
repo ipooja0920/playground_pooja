@@ -1,37 +1,62 @@
 # AI Weather Reporter for Storrs, CT
 
-This project automates the creation of an AI-generated weather report video for Storrs, CT.
+An AI pipeline that fetches live weather for Storrs, CT, generates an 8-second anchor script, validates it, and produces a broadcast-style video featuring Maya — a consistent AI anchor — using Vertex AI Veo 3.0.
 
-## Setup Instructions
+---
+
+## Setup
 
 ### 1. Google Cloud Credentials
-- Enable **Google Sheets API**, **Google Drive API**, and **Vertex AI API** in your Google Cloud Console.
-- Create an **OAuth 2.0 Client ID (Desktop App)**.
-- Download the credentials JSON and save it as `credentials.json` in the project root.
-- Set the `GOOGLE_CLOUD_PROJECT` environment variable.
+- Enable **Vertex AI API** in your Google Cloud Console.
+- Authenticate with Application Default Credentials:
+  ```bash
+  gcloud auth application-default login
+  ```
+- Set your project environment variable:
+  ```bash
+  export GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+  ```
 
 ### 2. Install Dependencies
 ```bash
-pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 requests pandas google-cloud-aiplatform
+pip install requests pandas google-cloud-aiplatform google-genai
 ```
 
-### 3. Usage
-Run the main script:
+### 3. Run the Pipeline
 ```bash
 python main.py
 ```
 
-## How it Works
-1. **Weather Fetch**: Uses `weather_service.py` to get the latest conditions for Storrs.
-2. **Sheet Log**: Appends data to "Storrs AI Weather Data" spreadsheet via `sheets_service.py`.
-3. **Script Gen**: Gemini 1.5 Pro generates a catchy 8s script, saved to Drive.
-4. **Validation**: `validator.py` checks script content, spellings, and video prompt consistency.
-5. **Video Gen**: If tests pass, Vertex AI Video 3.1 (Veo) generates an 8s video of Maya, the weather reporter.
-6. **Final Save**: The video is uploaded to Google Drive.
+---
+
+## How It Works
+
+1. **Weather Fetch** (`weather_service.py`) — Calls [wttr.in](https://wttr.in) for live conditions (temp, high, low, condition) in Storrs, CT. No API key required.
+2. **Store Locally** (`sync_weather.py`) — Appends weather data to `weather_report.csv`.
+3. **Generate Script** (`script_service.py`) — Gemini 2.0 Flash generates a 15–20 word (~8s) spoken script for anchor Maya. Saves to `weather_script.txt`.
+4. **Validate** (`validator.py`) — Runs 4 checks before video generation (see below).
+5. **Generate Video** (`video_service.py`) — If all hard checks pass, Veo 3.0 generates an 8-second 16:9 video. Saved locally as `output_video.mp4`.
+
+---
 
 ## Validation Suite
-The pipeline includes rigorous test cases:
-- **Accuracy**: Ensures script data matches weather data.
-- **Language**: Only English and correct spellings allowed.
-- **Consistency**: Recurring prompts for the character "Maya" ensure similar appearance.
-- **Context**: Background is dynamically adjusted (e.g., sunny vs. rainy) to match conditions.
+
+| Check | Type | What It Verifies |
+|-------|------|-----------------|
+| **Script Validation** | Hard FAIL | Script is in English, no spelling errors, reflects correct weather, no repeated phrases |
+| **Prompt Validation** | Hard FAIL | Display shows `TEMP`, `HIGH`, `LOW` exactly once; correct weather condition in background; UConn landmarks present; overlay graphics present; no misspellings |
+| **No-Repetition Check** | Soft WARN | Temperature numbers not spoken aloud if already visible on the studio display |
+| **Character Consistency** | Soft WARN | `maya_reference.jpg` exists for visual consistency across runs |
+
+Video is only generated if all **Hard** checks pass.
+
+---
+
+## Output Files
+
+| File | Description |
+|------|-------------|
+| `weather_report.csv` | Appended weather history |
+| `weather_script.txt` | Latest generated script |
+| `maya_reference.jpg` | Maya's anchor reference image (auto-generated once) |
+| `output_video.mp4` | Final generated video |

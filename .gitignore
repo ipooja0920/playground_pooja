@@ -23,3 +23,12 @@ venv/
 # Data files (optional - uncomment if you don't want to track large data files)
 # *.csv
 # *.parquet
+
+# Weather reporter — generated runtime outputs (auto-created on each run)
+GenAI/python_weather_reporter/weather_report.csv
+GenAI/python_weather_reporter/weather_script.txt
+GenAI/python_weather_reporter/weather_report.xlsx
+GenAI/python_weather_reporter/maya_reference.jpg
+GenAI/python_weather_reporter/output_video.mp4
+GenAI/python_weather_reporter/token.json
+GenAI/python_weather_reporter/credentials.json
