@@ -182,7 +182,7 @@ In the Veo prompt, Maya is positioned **slightly to the right of frame center** 
 
 After Veo generates the clean Maya video, `compositor.py` renders a **weather display card** and composites it onto the upper-left area of the frame using Pillow (card rendering) and moviepy (video compositing). The result is saved as `final_video.mp4`.
 
-Card layout — four rows:
+Card layout — up to four rows (daytime):
 
 ```
 ┌────────────────────┐
@@ -190,7 +190,7 @@ Card layout — four rows:
 │ ─────────────────  │  ← horizontal divider
 │  HIGH: 0°C         │  ← today's forecast high, smaller blue-white
 │  LOW:  -5°C        │  ← today's forecast low, smaller blue-white
-│  SUNNY             │  ← condition label, smaller blue-white (omitted when unknown)
+│  SUNNY             │  ← condition label (omitted in certain cases — see below)
 └────────────────────┘
 ```
 
@@ -198,7 +198,7 @@ Card layout — four rows:
 - **Position**: upper-left area (`6%` from left, `14%` from top), sized proportionally to video dimensions (`26%` width × `62%` height)
 - **Temperature**: always the raw `temp_c` value with `°C` suffix, displayed in large bold white
 - **High / Low**: `high_c` and `low_c` from the weather data, displayed as `HIGH: X°C` / `LOW: X°C`
-- **Condition label**: mapped from the raw condition string via `_get_weather_label()` (e.g. `"Overcast"` → `CLOUDY`, `"Light rain"` → `LIGHT RAIN`, `"Light snow, mist"` → `LIGHT SNOW`); the row is omitted entirely when the condition is `"unknown"`
+- **Condition label**: mapped from the raw condition string via `_get_weather_label()` (e.g. `"Overcast"` → `CLOUDY`, `"Light rain"` → `LIGHT RAIN`, `"Light snow, mist"` → `LIGHT SNOW`); the row is omitted when the condition is `"unknown"` **or** when the pipeline runs between **5:00 pm and 6:00 am EST** (evening and night broadcasts show only temp, high, and low)
 - Label is auto-truncated with `…` if it would overflow the card width
 - The Veo prompt explicitly tells the model **not** to render any text overlays — the display card is always a post-production layer, never baked into the AI-generated footage
 
