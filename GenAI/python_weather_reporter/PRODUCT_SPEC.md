@@ -27,6 +27,67 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 
 ---
 
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     External Data Sources                    │
+│          wttr.in (weather JSON)    NWS API (alerts)          │
+└────────────────────┬─────────────────────┬───────────────────┘
+                     │                     │
+                     ▼                     ▼
+             ┌───────────────────────────────────┐
+             │         weather_service.py         │
+             │  condition, temp, feels-like,      │
+             │  high, low, booleans, alert        │
+             └──────────┬────────────────┬────────┘
+                        │                │
+              ┌─────────▼──────┐  ┌──────▼──────────────┐
+              │ sync_weather   │  │  script_service.py   │
+              │   .py          │  │  reads CSV + alert   │
+              │ → CSV storage  │  │  Gemini 2.0 Flash    │
+              └────────────────┘  │  → 15–20 word script │
+                                  └──────────┬───────────┘
+                                             │ script_text
+                                             ▼
+                                  ┌──────────────────────┐
+                                  │   video_service.py   │
+                                  │  build Veo 3.0 prompt│
+                                  │  Imagen 3 → maya_    │
+                                  │  reference.jpg       │
+                                  └──────────┬───────────┘
+                                             │ prompt
+                                             ▼
+                                  ┌──────────────────────┐
+                                  │    validator.py      │
+                                  │  4 pre-gen checks    │
+                                  │  (Hard FAIL blocks)  │
+                                  └──────────┬───────────┘
+                                             │ PASS
+                                             ▼
+                                  ┌──────────────────────┐
+                                  │   video_service.py   │
+                                  │  Veo 3.0 generate    │
+                                  │  → output_video.mp4  │
+                                  └──────────┬───────────┘
+                                             │ video
+                                             ▼
+                                  ┌──────────────────────┐
+                                  │    validator.py      │
+                                  │  Frame OCR check     │
+                                  │  Gemini Vision →     │
+                                  │  verify temp on card │
+                                  └──────────────────────┘
+```
+
+**Key design decisions:**
+- All AI calls go through Vertex AI — Gemini 2.0 Flash for script generation and text-based validation, Imagen 3 for the Maya reference image, Veo 3.0 for video
+- Validation is split: rule-based Python checks run before generation (fast, deterministic), Gemini Vision OCR runs after (catches what prompt instructions cannot guarantee)
+- The anchor's visual identity is locked via a text constant (`ANCHOR_CHARACTER`) seeded into both the Imagen reference generation and the Veo prompt — not via pixel-level image compositing
+- Weather data is written to CSV before any generation so the pipeline can be re-run independently at any step
+
+---
+
 ## Project Files
 
 | File | Purpose |
@@ -238,3 +299,33 @@ No need to `export` manually each session.
 gcloud auth application-default login
 gcloud auth application-default set-quota-project your-gcp-project-id
 ```
+
+---
+
+## Limitations
+
+### 1. GCP Capacity Constraints
+`veo-3.0-generate-preview` is a limited-capacity preview model hosted on Google Cloud. At peak times, generation requests can return `done=True` with an empty response and no video — no error code, no RAI reason. This is a quota constraint on Google's infrastructure, not a code bug, and cannot be resolved from the application side.
+
+**Recommended approach:** Change the generation region from `us-central1` to another supported region (e.g. `us-east4`, `europe-west4`) — capacity availability varies by region and time of day. Alternatively, retry during off-peak hours (late night / early morning EST).
+
+---
+
+### 2. RAI (Responsible AI) Filtering
+Veo 3.0 applies Google's Responsible AI safety filter to every generation request. The filter is **non-deterministic** — the same prompt can pass on one run and be blocked on another, even without any content changes. When blocked, the operation returns `rai_media_filtered_count=1` with a support code but no video.
+
+Observed in this pipeline: dramatic wintry language (blizzard, whiteout, dangerous conditions) combined with active NWS alert content in the script can trigger the filter.
+
+**Recommended approach:** Wait and retry — RAI decisions vary by time of day. If a specific NWS alert is active and consistently causing blocks, retry once the alert has lifted. Report persistent false positives to Google using the support code from the response (`rai_media_filtered_reasons`).
+
+---
+
+### 3. Text and Logo Fidelity in Veo 3.0
+Veo 3.0, like most video generation models, is not designed to faithfully reproduce specific text strings, logos, or brand assets. It interprets visual and textual descriptions rather than rendering them with pixel-level precision. In practice this means:
+- Temperature values on the display card may be garbled, substituted with letters, or rendered inconsistently across frames
+- Brand logos described in the prompt are "hallucinated" by the model — the output is an artistic interpretation, not an accurate reproduction
+- Text that looks correct in one generation attempt may differ in the next
+
+The pipeline's frame validation step (Gemini Vision OCR on the rendered video) catches temperature rendering errors and triggers a visual retry. However, the underlying limitation is a model constraint, not a prompt or validation issue.
+
+**Recommended approach:** Treat text overlays and branded graphics as a **post-production layer** — not something to fight the AI over. This is how professional broadcast studios work: chyrons, lower-thirds, and graphics are always composited as separate layers on top of the video, never baked into the live-action footage. For production use, generate the clean Maya video with Veo, then composite temperature, condition label, and any branding using a video editing library (e.g. `moviepy`, `ffmpeg`, Adobe After Effects) as a separate step after generation.
