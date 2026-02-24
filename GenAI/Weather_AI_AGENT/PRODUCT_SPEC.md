@@ -371,7 +371,21 @@ Observed in this pipeline: dramatic wintry language (blizzard, whiteout, dangero
 
 ---
 
-### 3. Text and Logo Fidelity in Veo 3.0
+### 3. wttr.in Transient Network Errors
+The pipeline fetches live weather data from [wttr.in](https://wttr.in) over HTTPS. Occasionally, the request fails with a transient SSL or connection error before any AI step runs:
+
+```
+Error fetching weather: HTTPSConnectionPool(host='wttr.in', port=443): Max retries exceeded
+[SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC] decryption failed or bad record mac
+```
+
+This is a network-level intermittent failure — not a code issue and not specific to wttr.in. It can be caused by a brief SSL negotiation glitch, a momentary routing hiccup, or local network instability.
+
+**Recommended approach:** Simply re-run the pipeline (`python main.py`). The error is transient and the next attempt almost always succeeds immediately.
+
+---
+
+### 4. Text and Logo Fidelity in Veo 3.0
 Veo 3.0, like most video generation models, is not designed to faithfully reproduce specific text strings, logos, or brand assets. It interprets visual and textual descriptions rather than rendering them with pixel-level precision. In practice this means:
 - Temperature values on the display card may be garbled, substituted with letters, or rendered inconsistently across frames
 - Brand logos described in the prompt are "hallucinated" by the model — the output is an artistic interpretation, not an accurate reproduction
