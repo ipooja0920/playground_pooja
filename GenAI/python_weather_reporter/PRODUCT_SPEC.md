@@ -74,9 +74,18 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
                                              ▼
                                   ┌──────────────────────┐
                                   │    validator.py      │
-                                  │  Frame OCR check     │
+                                  │  Frame check         │
                                   │  Gemini Vision →     │
-                                  │  verify temp on card │
+                                  │  verify no text      │
+                                  │  overlays in frame   │
+                                  └──────────┬───────────┘
+                                             │ PASS
+                                             ▼
+                                  ┌──────────────────────┐
+                                  │   compositor.py      │
+                                  │  Pillow renders card │
+                                  │  moviepy composites  │
+                                  │  → final_video.mp4   │
                                   └──────────────────────┘
 ```
 
@@ -85,6 +94,7 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 - Validation is split: rule-based Python checks run before generation (fast, deterministic), Gemini Vision OCR runs after (catches what prompt instructions cannot guarantee)
 - The anchor's visual identity is locked via a text constant (`ANCHOR_CHARACTER`) seeded into both the Imagen reference generation and the Veo prompt — not via pixel-level image compositing
 - Weather data is written to CSV before any generation so the pipeline can be re-run independently at any step
+- Text overlays (temperature, condition label) are composited in post-production using Pillow + moviepy — never baked into the Veo prompt, following broadcast industry practice (chyrons and lower-thirds are always separate layers)
 
 ---
 
@@ -97,7 +107,8 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `sync_weather.py` | Appends weather data to local `weather_report.csv` |
 | `script_service.py` | Generates 8-second script via Gemini 2.0 Flash; reads/writes CSV and `.txt` |
 | `video_service.py` | Builds the Veo 3.0 prompt and generates the video; manages Maya's reference image |
-| `validator.py` | Runs all validation checks before video generation |
+| `validator.py` | Runs all validation checks before and after video generation |
+| `compositor.py` | Post-production step — renders the weather display card using Pillow and composites it onto the clean Veo video using moviepy |
 | `sheets_service.py` | Google Sheets integration — OAuth2 helper to append weather data to a Drive spreadsheet |
 | `.env` | Local secrets file (gitignored) — stores `GOOGLE_CLOUD_PROJECT` |
 
@@ -107,7 +118,8 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `weather_report.csv` | Appended daily — stores fetched weather history |
 | `weather_script.txt` | Latest generated spoken script |
 | `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3, reused for consistency) |
-| `output_video.mp4` | Final generated video (if all tests pass) |
+| `output_video.mp4` | Raw Veo output — clean video of Maya with no text overlays |
+| `final_video.mp4` | Final broadcast-ready video with composited weather display card |
 
 ---
 
@@ -119,10 +131,11 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 2. Store Locally     sync_weather.py     →  weather_report.csv (append row)
 3. Read Today's Data script_service.py   →  reads latest row from CSV + live NWS alert
 4. Generate Script   script_service.py   →  Gemini 2.0 Flash → weather_script.txt
-5. Build Video Prompt video_service.py   →  constructs Veo 3.0 prompt with display data
-6. Validate          validator.py        →  4 checks (see below) — hard fails block video generation
+5. Build Video Prompt video_service.py   →  constructs clean Veo 3.0 prompt (no text overlays)
+6. Validate          validator.py        →  3 checks (see below) — hard fails block video generation
 7. Generate Video    video_service.py    →  Veo 3.0 → output_video.mp4 (up to 3 API retries)
-8. Frame Validation  validator.py        →  Gemini Vision checks rendered frame — regenerates up to 3 times if INVALID
+8. Frame Validation  validator.py        →  Gemini Vision checks frame for any text overlay — regenerates up to 3 times if text found
+9. Composite Overlay compositor.py       →  Pillow renders display card; moviepy composites → final_video.mp4
 ```
 
 ---
@@ -162,20 +175,26 @@ A reference image (`maya_reference.jpg`) is auto-generated via Imagen 3 on first
 
 ---
 
-## Studio Display
+## Display Card (Post-Production Composite)
 
-Each video shows a glass-textured side panel with up to **two sections** (top to bottom):
+After Veo generates the clean Maya video, `compositor.py` renders a **weather display card** and composites it onto the lower-left of the frame using Pillow (card rendering) and moviepy (video compositing). The result is saved as `final_video.mp4`.
+
+Card layout — two sections:
 
 ```
-TOP    — {temp}°C               (current temperature, large and bold)
-BOTTOM — {WEATHER_LABEL}        (e.g. SUNNY, CLOUDY, LIGHT SNOW)
+┌────────────────────┐
+│      -2°C          │  ← current temperature, large bold white
+│ ─────────────────  │  ← horizontal divider
+│      SUNNY         │  ← condition label, smaller blue-white
+└────────────────────┘
 ```
 
-When the condition is `"Unknown precipitation"`, only the TOP section (current temperature) is shown — no condition label is displayed.
-
-- `TEMP:` label is never used — the bare temperature value is shown directly
-- Weather label is mapped from the raw condition string (e.g. `"Overcast"` → `CLOUDY`, `"Light rain"` → `LIGHT RAIN`, `"Light snow, mist"` → `LIGHT SNOW`)
-- The spoken script describes conditions in words only — no temperature numbers — since they are already visible on screen
+- **Background**: dark navy (`#08122A`), ~84% opacity, rounded corners
+- **Position**: lower-left corner (`3%` from left, `68%` from top), sized proportionally to video dimensions
+- **Temperature**: always the raw `temp_c` value with `°C` suffix
+- **Condition label**: mapped from the raw condition string via `_get_weather_label()` (e.g. `"Overcast"` → `CLOUDY`, `"Light rain"` → `LIGHT RAIN`, `"Light snow, mist"` → `LIGHT SNOW`)
+- Label is auto-truncated with `…` if it would overflow the card width
+- The Veo prompt explicitly tells the model **not** to render any text overlays — the display card is always a post-production layer, never baked into the AI-generated footage
 
 ---
 
@@ -200,7 +219,7 @@ The background is dynamically matched to the weather condition. For snowy condit
 
 ## Validation Tests
 
-Pre-generation checks (1–4) run before video is created. **Hard FAILs** block video generation; **Soft WARNs** are logged but do not block. Post-generation check (5) runs after each video and triggers a visual retry if it fails.
+Pre-generation checks (1–3) run before video is created. **Hard FAILs** block video generation; **Soft WARNs** are logged but do not block. Post-generation check (4) runs after each video and triggers a visual retry if it fails.
 
 ### 1. Script Validation (Hard — FAIL blocks video)
 Uses **Gemini 2.0 Flash** to verify the spoken script:
@@ -212,38 +231,33 @@ Uses **Gemini 2.0 Flash** to verify the spoken script:
 - If an Extreme or Severe NWS alert is active: FAIL only if the alert is **completely absent** from the script
 
 ### 2. Prompt Validation (Hard — FAIL blocks video)
-Manual checks on the Veo 3.0 prompt, organised into sections:
+Rule-based checks on the Veo 3.0 prompt:
 
 **Core checks:**
 - Weather condition keywords present in prompt
 - Maya's name and anchor role present
 - Prompt specifies 4K resolution and 16:9 aspect ratio
 
-**Two-section display card:**
-- TOP section present and contains only the current temperature
-- BOTTOM section present and contains only the condition label — no temperature values (skipped when condition is "Unknown precipitation")
-- `TEMP:` label must not appear anywhere (bare value shown directly)
+**No-text enforcement:**
+- Prompt must **not** contain display card instructions (`TOP SECTION`, `BOTTOM SECTION`, `TEMP:` label)
+- Prompt must include an explicit no-text directive (one of: `"no text overlays"`, `"no on-screen graphics"`, `"no chyrons"`, `"no display panels"`)
 
 **Landmark / environment check:**
 - UConn landmark keywords present for the given condition (Homer Babbidge Library, central green, etc.)
 - For snowy conditions — active snowfall keyword present (`falling`, `drifting`, `swirling`, `snowflakes`, `blizzard rages`, or `curtains of snow`)
 
-### 3. No-Repetition Check (Soft — WARN only)
-Checks that temperature numbers shown on the studio display are not also spoken aloud in the script.
-
-### 4. Character Consistency Check (Soft — WARN only)
+### 3. Character Consistency Check (Soft — WARN only)
 Checks that `maya_reference.jpg` exists locally.
 
-### 5. Frame Validation (Post-gen — FAIL triggers visual retry)
-After each video is generated, `validate_video_frame()` extracts a frame at 4 seconds via `ffmpeg` and sends it to **Gemini Vision** for OCR. This catches Veo rendering hallucinations (garbled text, wrong temperature) that prompt-level checks cannot detect because they only inspect the instructions, not the actual rendered output.
+### 4. Frame Validation (Post-gen — FAIL triggers visual retry)
+After each video is generated, `validate_video_frame()` extracts a frame at 4 seconds via `ffmpeg` and sends it to **Gemini Vision**. The model is asked whether any on-screen text is visible (temperature values, chyrons, lower-thirds, display cards, or any graphic overlay). Since Veo is explicitly told to render no text, any text detected is a Veo hallucination.
 
-**Two-step approach:**
-1. Gemini Vision reads the display card as structured JSON (`top_section`, `bottom_section`) — pure OCR, no interpretation
-2. Python validates: TOP section must contain the correct current temperature value
+- Returns **PASS** if Gemini responds `"NO TEXT"` — frame is clean
+- Returns **FAIL** if Gemini responds `"TEXT FOUND: <description>"` — triggers a visual retry
 
 If the frame check fails, `main.py` regenerates the video (up to **3 visual retries** — separate from the 3 Veo API retries).
 
-If all visual retries fail, the pipeline logs a warning and exits.
+If all visual retries fail, the pipeline logs a warning and exits without compositing.
 
 ---
 
