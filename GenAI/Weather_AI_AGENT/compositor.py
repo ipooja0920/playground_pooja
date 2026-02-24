@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 import numpy as np
 from moviepy import VideoFileClip, ImageClip, CompositeVideoClip
 from PIL import Image, ImageDraw, ImageFont
@@ -183,6 +184,11 @@ def composite_overlay(input_path, output_path, weather_data):
     condition = weather_data['condition']
     # Pass None for condition label when condition is unknown — row omitted from card
     condition_label = None if "unknown" in condition.lower() else _get_weather_label(condition)
+
+    # Hide condition row between 5:00 pm and 6:00 am EST (evening/night broadcasts)
+    hour = datetime.now().hour
+    if hour >= 17 or hour < 6:
+        condition_label = None
 
     print(f"Compositing display card: {temp_c}°C  H:{high_c}°C  L:{low_c}°C  /  {condition_label or 'n/a'}")
 
