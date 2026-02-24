@@ -94,7 +94,8 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 - Validation is split: rule-based Python checks run before generation (fast, deterministic), Gemini Vision OCR runs after (catches what prompt instructions cannot guarantee)
 - The anchor's visual identity is locked via a text constant (`ANCHOR_CHARACTER`) seeded into both the Imagen reference generation and the Veo prompt — not via pixel-level image compositing
 - Weather data is written to CSV before any generation so the pipeline can be re-run independently at any step
-- Text overlays (temperature, condition label) are composited in post-production using Pillow + moviepy — never baked into the Veo prompt, following broadcast industry practice (chyrons and lower-thirds are always separate layers)
+- Text overlays (temperature, high, low, condition label) and the UConn NEWS channel logo are composited in post-production using Pillow + moviepy — never baked into the Veo prompt, following broadcast industry practice (chyrons and lower-thirds are always separate layers)
+- The studio backdrop is always Wilbur Cross Building through the floor-to-ceiling windows; weather effects (rain on glass, snow, fog, etc.) and time-of-day lighting (daytime / evening 5–7:30 pm / night 8–11 pm) are layered on top via the Veo prompt at generation time
 
 ---
 
