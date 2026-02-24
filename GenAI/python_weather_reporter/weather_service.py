@@ -62,6 +62,7 @@ def get_weather(location="Storrs, CT"):
         # Fetch active NWS weather alert (blizzard warning, winter storm, etc.)
         alert = get_nws_alert()
 
+        desc_lower = weather_desc.lower()
         weather_report = {
             "location": location,
             "date": date.today().strftime("%Y-%m-%d"),
@@ -70,10 +71,15 @@ def get_weather(location="Storrs, CT"):
             "feels_like_c": feels_like_c,
             "high_c": max_temp,
             "low_c": min_temp,
-            "is_sunny": "sunny" in weather_desc.lower() or "clear" in weather_desc.lower(),
-            "is_rainy": "rain" in weather_desc.lower() or "drizzle" in weather_desc.lower(),
-            "is_stormy": "thunder" in weather_desc.lower() or "storm" in weather_desc.lower(),
-            "is_snowy": "snow" in weather_desc.lower(),
+            "is_sunny": "sunny" in desc_lower or "clear" in desc_lower,
+            "is_rainy": "rain" in desc_lower or "drizzle" in desc_lower,
+            "is_stormy": "thunder" in desc_lower or "storm" in desc_lower,
+            "is_snowy": "snow" in desc_lower or "blizzard" in desc_lower,
+            "is_cloudy": "cloud" in desc_lower or "overcast" in desc_lower,
+            "is_foggy": "fog" in desc_lower or "mist" in desc_lower,
+            "is_hazy": "haze" in desc_lower or "hazy" in desc_lower,
+            "is_icy": "ice" in desc_lower or "freezing" in desc_lower or "sleet" in desc_lower or "frost" in desc_lower or "precipitation" in desc_lower,
+            "is_windy": "wind" in desc_lower or "breezy" in desc_lower or "gust" in desc_lower,
             "alert": alert,  # None if no active alert, else {"event", "headline", "severity"}
         }
 

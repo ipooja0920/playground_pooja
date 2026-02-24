@@ -39,6 +39,15 @@ def generate_script(weather_data):
     "Blizzard Warning tonight" — make it the lead, not an afterthought.
     """
 
+    unknown_block = ""
+    if "unknown" in weather_data.get("condition", "").lower():
+        unknown_block = """
+    NOTE: The condition is listed as 'Unknown precipitation' — the exact type of precipitation
+    cannot be determined. Do NOT claim it is specifically rain, snow, sleet, or any other type.
+    Instead, describe it as uncertain, messy, or mixed conditions. Focus on the cold temperature
+    and general caution (e.g. "tricky conditions", "messy weather", "watch your step outside").
+    """
+
     prompt = f"""
     Generate a catchy, energetic weather report script for a female TV news anchor named Maya.
     The script must be exactly 8 seconds long when spoken (strictly 15-20 words, no more).
@@ -50,7 +59,7 @@ def generate_script(weather_data):
     Current Temp: {weather_data['temp_c']}°C (feels like {weather_data.get('feels_like_c', weather_data['temp_c'])}°C)
     High: {weather_data['high_c']}°C
     Low: {weather_data['low_c']}°C
-    {alert_block}
+    {alert_block}{unknown_block}
     IMPORTANT — The studio background display already shows all temperature numbers
     (current temp, high, and low) as on-screen graphics. Do NOT repeat any of those
     exact numbers in the spoken script — the viewer can see them. Instead, use

@@ -6,7 +6,6 @@ import json
 import subprocess
 
 REFERENCE_IMAGE_PATH = "maya_reference.jpg"
-LOGO_PATH = "uconn_news_logo.png"
 
 
 def validate_script_content(script_text, weather_data):
@@ -29,11 +28,19 @@ def validate_script_content(script_text, weather_data):
             f"The script MUST mention this alert or warn listeners urgently. FAIL if it is not mentioned at all."
         )
 
+    unknown_note = ""
+    if "unknown" in weather_data.get("condition", "").lower():
+        unknown_note = (
+            "\n    NOTE: The condition is 'Unknown precipitation' — an unclassified precipitation event. "
+            "PASS any script that describes general wintry, messy, uncertain, or cautionary conditions. "
+            "Do NOT fail for being vague about the precipitation type — specificity is impossible here."
+        )
+
     prompt = f"""
     Evaluate the following weather report script based on the provided data.
 
     Script: "{script_text}"
-    Weather data: Location={weather_data['location']}, Condition={weather_data['condition']}, Current Temp={weather_data['temp_c']}°C, High={weather_data['high_c']}°C, Low={weather_data['low_c']}°C{alert_line}
+    Weather data: Location={weather_data['location']}, Condition={weather_data['condition']}, Current Temp={weather_data['temp_c']}°C, High={weather_data['high_c']}°C, Low={weather_data['low_c']}°C{alert_line}{unknown_note}
 
     Checklist:
     1. Is the script in English?
@@ -77,120 +84,41 @@ def validate_video_prompt(prompt_text, weather_data):
     if "Maya" not in prompt_text or ("reporter" not in prompt_text and "anchor" not in prompt_text):
         return False, "Character identity (Maya) not found in prompt."
 
-    # 2a. Extract the three display card sections
+    # 2a. Extract display card sections
+    is_unknown_condition = "unknown" in condition
     top_match = re.search(r"TOP SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
-    mid_match = re.search(r"MIDDLE SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
     bot_match = re.search(r"BOTTOM SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
     top_section = top_match.group(1) if top_match else ""
-    mid_section = mid_match.group(1) if mid_match else ""
     bot_section = bot_match.group(1) if bot_match else ""
 
-    if not top_section or not mid_section or not bot_section:
+    if not top_section:
+        return False, "TOP SECTION (current temperature) not found in prompt."
+    if not is_unknown_condition and not bot_section:
         return False, (
-            "Display card three-section structure (TOP SECTION / MIDDLE SECTION / BOTTOM SECTION) "
-            "not found in prompt — temperature card must be described as three explicit sections."
+            "Display card BOTTOM SECTION (weather condition) not found in prompt — "
+            "required when condition is known."
         )
 
-    # 2b. TOP section must contain only the current temperature — no HIGH/LOW
+    # 2b. TOP section must contain only the current temperature
     if weather_data:
         expected_temp = f"{weather_data['temp_c']}°C"
         if expected_temp not in top_section:
             return False, f"TOP section should contain only the current temperature '{expected_temp}', found: '{top_section}'."
-    if re.search(r'\b(HIGH|LOW)\b', top_section, re.IGNORECASE):
-        return False, f"TOP section must show ONLY the current temperature — 'HIGH' or 'LOW' must not appear here."
 
-    # 2c. MIDDLE section — HIGH and LOW each exactly once, spelled correctly, values match weather_data
-    high_count = len(re.findall(r'\bHIGH\b', mid_section, re.IGNORECASE))
-    low_count = len(re.findall(r'\bLOW\b', mid_section, re.IGNORECASE))
-    if high_count != 1:
-        return False, f"'HIGH' must appear exactly once in MIDDLE section, found {high_count} times."
-    if low_count != 1:
-        return False, f"'LOW' must appear exactly once in MIDDLE section, found {low_count} times."
-    if re.search(r'\bHIGHH+\b', prompt_text, re.IGNORECASE):
-        return False, "Misspelling detected: 'HIGHH' found in prompt — should be 'HIGH'."
-    if re.search(r'\bLOWW+\b', prompt_text, re.IGNORECASE):
-        return False, "Misspelling detected: 'LOWW' found in prompt — should be 'LOW'."
-    if weather_data:
-        expected_high = f"{weather_data['high_c']}°C"
-        expected_low = f"{weather_data['low_c']}°C"
-        if expected_high not in mid_section:
-            return False, f"MIDDLE section HIGH value should be '{expected_high}', not found in: '{mid_section}'."
-        if expected_low not in mid_section:
-            return False, f"MIDDLE section LOW value should be '{expected_low}', not found in: '{mid_section}'."
+    # 2c. BOTTOM section must contain only the weather condition — no temperature numbers
+    # (skipped when condition is unknown — no condition label is shown)
+    if not is_unknown_condition and re.search(r'-?\d+°C', bot_section):
+        return False, "BOTTOM section must show ONLY the weather condition — no temperature values allowed here."
 
-    # 2d. BOTTOM section must contain only the weather condition — no extra labels or numbers
-    if re.search(r'\b(HIGH|LOW)\b', bot_section, re.IGNORECASE):
-        return False, f"BOTTOM section must show ONLY the weather condition — 'HIGH' or 'LOW' must not appear here."
-    if re.search(r'-?\d+°C', bot_section):
-        return False, f"BOTTOM section must show ONLY the weather condition — no temperature values allowed here."
-
-    # 2e. TEMP: label must not appear anywhere
+    # 2d. TEMP: label must not appear anywhere
     if re.search(r'\bTEMP:', prompt_text, re.IGNORECASE):
         return False, "'TEMP:' label found — temperature card shows bare value only, no TEMP: prefix."
 
-    # 2f. HIGH: and LOW: must not appear outside the display card block
-    display_block_match = re.search(
-        r'divided into three clearly separated sections.*?shown exactly once\.',
-        prompt_text, re.DOTALL | re.IGNORECASE
-    )
-    prompt_without_display = (
-        prompt_text.replace(display_block_match.group(0), "")
-        if display_block_match else prompt_text
-    )
-    if re.search(r'\bHIGH:', prompt_without_display, re.IGNORECASE):
-        return False, "'HIGH:' label appears outside the display card section."
-    if re.search(r'\bLOW:', prompt_without_display, re.IGNORECASE):
-        return False, "'LOW:' label appears outside the display card section."
-
-    # 3. Overlay graphics checks
-    if "UConn News" not in prompt_text or "Today's Weather Forecast" not in prompt_text:
-        return False, "Overlay graphics (Logo or Title) missing from video prompt."
-
-    # 4. Visual text spelling — manual checks only
-    # All on-screen text is either standardized constants (UConn News, Today's Weather
-    # Forecast, WARNING: X IN EFFECT) or numeric/abbreviated weather values (°C, SUNNY).
-    # LLM spell-check of these strings consistently hallucinates false positives, so
-    # all misspelling detection is handled by the targeted manual checks above (HIGHH, LOWW)
-    # and the three-section structural validation.
-
-    # 5. Lower-third layout validation (6-point check)
-    # 5a. Format: prompt must specify 4K and 16:9 aspect ratio
+    # 3. Format: prompt must specify 4K and 16:9 aspect ratio
     if "4K" not in prompt_text or "16:9" not in prompt_text:
         return False, "Video format (4K, 16:9) not specified in prompt."
 
-    # 5b. Lower-third structure: single full-width navy blue bar containing the title
-    if "navy blue" not in prompt_text.lower():
-        return False, "Lower-third bar must specify a navy blue background."
-    if not re.search(r'full.width', prompt_text, re.IGNORECASE):
-        return False, "Lower-third bar must be described as full-width."
-
-    # 5c. Forbidden elements: prompt must explicitly prohibit badges and extra boxes
-    if not re.search(r'no condition badges|no extra boxes|no floating labels', prompt_text, re.IGNORECASE):
-        return False, "Prompt must explicitly forbid condition badges and extra elements in the lower-third."
-
-    # 5d. Typography: lower-third must specify bold white sans-serif font
-    if "bold white sans-serif" not in prompt_text.lower():
-        return False, "Lower-third typography must specify 'bold white sans-serif'."
-
-    # 5e. Text duplication: title appears exactly once; ALERT: appears only when alert is active
-    forecast_count = len(re.findall(r"Today's Weather Forecast", prompt_text, re.IGNORECASE))
-    if forecast_count != 1:
-        return False, f"'Today's Weather Forecast' must appear exactly once in prompt, found {forecast_count} times."
-
-    alert_data = weather_data.get("alert") if weather_data else None
-    has_active_alert = bool(alert_data and alert_data.get("severity") in ("Extreme", "Severe"))
-    alert_count = len(re.findall(r'\bALERT:', prompt_text, re.IGNORECASE))
-    if has_active_alert and alert_count != 1:
-        return False, f"Active alert present — 'ALERT:' must appear exactly once in prompt, found {alert_count} times."
-    if not has_active_alert and alert_count > 0:
-        return False, f"No active alert — 'ALERT:' must not appear in prompt, found {alert_count} times."
-
-    # 5f. Layout: alert bar must be positioned directly beneath the title bar (not floating elsewhere)
-    if has_active_alert:
-        if not re.search(r'directly below|directly beneath', prompt_text, re.IGNORECASE):
-            return False, "Alert bar must be positioned 'directly below' the lower-third title bar."
-
-    # 6. Landmark Checks
+    # 4. Landmark Checks
     landmark_checks = {
         ("sunny", "clear"): (
             ["Homer Babbidge", "central green", "golden sunlight"],
@@ -227,45 +155,7 @@ def validate_video_prompt(prompt_text, weather_data):
                 "Settled snow alone is not enough — Veo needs to render live snowfall."
             )
 
-    # 7. Logo placement validation
-    # 7a. Logo must be present and positioned in the top-left corner
-    if "UConn News" not in prompt_text:
-        return False, "UConn News logo missing from video prompt."
-    if "top-right corner" not in prompt_text.lower():
-        return False, "UConn News logo must be positioned in the top-right corner."
-
-    # 7b. Placement spec: 80px padding and 400px width must be specified
-    if "80px" not in prompt_text:
-        return False, "UConn News logo must specify 80px padding from top and right edges."
-    if "400px" not in prompt_text:
-        return False, "UConn News logo must specify approximately 400px width."
-
-    # 7c. Static constraint: prompt must say the logo does not move, animate, or duplicate
-    if not re.search(r'do NOT (move|resize|animate|duplicate)', prompt_text, re.IGNORECASE):
-        return False, "Prompt must explicitly state logo is static (do NOT move/resize/animate/duplicate)."
-
-    # 7d. Logo must appear exactly once — no duplication
-    if not re.search(r'appears exactly once', prompt_text, re.IGNORECASE):
-        return False, "Prompt must state UConn News logo appears exactly once."
-
-    # 7e. No color or text modification
-    if not re.search(r'no color changes|no text modification', prompt_text, re.IGNORECASE):
-        return False, "Prompt must explicitly state no color changes and no text modification to the logo."
-
     return True, "Prompt looks good."
-
-
-def validate_logo_consistency():
-    """
-    Checks that the UConn News logo file exists locally.
-    If missing, it will be auto-generated on the next video run.
-    """
-    if os.path.exists(LOGO_PATH):
-        return True, f"UConn News logo found: {LOGO_PATH}"
-    return False, (
-        f"UConn News logo not found at '{LOGO_PATH}'. "
-        "It will be auto-generated on the next video run."
-    )
 
 
 def validate_video_frame(video_path, weather_data):
@@ -305,16 +195,12 @@ def validate_video_frame(video_path, weather_data):
 
         # Step 2: Ask Gemini Vision to read visible text as structured JSON — no validation, pure OCR
         ocr_prompt = (
-            "Read every piece of visible text in this broadcast video frame exactly as it appears. "
+            "Read the visible text in the weather display card in this broadcast video frame exactly as it appears. "
             "Do NOT correct spelling, interpret intent, or skip garbled text — transcribe precisely what you see. "
             "Return ONLY a JSON object with these exact keys:\n"
             "{\n"
-            '  "top_section": "<exact text in the top of the weather card>",\n'
-            '  "middle_section": "<exact text in the middle of the weather card>",\n'
-            '  "bottom_section": "<exact text in the bottom of the weather card>",\n'
-            '  "logo_text": "<exact text of the logo in the top-right corner>",\n'
-            '  "lower_third": "<exact text in the navy bar at the bottom of the frame>",\n'
-            '  "alert_banner": "<exact text in the red banner below the navy bar, or null if not present>"\n'
+            '  "top_section": "<exact text in the top section of the weather card>",\n'
+            '  "bottom_section": "<exact text in the bottom section of the weather card>"\n'
             "}\n"
             "Return ONLY the JSON — no explanation, no markdown."
         )
@@ -337,47 +223,16 @@ def validate_video_frame(video_path, weather_data):
         # Step 3: Validate extracted values using explicit Python rules
         issues = []
         expected_temp = f"{weather_data['temp_c']}°C"
-        expected_high = f"{weather_data['high_c']}°C"
-        expected_low  = f"{weather_data['low_c']}°C"
 
-        top         = extracted.get("top_section", "")
-        mid         = extracted.get("middle_section", "")
-        logo        = extracted.get("logo_text", "")
-        lower_third = extracted.get("lower_third", "")
-        alert_banner = extracted.get("alert_banner")
+        def _norm(text):
+            """Collapse all whitespace (including newlines) to single spaces."""
+            return re.sub(r'\s+', ' ', (text or "").strip())
 
-        # TOP section — must contain the current temp, must NOT have a HIGH/LOW label
+        top = _norm(extracted.get("top_section"))
+
+        # TOP section — must contain the current temperature
         if expected_temp not in top:
             issues.append(f"TOP section shows '{top}' — expected '{expected_temp}'")
-        if re.search(r'\b(HIGH|LOW)\b', top, re.IGNORECASE):
-            issues.append(f"TOP section has HIGH/LOW label — must show bare temp only: '{top}'")
-
-        # MIDDLE section — must contain HIGH: {high} and LOW: {low}
-        if f"HIGH: {expected_high}" not in mid:
-            issues.append(f"MIDDLE section missing 'HIGH: {expected_high}' — got: '{mid}'")
-        if f"LOW: {expected_low}" not in mid:
-            issues.append(f"MIDDLE section missing 'LOW: {expected_low}' — got: '{mid}'")
-
-        # Logo — must read exactly "UConn News"
-        if logo.strip() != "UConn News":
-            issues.append(f"Logo shows '{logo}' — expected 'UConn News'")
-
-        # Lower-third — must read exactly "Today's Weather Forecast"
-        if lower_third.strip() != "Today's Weather Forecast":
-            issues.append(f"Lower-third shows '{lower_third}' — expected \"Today's Weather Forecast\"")
-
-        # Alert banner — must match exactly when active, must be absent when not active
-        alert = weather_data.get("alert")
-        has_active_alert = bool(alert and alert.get("severity") in ("Extreme", "Severe"))
-        if has_active_alert:
-            alert_event = alert["event"].upper()
-            expected_banner = f"ALERT: {alert_event} IN EFFECT"
-            if not alert_banner:
-                issues.append(f"Alert banner missing — expected '{expected_banner}'")
-            elif alert_banner.strip() != expected_banner:
-                issues.append(f"Alert banner shows '{alert_banner}' — expected '{expected_banner}'")
-        elif alert_banner:
-            issues.append(f"Alert banner present but no active alert — got: '{alert_banner}'")
 
         if issues:
             return False, "Frame issues:\n" + "\n".join(f"  - {i}" for i in issues)
@@ -404,18 +259,11 @@ def validate_no_repetition(script_text, video_prompt, weather_data):
     # Extract all numeric values from the script (temperatures)
     script_numbers = set(re.findall(r'-?\d+', script_text))
 
-    # Extract display values from the prompt (between the display quotes)
-    display_match = re.search(r'TEMP: (-?\d+)', video_prompt)
-    high_match = re.search(r'HIGH: (-?\d+)', video_prompt)
-    low_match = re.search(r'LOW: (-?\d+)', video_prompt)
-
+    # Extract the current temperature from the TOP SECTION of the display card
+    top_match = re.search(r"TOP SECTION[^']*'(-?\d+)", video_prompt)
     display_numbers = set()
-    if display_match:
-        display_numbers.add(display_match.group(1))
-    if high_match:
-        display_numbers.add(high_match.group(1))
-    if low_match:
-        display_numbers.add(low_match.group(1))
+    if top_match:
+        display_numbers.add(top_match.group(1))
 
     overlap = script_numbers & display_numbers
     if overlap:
@@ -469,10 +317,7 @@ def run_all_tests(script_text, prompt_text, weather_data):
     print(f"Character Consistency:   {'PASS' if char_pass else 'WARN'} — {char_msg}")
     # Also a soft warning — Veo will generate the reference image if missing
 
-    # 5. Logo consistency (logo file exists)
-    logo_pass, logo_msg = validate_logo_consistency()
-    print(f"Logo Consistency:        {'PASS' if logo_pass else 'WARN'} — {logo_msg}")
-    # Soft warning — logo will be auto-generated on next video run if missing
+
 
     return all_passed
 
@@ -483,22 +328,10 @@ if __name__ == "__main__":
     mock_prompt = (
         "A professional 4K 16:9 TV news broadcast shot of Maya the anchor reporter in a sunny studio. "
         "Behind her and to her left is a sleek new-age glass-textured broadcast studio display panel "
-        "divided into three clearly separated sections (top to bottom): "
-        "TOP SECTION — shows ONLY the bare value '15°C' with no label and no prefix "
-        "(this is the CURRENT real-time temperature — do NOT label it HIGH, do NOT repeat this value elsewhere in the card); "
-        "MIDDLE SECTION — shows only 'HIGH: 20°C  LOW: 10°C' (HIGH on the left, LOW on the right); "
-        "BOTTOM SECTION — shows only 'SUNNY' (weather condition label only, no temperature numbers). "
-        "The card must contain ONLY these three sections — no extra numbers, no timestamps, "
-        "no random strings, no duplicate values, HIGH and LOW each spelled correctly and shown exactly once. "
-        "Overlay graphics: in the top-right corner of the frame is the official 'UConn News' broadcast logo — "
-        "bold white sans-serif text on a deep navy blue background with a subtle red accent. "
-        "Logo placement: 80px padding from the top and right edges, approximately 400px wide, maintaining its original aspect ratio. "
-        "The logo is static and identical across all frames — do NOT move, resize, animate, or duplicate it. "
-        "It appears exactly once in the top-right corner only, with no color changes and no text modification. "
-        "At the very bottom of the frame is a single lower-third title bar: a full-width semi-transparent navy blue bar "
-        "containing only the centered text 'Today's Weather Forecast' in bold white sans-serif (Helvetica Neue or Roboto Condensed style) — "
-        "no random characters, watermarks, or other text appear in this bar before or after the title. "
-        "No condition badges, no extra boxes, no floating labels, no duplicate title elements anywhere else in the frame. "
+        "divided into two clearly separated sections (top to bottom): "
+        "TOP SECTION — shows ONLY the current temperature '15°C' in large bold text, nothing else; "
+        "BOTTOM SECTION — shows ONLY the weather condition 'SUNNY' — no temperature numbers in this section. "
+        "The card must contain ONLY these two sections — no extra numbers, no timestamps, no random strings. "
         "The video starts immediately. Camera is static. 4K resolution, professional broadcast quality. "
         "Studio environment: golden sunlight over the Homer Babbidge Library and the central green at UConn Storrs campus."
     )

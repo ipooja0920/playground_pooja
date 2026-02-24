@@ -54,7 +54,7 @@ python main.py
 1. **Weather Fetch** (`weather_service.py`) — Calls [wttr.in](https://wttr.in) for live conditions (temp, feels-like, high, low) in Storrs, CT. Also fetches the most severe active alert from the [NWS API](https://api.weather.gov) (e.g. Blizzard Warning, Winter Storm Watch). No API keys required for either.
 2. **Store Locally** (`sync_weather.py`) — Appends weather data to `weather_report.csv`.
 3. **Generate Script** (`script_service.py`) — Gemini 2.0 Flash generates a 15–20 word (~8s) spoken script for anchor Maya. If an Extreme or Severe NWS alert is active, the script must open with or urgently mention it. Saves to `weather_script.txt`.
-4. **Validate** (`validator.py`) — Runs 5 checks before video generation (see below).
+4. **Validate** (`validator.py`) — Runs 4 checks before video generation (see below).
 5. **Generate Video** (`video_service.py`) — If all hard checks pass, Veo 3.0 generates an 8-second 16:9 4K video. Saved locally as `output_video.mp4`. Up to 3 API retry attempts.
 6. **Frame Validation** (`validator.py`) — After each video, Gemini Vision inspects an extracted frame (via ffmpeg) for rendering errors — garbled text, wrong labels, phantom characters. If INVALID, the video is regenerated (up to 3 visual retries).
 
@@ -65,11 +65,10 @@ python main.py
 | Check | Type | What It Verifies |
 |-------|------|-----------------|
 | **Script Validation** | Hard FAIL | Script is in English, no spelling errors, reflects correct weather, no repeated phrases; Extreme/Severe alert must appear in script |
-| **Prompt Validation** | Hard FAIL | Three-section display card structure; lower-third layout (navy bar, bold white sans-serif, no badges); logo placement (top-right, 80px, 400px, static, exactly once); UConn landmarks; active snowfall for snowy conditions |
-| **Frame Validation** | Post-gen FAIL → retry | Gemini Vision checks rendered video frame — zero-tolerance for garbled text, wrong values, or phantom characters |
+| **Prompt Validation** | Hard FAIL | Two-section display card (TOP: current temp, BOTTOM: condition label); UConn landmarks; active snowfall for snowy conditions; Maya name and anchor role; 4K/16:9 format |
+| **Frame Validation** | Post-gen FAIL → retry | Gemini Vision OCR reads the display card; Python validates TOP section shows the correct current temperature |
 | **No-Repetition Check** | Soft WARN | Temperature numbers not spoken aloud if already visible on the studio display |
 | **Character Consistency** | Soft WARN | `maya_reference.jpg` exists for visual consistency across runs |
-| **Logo Consistency** | Soft WARN | `uconn_news_logo.png` exists — auto-generated via Imagen 3 on first run |
 
 Video is only generated if all **Hard** checks pass.
 
@@ -77,12 +76,11 @@ Video is only generated if all **Hard** checks pass.
 
 ## Key Features
 
-- **NWS Alert overlay**: When a Blizzard Warning or other Extreme/Severe alert is active, a full-width red banner appears directly below the lower-third: `ALERT: {ALERT EVENT} IN EFFECT` in bold white sans-serif
+- **NWS alert scripting**: When an Extreme or Severe NWS alert is active (e.g. Blizzard Warning), the script must lead with or urgently mention it
 - **Snow condition differentiation**: Three distinct snowy backgrounds — blizzard/whiteout, light/patchy snow drifting, moderate snow actively falling
-- **UConn branding**: Homer Babbidge Library and campus landmarks in background; AI-generated `UConn News` logo (Imagen 3) in top-right corner; `Today's Weather Forecast` lower-third in bold white sans-serif on navy bar
-- **AI-generated logo**: `UConn News` broadcast logo auto-generated via Imagen 3 on first run — flat navy + red design, locked static in top-right at 80px padding / 400px wide
-- **Post-generation frame validation**: Gemini Vision inspects each rendered video frame against strict expected values — zero tolerance for Veo hallucinations; retries up to 3 times if INVALID
-- **Three-section weather card**: Temperature display split into TOP (current temp), MIDDLE (HIGH/LOW), BOTTOM (condition label) — each section strictly contains only its own data
+- **UConn campus backdrop**: Homer Babbidge Library and central green dynamically matched to the weather condition behind Maya in every shot
+- **Post-generation frame validation**: Gemini Vision OCR reads the display card; Python checks the current temperature is rendered correctly — retries up to 3 times if wrong
+- **Two-section weather card**: Display panel shows TOP (current temp) and BOTTOM (condition label); unknown conditions show only the temperature
 - **Feels-like temperature**: Included in the script prompt so Gemini can describe how it actually feels outside
 
 ---
@@ -96,5 +94,4 @@ All output files are gitignored (auto-generated at runtime):
 | `weather_report.csv` | Appended weather history |
 | `weather_script.txt` | Latest generated script |
 | `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3) |
-| `uconn_news_logo.png` | UConn News broadcast logo (auto-generated once via Imagen 3) |
 | `output_video.mp4` | Final generated video |

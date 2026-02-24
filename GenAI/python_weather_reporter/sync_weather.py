@@ -8,6 +8,7 @@ def sync_to_local_csv(weather_data, filename="weather_report.csv"):
     Appends the weather data to a local CSV file.
     """
     now = datetime.now()
+    alert = weather_data.get('alert')
     df_new = pd.DataFrame([{
         "Date": now.strftime("%Y-%m-%d %H:%M:%S"),
         "Condition": weather_data['condition'],
@@ -15,10 +16,18 @@ def sync_to_local_csv(weather_data, filename="weather_report.csv"):
         "Feels Like (C)": weather_data.get('feels_like_c', ''),
         "High (C)": weather_data['high_c'],
         "Low (C)": weather_data['low_c'],
-        "Sunny": weather_data['is_sunny'],
-        "Rainy": weather_data['is_rainy'],
-        "Stormy": weather_data['is_stormy'],
-        "Snowy": weather_data['is_snowy'],
+        "Sunny": weather_data.get('is_sunny', False),
+        "Rainy": weather_data.get('is_rainy', False),
+        "Stormy": weather_data.get('is_stormy', False),
+        "Snowy": weather_data.get('is_snowy', False),
+        "Cloudy": weather_data.get('is_cloudy', False),
+        "Foggy": weather_data.get('is_foggy', False),
+        "Hazy": weather_data.get('is_hazy', False),
+        "Icy": weather_data.get('is_icy', False),
+        "Windy": weather_data.get('is_windy', False),
+        "Alert Event": alert['event'] if alert else '',
+        "Alert Severity": alert['severity'] if alert else '',
+        "Alert Headline": alert['headline'] if alert else '',
     }])
 
     if os.path.exists(filename):
