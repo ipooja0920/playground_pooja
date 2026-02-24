@@ -15,6 +15,7 @@ from script_service import generate_script, read_latest_weather_from_csv, save_s
 from video_service import generate_weather_video, generate_video_prompt
 from validator import run_all_tests, validate_video_frame
 from sync_weather import sync_to_local_csv
+from compositor import composite_overlay
 
 CSV_FILE = "weather_report.csv"
 
@@ -84,6 +85,8 @@ def main():
             print(f"Frame Validation:        {'PASS' if frame_pass else 'FAIL'} — {frame_msg}")
 
             if frame_pass:
+                # 9. Composite display card onto the clean video
+                composite_overlay("output_video.mp4", "final_video.mp4", weather_data)
                 break
 
             if visual_attempt == MAX_VISUAL_RETRIES:
