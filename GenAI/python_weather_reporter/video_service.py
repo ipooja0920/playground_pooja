@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from google import genai
 from google.genai import types
 
@@ -91,16 +92,39 @@ def _get_studio_environment(condition):
     """
     Returns a visual description of the studio backdrop for Veo.
 
-    The base view is always the same: Wilbur Cross Building seen through the
-    studio's floor-to-ceiling windows. Weather effects (rain on glass, snow
-    falling, fog, etc.) are layered on top of that fixed background to match
-    today's conditions.
+    Base view: Wilbur Cross Building through the studio's floor-to-ceiling windows.
+    Time of day adjusts the base lighting:
+      - 5:00 pm – 7:30 pm  → evening (amber twilight, path lights on)
+      - 8:00 pm – 11:00 pm → night   (dark sky, exterior floodlights, lanterns)
+      - all other hours    → daytime (neutral sky)
+    Weather effects (rain on glass, snow, fog, etc.) layer on top of whichever
+    base is active.
     """
-    BASE = (
-        "the broadcast studio's floor-to-ceiling windows look out directly onto "
-        "Wilbur Cross Building — UConn's landmark red-brick Georgian building with "
-        "arched windows, a pitched slate roof, and tall oaks lining the path in front"
-    )
+    t = datetime.now().hour + datetime.now().minute / 60
+
+    if 17.0 <= t < 19.5:   # 5:00 pm – 7:30 pm — evening
+        BASE = (
+            "the broadcast studio's floor-to-ceiling windows look out directly onto "
+            "Wilbur Cross Building — UConn's landmark red-brick Georgian building; "
+            "the sky behind the building is deepening to a warm amber-orange twilight, "
+            "the last soft glow of dusk washing over the red-brick facade, "
+            "campus path lights beginning to flicker on along the oak-lined walkways"
+        )
+    elif 20.0 <= t < 23.0:  # 8:00 pm – 11:00 pm — night
+        BASE = (
+            "the broadcast studio's floor-to-ceiling windows look out directly onto "
+            "Wilbur Cross Building — UConn's landmark red-brick Georgian building; "
+            "it is fully dark outside, the building lit by exterior floodlights against "
+            "a deep navy night sky, warm amber campus path lanterns glowing along the "
+            "darkened oak-lined walkways, the studio interior bright against the dark glass"
+        )
+    else:                   # daytime — default
+        BASE = (
+            "the broadcast studio's floor-to-ceiling windows look out directly onto "
+            "Wilbur Cross Building — UConn's landmark red-brick Georgian building with "
+            "arched windows, a pitched slate roof, and tall oaks lining the path in front"
+        )
+
     c = condition.lower()
 
     if "thunder" in c or ("storm" in c and "light" not in c):

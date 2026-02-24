@@ -227,7 +227,15 @@ Logo layout:
 
 **Base view (always present):** The studio's floor-to-ceiling windows look out directly onto **Wilbur Cross Building** — UConn's landmark red-brick Georgian building with arched windows, a pitched slate roof, and tall oaks lining the path in front. This is the fixed backdrop in every broadcast.
 
-Weather-specific **effects** are then layered on top of that fixed Wilbur Cross view to match today's conditions:
+The base lighting shifts automatically based on the **time of day** when the pipeline runs:
+
+| Time of Day | Base Lighting |
+|-------------|--------------|
+| Daytime (default) | Neutral sky behind Wilbur Cross; standard broadcast lighting |
+| **Evening (5:00 pm – 7:30 pm)** | Warm amber-orange twilight deepening behind the building; campus path lights flickering on along the oak-lined walkways |
+| **Night (8:00 pm – 11:00 pm)** | Fully dark outside; Wilbur Cross lit by exterior floodlights against a deep navy sky; warm amber campus lanterns glowing; studio interior bright against the dark glass |
+
+Weather-specific **effects** are then layered on top of the active base to match today's conditions:
 
 | Condition | Effect on the Wilbur Cross view |
 |-----------|--------------------------------|
