@@ -2,6 +2,8 @@
 
 An AI pipeline that fetches live weather + NWS alerts for Storrs, CT, generates an 8-second anchor script, validates it, and produces a broadcast-style video featuring Maya — a consistent AI anchor — using Vertex AI Veo 3.0.
 
+> For a deeper understanding of the architecture, design decisions, and full feature breakdown, please refer to the **[Product Specification](PRODUCT_SPEC.md)**.
+
 ---
 
 ## 📺 Watch the Daily Forecast
