@@ -65,60 +65,43 @@ def validate_script_content(script_text, weather_data):
 def validate_video_prompt(prompt_text, weather_data):
     """
     Checks the video prompt for:
-    - Correct weather condition reflected (manual & LLM check)
-    - Spellings (LLM check)
-    - No duplicated data or words in the display (manual & LLM check)
-    - Character consistency and landmarks (manual)
+    - Correct weather condition reflected in studio background
+    - Character identity (Maya)
+    - No display card or text overlay instructions present
+    - Explicit no-text instruction included
+    - UConn landmark keywords for the given condition
+    - Active snowfall keyword for snowy conditions
     """
     condition = weather_data['condition'].lower()
-    passed = True
-    reason = "Prompt looks good."
 
-    # 1. Manual Checks for Core Requirements
+    # 1. Weather condition keywords for studio background
     if "sunny" in condition and "sunny" not in prompt_text.lower() and "golden sunlight" not in prompt_text.lower():
         return False, "Sunny condition missing from background prompt."
     if "rain" in condition and "rain" not in prompt_text.lower():
         return False, "Rainy condition missing from background prompt."
     if "snow" in condition and "snow" not in prompt_text.lower():
         return False, "Snowy condition missing from background prompt."
+
+    # 2. Character identity
     if "Maya" not in prompt_text or ("reporter" not in prompt_text and "anchor" not in prompt_text):
         return False, "Character identity (Maya) not found in prompt."
 
-    # 2a. Extract display card sections
-    is_unknown_condition = "unknown" in condition
-    top_match = re.search(r"TOP SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
-    bot_match = re.search(r"BOTTOM SECTION[^']*'([^']+)'", prompt_text, re.IGNORECASE)
-    top_section = top_match.group(1) if top_match else ""
-    bot_section = bot_match.group(1) if bot_match else ""
-
-    if not top_section:
-        return False, "TOP SECTION (current temperature) not found in prompt."
-    if not is_unknown_condition and not bot_section:
-        return False, (
-            "Display card BOTTOM SECTION (weather condition) not found in prompt — "
-            "required when condition is known."
-        )
-
-    # 2b. TOP section must contain only the current temperature
-    if weather_data:
-        expected_temp = f"{weather_data['temp_c']}°C"
-        if expected_temp not in top_section:
-            return False, f"TOP section should contain only the current temperature '{expected_temp}', found: '{top_section}'."
-
-    # 2c. BOTTOM section must contain only the weather condition — no temperature numbers
-    # (skipped when condition is unknown — no condition label is shown)
-    if not is_unknown_condition and re.search(r'-?\d+°C', bot_section):
-        return False, "BOTTOM section must show ONLY the weather condition — no temperature values allowed here."
-
-    # 2d. TEMP: label must not appear anywhere
+    # 3. No display card or text overlay instructions — these belong in post-production
+    if "TOP SECTION" in prompt_text or "BOTTOM SECTION" in prompt_text:
+        return False, "Prompt contains display card instructions (TOP/BOTTOM SECTION) — remove these, text is composited in post-production."
     if re.search(r'\bTEMP:', prompt_text, re.IGNORECASE):
-        return False, "'TEMP:' label found — temperature card shows bare value only, no TEMP: prefix."
+        return False, "Prompt contains 'TEMP:' label — display card instructions must be removed."
 
-    # 3. Format: prompt must specify 4K and 16:9 aspect ratio
+    # 4. Prompt must explicitly tell Veo not to render any text
+    no_text_keywords = ["no text overlays", "no on-screen graphics", "no chyrons", "no display panels"]
+    if not any(kw in prompt_text.lower() for kw in no_text_keywords):
+        return False, "Prompt must include explicit no-text instruction (e.g. 'no text overlays, no on-screen graphics, no chyrons, no display panels')."
+
+    # 5. Format: prompt must specify 4K and 16:9 aspect ratio
     if "4K" not in prompt_text or "16:9" not in prompt_text:
         return False, "Video format (4K, 16:9) not specified in prompt."
 
-    # 4. Landmark Checks
+    # 6. Landmark checks
     landmark_checks = {
         ("sunny", "clear"): (
             ["Homer Babbidge", "central green", "golden sunlight"],
@@ -144,8 +127,7 @@ def validate_video_prompt(prompt_text, weather_data):
                 return False, fail_reason
             break
 
-    # Extra check for snowy conditions: active snowfall must be visible through the window
-    # (not just settled snow — Veo must show snow falling/drifting past the glass)
+    # 7. Snowy conditions: active snowfall must be visible through the window
     if "snow" in condition or "blizzard" in condition:
         active_snow_keywords = ["falling", "drifting", "swirling", "snowflakes", "blizzard rages", "curtains of snow"]
         if not any(kw.lower() in prompt_text.lower() for kw in active_snow_keywords):
@@ -160,12 +142,9 @@ def validate_video_prompt(prompt_text, weather_data):
 
 def validate_video_frame(video_path, weather_data):
     """
-    Post-generation frame check in two steps:
-      1. Gemini Vision reads ALL visible text from the frame as structured JSON (pure OCR — no judgment).
-      2. Python validates the extracted values against expected weather data using explicit rules.
-
-    This separates reading (Gemini's job) from validation (Python's job), making checks
-    deterministic and reusing the same logic applied to the prompt.
+    Post-generation frame check: verifies no text overlays appear in the rendered video.
+    Text is composited in post-production, so the raw Veo output should contain only
+    Maya and the studio background — no chyrons, no display cards, no on-screen graphics.
     """
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
     if not project_id:
@@ -174,7 +153,7 @@ def validate_video_frame(video_path, weather_data):
     if not os.path.exists(str(video_path)):
         return True, "Video not a local file (may be GCS URI) — skipping frame validation."
 
-    # Step 1: Extract a frame at 4 seconds (midpoint of the 8-second video)
+    # Extract a frame at 4 seconds (midpoint of the 8-second video)
     frame_path = str(video_path).replace(".mp4", "_frame_check.jpg")
     try:
         subprocess.run(
@@ -193,16 +172,15 @@ def validate_video_frame(video_path, weather_data):
         with open(frame_path, "rb") as f:
             frame_bytes = f.read()
 
-        # Step 2: Ask Gemini Vision to read visible text as structured JSON — no validation, pure OCR
+        # Ask Gemini Vision to check whether any text overlays are visible
         ocr_prompt = (
-            "Read the visible text in the weather display card in this broadcast video frame exactly as it appears. "
-            "Do NOT correct spelling, interpret intent, or skip garbled text — transcribe precisely what you see. "
-            "Return ONLY a JSON object with these exact keys:\n"
-            "{\n"
-            '  "top_section": "<exact text in the top section of the weather card>",\n'
-            '  "bottom_section": "<exact text in the bottom section of the weather card>"\n'
-            "}\n"
-            "Return ONLY the JSON — no explanation, no markdown."
+            "Look at this broadcast video frame carefully. "
+            "Is there any visible text on screen — including temperature values, weather labels, "
+            "chyrons, lower-thirds, on-screen graphics, display cards, or any other text overlay? "
+            "The anchor's spoken words do not count — only look for on-screen text graphics. "
+            "Reply with exactly one of:\n"
+            "NO TEXT — if the frame contains no on-screen text overlays\n"
+            "TEXT FOUND: <brief description> — if any text overlay is visible"
         )
 
         client = genai.Client(vertexai=True, project=project_id, location="us-central1")
@@ -214,32 +192,12 @@ def validate_video_frame(video_path, weather_data):
             ]
         )
 
-        raw = response.text.strip()
-        # Strip markdown code fences if Gemini wraps the JSON anyway
-        raw = re.sub(r"^```[a-z]*\n?", "", raw)
-        raw = re.sub(r"\n?```$", "", raw)
-        extracted = json.loads(raw)
+        result = response.text.strip()
+        if result.upper().startswith("NO TEXT"):
+            return True, "Frame is clean — no text overlays detected."
+        else:
+            return False, f"Text detected in frame: {result}"
 
-        # Step 3: Validate extracted values using explicit Python rules
-        issues = []
-        expected_temp = f"{weather_data['temp_c']}°C"
-
-        def _norm(text):
-            """Collapse all whitespace (including newlines) to single spaces."""
-            return re.sub(r'\s+', ' ', (text or "").strip())
-
-        top = _norm(extracted.get("top_section"))
-
-        # TOP section — must contain the current temperature
-        if expected_temp not in top:
-            issues.append(f"TOP section shows '{top}' — expected '{expected_temp}'")
-
-        if issues:
-            return False, "Frame issues:\n" + "\n".join(f"  - {i}" for i in issues)
-        return True, "Frame text verified — all visible elements correct."
-
-    except json.JSONDecodeError as e:
-        return True, f"Frame validation skipped — could not parse OCR response: {e}"
     except Exception as e:
         return True, f"Frame validation skipped due to error: {e}"
     finally:
@@ -307,15 +265,10 @@ def run_all_tests(script_text, prompt_text, weather_data):
     print(f"Prompt Validation:       {'PASS' if prompt_pass else 'FAIL'} — {prompt_msg}")
     all_passed = all_passed and prompt_pass
 
-    # 3. No repeated values between script and display
-    repeat_pass, repeat_msg = validate_no_repetition(script_text, prompt_text, weather_data)
-    print(f"No-Repetition Check:     {'PASS' if repeat_pass else 'WARN'} — {repeat_msg}")
-    # This is a soft warning — does not block video generation
-
-    # 4. Character consistency (reference image exists)
+    # 3. Character consistency (reference image exists)
     char_pass, char_msg = validate_character_consistency()
     print(f"Character Consistency:   {'PASS' if char_pass else 'WARN'} — {char_msg}")
-    # Also a soft warning — Veo will generate the reference image if missing
+    # Soft warning — does not block video generation
 
 
 
@@ -326,13 +279,13 @@ if __name__ == "__main__":
     mock_data = {"location": "Storrs", "condition": "Sunny", "temp_c": 15, "high_c": 20, "low_c": 10, "feels_like_c": 14, "alert": None}
     mock_script = "Good morning Storrs! Crisp and clear out there — a beautiful start to the day. Get outside!"
     mock_prompt = (
-        "A professional 4K 16:9 TV news broadcast shot of Maya the anchor reporter in a sunny studio. "
-        "Behind her and to her left is a sleek new-age glass-textured broadcast studio display panel "
-        "divided into two clearly separated sections (top to bottom): "
-        "TOP SECTION — shows ONLY the current temperature '15°C' in large bold text, nothing else; "
-        "BOTTOM SECTION — shows ONLY the weather condition 'SUNNY' — no temperature numbers in this section. "
-        "The card must contain ONLY these two sections — no extra numbers, no timestamps, no random strings. "
-        "The video starts immediately. Camera is static. 4K resolution, professional broadcast quality. "
-        "Studio environment: golden sunlight over the Homer Babbidge Library and the central green at UConn Storrs campus."
+        "A professional 4K 16:9 TV news broadcast shot of Maya the anchor reporter standing centered in the frame. "
+        "She delivers the weather report with clear lip-sync and natural speech rhythm. "
+        "Studio environment: warm golden sunlight bathes the UConn Storrs campus visible through the studio windows — "
+        "the Homer Babbidge Library, the sunlit central green, and blue skies above the iconic Georgian brick buildings; "
+        "bright warm-white studio lighting with a clean energetic feel. "
+        "Camera is static and locked at eye level. "
+        "No text overlays, no on-screen graphics, no chyrons, no display panels — only Maya and the studio background. "
+        "4K resolution, professional broadcast quality."
     )
     run_all_tests(mock_script, mock_prompt, mock_data)

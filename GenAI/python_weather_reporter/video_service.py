@@ -81,7 +81,6 @@ def _get_weather_label(condition):
     elif "precipitation" in c or "mixed" in c:
         return "MIXED PRECIP"
     else:
-        # Strip redundant words that are already used as labels in the display
         label = condition.upper()
         for redundant in ["HIGH", "LOW", "TEMP"]:
             label = label.replace(redundant, "").strip()
@@ -169,47 +168,24 @@ def _get_studio_environment(condition):
 
 def generate_video_prompt(weather_data, script_text):
     """
-    Builds a Veo prompt.
-    - Maya positioned slightly right so the studio display is visible on the left.
-    - Display card: TOP = current temperature, BOTTOM = weather condition label.
-    - Anchor appearance locked via ANCHOR_CHARACTER for daily visual consistency.
+    Builds a Veo prompt for a clean video of Maya delivering the weather report.
+    No text overlays or display panels — those are composited in post-production.
+    Anchor appearance locked via ANCHOR_CHARACTER for daily visual consistency.
     """
     condition = weather_data['condition']
-    weather_label = _get_weather_label(condition)
     studio_env = _get_studio_environment(condition)
-    temp = weather_data['temp_c']
-
-    top_text = f"{temp}°C"
-    bottom_text = weather_label
-    is_unknown = "unknown" in condition.lower()
-
-    if is_unknown:
-        # Condition is unclassified — show only current temperature, no condition label
-        display_block = (
-            "with a single section: "
-            f"TOP SECTION — shows ONLY the current temperature '{top_text}' in large bold text, centered. "
-            "The display contains ONLY this temperature value — no condition label, no additional text, no random strings. "
-        )
-    else:
-        display_block = (
-            "divided into two clearly separated sections (top to bottom): "
-            f"TOP SECTION — shows ONLY the current temperature '{top_text}' in large bold text, nothing else; "
-            f"BOTTOM SECTION — shows ONLY the weather condition '{bottom_text}' — no temperature numbers in this section. "
-            "The card must contain ONLY these two sections — no extra numbers, no timestamps, no random strings. "
-        )
 
     prompt = (
         f"A professional 4K 16:9 TV news broadcast shot of {ANCHOR_CHARACTER} "
-        "She is positioned slightly to the right of the frame, standing upright and looking "
-        "directly into the camera lens, so the studio display panel on the left side of the "
-        "frame is clearly visible to viewers. "
+        "She stands centered in the frame, upright, looking directly into the camera lens. "
         f"She delivers the following 8-second weather report with clear lip-sync, natural "
         f"speech rhythm, and subtle professional hand gestures: \"{script_text}\". "
-        f"Behind her and to her left is a sleek new-age glass-textured broadcast studio display panel {display_block}"
         f"Studio environment: {studio_env}. "
         "The video starts immediately as she begins speaking and ends exactly at the 8-second "
         "mark as she finishes her last word — no dialogue is cut off. "
         "Camera is static and locked at eye level. "
+        "No text overlays, no on-screen graphics, no chyrons, no display panels — "
+        "only Maya and the studio background. "
         "4K resolution, professional broadcast quality."
     )
     return prompt
