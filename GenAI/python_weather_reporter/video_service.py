@@ -177,7 +177,7 @@ def generate_video_prompt(weather_data, script_text):
 
     prompt = (
         f"A professional 4K 16:9 TV news broadcast shot of {ANCHOR_CHARACTER} "
-        "She stands centered in the frame, upright, looking directly into the camera lens. "
+        "She stands slightly to the right of frame center (screen right, from the viewer's perspective), upright, looking directly into the camera lens. "
         f"She delivers the following 8-second weather report with clear lip-sync, natural "
         f"speech rhythm, and subtle professional hand gestures: \"{script_text}\". "
         f"Studio environment: {studio_env}. "

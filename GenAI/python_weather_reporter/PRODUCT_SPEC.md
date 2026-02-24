@@ -108,7 +108,7 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `script_service.py` | Generates 8-second script via Gemini 2.0 Flash; reads/writes CSV and `.txt` |
 | `video_service.py` | Builds the Veo 3.0 prompt and generates the video; manages Maya's reference image |
 | `validator.py` | Runs all validation checks before and after video generation |
-| `compositor.py` | Post-production step — renders the weather display card using Pillow and composites it onto the clean Veo video using moviepy |
+| `compositor.py` | Post-production step — renders the 4-row weather display card and UConn NEWS channel logo using Pillow, then composites both onto the clean Veo video using moviepy |
 | `sheets_service.py` | Google Sheets integration — OAuth2 helper to append weather data to a Drive spreadsheet |
 | `.env` | Local secrets file (gitignored) — stores `GOOGLE_CLOUD_PROJECT` |
 
@@ -173,28 +173,53 @@ Maya's appearance is locked via a constant `ANCHOR_CHARACTER` string in `video_s
 
 A reference image (`maya_reference.jpg`) is auto-generated via Imagen 3 on first run and reused to maintain visual consistency across daily videos.
 
+In the Veo prompt, Maya is positioned **slightly to the right of frame center** (screen right, from the viewer's perspective), looking directly into the camera — leaving the left side open for the weather display card.
+
 ---
 
 ## Display Card (Post-Production Composite)
 
-After Veo generates the clean Maya video, `compositor.py` renders a **weather display card** and composites it onto the lower-left of the frame using Pillow (card rendering) and moviepy (video compositing). The result is saved as `final_video.mp4`.
+After Veo generates the clean Maya video, `compositor.py` renders a **weather display card** and composites it onto the upper-left area of the frame using Pillow (card rendering) and moviepy (video compositing). The result is saved as `final_video.mp4`.
 
-Card layout — two sections:
+Card layout — four rows:
 
 ```
 ┌────────────────────┐
 │      -2°C          │  ← current temperature, large bold white
 │ ─────────────────  │  ← horizontal divider
-│      SUNNY         │  ← condition label, smaller blue-white
+│  HIGH: 0°C         │  ← today's forecast high, smaller blue-white
+│  LOW:  -5°C        │  ← today's forecast low, smaller blue-white
+│  SUNNY             │  ← condition label, smaller blue-white (omitted when unknown)
 └────────────────────┘
 ```
 
 - **Background**: dark navy (`#08122A`), ~84% opacity, rounded corners
-- **Position**: lower-left corner (`3%` from left, `68%` from top), sized proportionally to video dimensions
-- **Temperature**: always the raw `temp_c` value with `°C` suffix
-- **Condition label**: mapped from the raw condition string via `_get_weather_label()` (e.g. `"Overcast"` → `CLOUDY`, `"Light rain"` → `LIGHT RAIN`, `"Light snow, mist"` → `LIGHT SNOW`)
+- **Position**: upper-left area (`6%` from left, `14%` from top), sized proportionally to video dimensions (`26%` width × `62%` height)
+- **Temperature**: always the raw `temp_c` value with `°C` suffix, displayed in large bold white
+- **High / Low**: `high_c` and `low_c` from the weather data, displayed as `HIGH: X°C` / `LOW: X°C`
+- **Condition label**: mapped from the raw condition string via `_get_weather_label()` (e.g. `"Overcast"` → `CLOUDY`, `"Light rain"` → `LIGHT RAIN`, `"Light snow, mist"` → `LIGHT SNOW`); the row is omitted entirely when the condition is `"unknown"`
 - Label is auto-truncated with `…` if it would overflow the card width
 - The Veo prompt explicitly tells the model **not** to render any text overlays — the display card is always a post-production layer, never baked into the AI-generated footage
+
+---
+
+## Channel Logo (Post-Production Composite)
+
+`compositor.py` also renders a **UConn NEWS channel logo** and composites it into the top-right corner of every frame.
+
+Logo layout:
+
+```
+┌─────────────────────┬───┐
+│       UConn         │   │  ← navy blue background, white bold text
+│       NEWS          │   │  ← red vertical stripe on right edge
+└─────────────────────┴───┘
+```
+
+- **Background**: UConn navy blue (`#003865`), near-opaque
+- **Red stripe**: right-edge vertical stripe (~12% of logo width), UConn red (`#C8102E`)
+- **Position**: top-right corner with a `2%` margin from both the right and top edges
+- **Size**: `12%` of video width × `10%` of video height
 
 ---
 

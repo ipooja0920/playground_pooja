@@ -57,7 +57,7 @@ python main.py
 4. **Validate** (`validator.py`) — Runs 3 checks before video generation (see below).
 5. **Generate Video** (`video_service.py`) — If all hard checks pass, Veo 3.0 generates an 8-second 16:9 4K video with no text overlays. Saved locally as `output_video.mp4`. Up to 3 API retry attempts.
 6. **Frame Validation** (`validator.py`) — After each video, Gemini Vision inspects an extracted frame (via ffmpeg) for any visible text overlay. Veo is told to render none, so any text is a hallucination. If text is found, the video is regenerated (up to 3 visual retries).
-7. **Composite Overlay** (`compositor.py`) — After a clean frame passes, Pillow renders the weather display card (temperature + condition label) and moviepy composites it onto the clean video. Result saved as `final_video.mp4`.
+7. **Composite Overlay** (`compositor.py`) — After a clean frame passes, Pillow renders two overlays: (1) a 4-row **weather display card** (current temp, high, low, condition label) in the upper-left, and (2) a **UConn NEWS channel logo** (navy blue + red stripe) in the top-right corner. moviepy composites both onto the clean video. Result saved as `final_video.mp4`.
 
 ---
 
@@ -79,7 +79,8 @@ Video is only generated if all **Hard** checks pass.
 - **NWS alert scripting**: When an Extreme or Severe NWS alert is active (e.g. Blizzard Warning), the script must lead with or urgently mention it
 - **Snow condition differentiation**: Three distinct snowy backgrounds — blizzard/whiteout, light/patchy snow drifting, moderate snow actively falling
 - **UConn campus backdrop**: Homer Babbidge Library and central green dynamically matched to the weather condition behind Maya in every shot
-- **Post-production display card**: Temperature and condition label are composited onto the clean Veo video using Pillow + moviepy — never baked into the AI prompt, following broadcast industry practice
+- **Post-production display card**: A 4-row card (current temp, high, low, condition label) and a UConn NEWS channel logo are composited onto the clean Veo video using Pillow + moviepy — never baked into the AI prompt, following broadcast industry practice
+- **Anchor framing**: Maya stands slightly to the right of frame center (screen right), keeping the left side open for the weather display card
 - **Post-generation frame validation**: Gemini Vision checks each rendered frame for any text overlay — retries up to 3 times if Veo hallucinates on-screen graphics
 - **Feels-like temperature**: Included in the script prompt so Gemini can describe how it actually feels outside
 
@@ -95,4 +96,4 @@ All output files are gitignored (auto-generated at runtime):
 | `weather_script.txt` | Latest generated script |
 | `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3) |
 | `output_video.mp4` | Raw Veo output — clean video of Maya with no text overlays |
-| `final_video.mp4` | Broadcast-ready video with composited weather display card |
+| `final_video.mp4` | Broadcast-ready video with composited weather display card and UConn NEWS logo |
