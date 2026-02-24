@@ -25,15 +25,15 @@ venv/
 # *.parquet
 
 # Weather reporter — secrets (never commit)
-GenAI/python_weather_reporter/.env
+GenAI/Weather_AI_AGENT/.env
 
 # Weather reporter — generated runtime outputs (auto-created on each run)
-GenAI/python_weather_reporter/weather_report.csv
-GenAI/python_weather_reporter/weather_script.txt
-GenAI/python_weather_reporter/weather_report.xlsx
-GenAI/python_weather_reporter/maya_reference.jpg
-GenAI/python_weather_reporter/uconn_news_logo.png
-GenAI/python_weather_reporter/output_video.mp4
-GenAI/python_weather_reporter/final_video.mp4
-GenAI/python_weather_reporter/token.json
-GenAI/python_weather_reporter/credentials.json
+GenAI/Weather_AI_AGENT/weather_report.csv
+GenAI/Weather_AI_AGENT/weather_script.txt
+GenAI/Weather_AI_AGENT/weather_report.xlsx
+GenAI/Weather_AI_AGENT/maya_reference.jpg
+GenAI/Weather_AI_AGENT/uconn_news_logo.png
+GenAI/Weather_AI_AGENT/output_video.mp4
+GenAI/Weather_AI_AGENT/final_video.mp4
+GenAI/Weather_AI_AGENT/token.json
+GenAI/Weather_AI_AGENT/credentials.json
