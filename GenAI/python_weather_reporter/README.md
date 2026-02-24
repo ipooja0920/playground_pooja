@@ -77,8 +77,8 @@ Video is only generated if all **Hard** checks pass.
 ## Key Features
 
 - **NWS alert scripting**: When an Extreme or Severe NWS alert is active (e.g. Blizzard Warning), the script must lead with or urgently mention it
-- **Snow condition differentiation**: Three distinct snowy backgrounds — blizzard/whiteout, light/patchy snow drifting, moderate snow actively falling
-- **UConn campus backdrop**: Homer Babbidge Library and central green dynamically matched to the weather condition behind Maya in every shot
+- **Fixed Wilbur Cross backdrop**: Wilbur Cross Building is always visible through the studio's floor-to-ceiling windows — the same base view every broadcast, with weather effects layered on top (rain streaking glass, snow falling past the window, fog rolling in, sunlight flooding through)
+- **Weather effects on glass**: Instead of switching backgrounds, atmospheric effects are composited onto the fixed Wilbur Cross view — rain rivulets, snow accumulation on ledges, frost on the glass, lightning flashes — matching today's exact condition
 - **Post-production display card**: A 4-row card (current temp, high, low, condition label) and a UConn NEWS channel logo are composited onto the clean Veo video using Pillow + moviepy — never baked into the AI prompt, following broadcast industry practice
 - **Anchor framing**: Maya stands slightly to the right of frame center (screen right), keeping the left side open for the weather display card
 - **Post-generation frame validation**: Gemini Vision checks each rendered frame for any text overlay — retries up to 3 times if Veo hallucinates on-screen graphics

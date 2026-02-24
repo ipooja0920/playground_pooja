@@ -225,20 +225,23 @@ Logo layout:
 
 ## Studio Background
 
-The background is dynamically matched to the weather condition. For snowy conditions, the window view must show **active snowfall** (not just settled snow):
+**Base view (always present):** The studio's floor-to-ceiling windows look out directly onto **Wilbur Cross Building** — UConn's landmark red-brick Georgian building with arched windows, a pitched slate roof, and tall oaks lining the path in front. This is the fixed backdrop in every broadcast.
 
-| Condition | Background |
-|-----------|-----------|
-| Sunny / Clear | Golden sunlight over UConn campus, Homer Babbidge Library visible |
-| Overcast / Cloudy | Grey sky over UConn central green and Georgian brick buildings |
-| Heavy Rain | Rain streaking studio windows, UConn green visible through downpour |
-| Light Rain / Drizzle | Soft drizzle, misty UConn pathways and Wilbur Cross Building |
-| **Blizzard / Heavy Snow** | Full whiteout — thick curtains of snow **actively swirling** past glass, Homer Babbidge Library barely visible; harsh white studio lighting |
-| **Light / Patchy Snow** | Light snowflakes **drifting and falling** gently past windows, campus lightly frosted; quiet wintry feel |
-| **Moderate Snow** | Snowflakes **actively falling**, campus blanketed in fresh snow; flat white sky |
-| Fog / Mist | Misty silhouette of campus buildings and tall oaks |
-| Thunderstorm | Stormy sky, lightning, deep blue-grey studio lighting |
-| Other | Neutral campus view, professional broadcast lighting |
+Weather-specific **effects** are then layered on top of that fixed Wilbur Cross view to match today's conditions:
+
+| Condition | Effect on the Wilbur Cross view |
+|-----------|--------------------------------|
+| Sunny / Clear | Warm golden sunlight floods through the glass; sharp shadows on the brick facade; blue skies behind |
+| Overcast / Cloudy | Flat grey cloud cover over the building; diffused cool studio lighting; no shadows |
+| Light Rain / Drizzle | Soft drizzle beads and trickles down the glass; tree-lined paths glistening; cool blue-grey lighting |
+| Heavy Rain | Steady rain streams and rivulets run down the glass; Wilbur Cross visible through downpour; wet-pavement reflections |
+| Thunderstorm | Sheets of water on the glass; lightning flashes illuminate the building; deep moody blue-grey lighting |
+| **Light / Patchy Snow** | Snowflakes **drifting and falling** gently past the glass; dusting on ledges and oak branches; soft grey winter sky |
+| **Moderate Snow** | Snowflakes **actively falling** past the glass; building blanketed; flat white sky; cool soft-white lighting |
+| **Blizzard / Heavy Snow** | Thick curtains of snow **swirling** past the glass in near-whiteout; snow on ledges; bare oaks bending; harsh cold white lighting |
+| Fog / Mist | Wilbur Cross visible only as a soft silhouette through the haze on the glass; diffused white-grey lighting |
+| Icy / Wintry Mix | Freezing precipitation ticking on the glass; frost and ice on the building; glazed oak branches; bleak grey sky |
+| Other | Clear view of Wilbur Cross under a neutral sky; professional broadcast lighting |
 
 ---
 

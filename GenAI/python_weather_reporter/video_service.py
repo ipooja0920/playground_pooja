@@ -88,81 +88,91 @@ def _get_weather_label(condition):
 
 
 def _get_studio_environment(condition):
-    """Returns a visual description of the UConn Storrs campus backdrop matching today's weather."""
+    """
+    Returns a visual description of the studio backdrop for Veo.
+
+    The base view is always the same: Wilbur Cross Building seen through the
+    studio's floor-to-ceiling windows. Weather effects (rain on glass, snow
+    falling, fog, etc.) are layered on top of that fixed background to match
+    today's conditions.
+    """
+    BASE = (
+        "the broadcast studio's floor-to-ceiling windows look out directly onto "
+        "Wilbur Cross Building — UConn's landmark red-brick Georgian building with "
+        "arched windows, a pitched slate roof, and tall oaks lining the path in front"
+    )
     c = condition.lower()
+
     if "thunder" in c or ("storm" in c and "light" not in c):
         return (
-            "the broadcast studio's floor-to-ceiling windows frame the UConn Storrs campus under "
-            "a dramatic stormy sky — the iconic Homer Babbidge Library and surrounding brick "
-            "buildings are visible through heavy rain and distant lightning flashes; deep moody "
-            "blue-grey studio lighting"
+            f"{BASE}; a violent thunderstorm rages outside — heavy rain streaks and "
+            "sheets of water run down the studio glass, lightning flashes illuminate "
+            "Wilbur Cross in the background; deep moody blue-grey studio lighting"
         )
     elif "heavy rain" in c or ("rain" in c and "light" not in c and "drizzle" not in c):
         return (
-            "steady rain streaks down the studio's wide windows revealing the UConn Storrs campus "
-            "— the central UConn green and Georgian-style brick academic buildings visible through "
-            "the downpour; cool blue ambient studio lighting with wet-pavement reflections"
+            f"{BASE}; steady rain streams down the studio glass, rivulets of water "
+            "tracing paths across the window surface — Wilbur Cross visible through "
+            "the downpour; cool blue ambient studio lighting with wet-pavement "
+            "reflections on the campus path below"
         )
     elif "drizzle" in c or ("light" in c and "rain" in c):
         return (
-            "soft drizzle falls across the UConn Storrs campus visible through the studio windows "
-            "— the tree-lined pathways and the Wilbur Cross Building in the misty background; "
-            "cool diffused blue-grey studio lighting creating a calm quiet atmosphere"
+            f"{BASE}; a soft drizzle beads and trickles down the studio glass — "
+            "Wilbur Cross visible through the light mist, tree-lined paths glistening; "
+            "cool diffused blue-grey studio lighting with a calm quiet atmosphere"
         )
     elif "blizzard" in c or ("heavy" in c and "snow" in c):
         return (
-            "through the studio's floor-to-ceiling windows a full blizzard rages across the UConn "
-            "Storrs campus — thick curtains of snow are actively falling and swirling past the glass, "
-            "nearly obscuring the Homer Babbidge Library and the central green in whiteout conditions; "
-            "bare oak trees barely visible as snow piles up on the campus paths; "
+            f"{BASE}; a full blizzard rages outside — thick curtains of snow are "
+            "actively falling and swirling past the studio glass, nearly obscuring "
+            "Wilbur Cross in whiteout conditions; snow accumulates on the window "
+            "ledge and bare oak branches bend in the storm wind; "
             "cold harsh white studio lighting matching the blizzard outside"
         )
     elif "light snow" in c or ("light" in c and "snow" in c) or "patchy" in c:
         return (
-            "light snowflakes drift and fall gently past the studio's wide windows, dusting the "
-            "UConn Storrs campus — the Homer Babbidge Library and the central green are lightly "
-            "frosted in white, bare oak trees catching the snowflakes against a soft grey sky; "
+            f"{BASE}; light snowflakes drift and fall gently past the studio glass, "
+            "a dusting of white settling on the Wilbur Cross window ledges and the "
+            "oak branches outside — soft grey winter sky behind the building; "
             "cool diffused white studio lighting with a quiet wintry feel"
         )
     elif "snow" in c:
         return (
-            "snowflakes are actively falling past the studio's floor-to-ceiling windows across the "
-            "UConn Storrs campus — the Homer Babbidge Library, the central green, and the Georgian "
-            "brick buildings are blanketed in fresh snow with more falling steadily; "
-            "bare oak trees heavy with snow against a flat white sky; "
+            f"{BASE}; snowflakes are actively falling past the studio glass — Wilbur "
+            "Cross is blanketed in fresh snow, more falling steadily; bare oak trees "
+            "heavy with snow against a flat white winter sky; "
             "cool soft-white studio lighting"
         )
     elif "fog" in c or "mist" in c:
         return (
-            "a hazy mist rolls across the UConn Storrs campus visible through the studio windows "
-            "— the silhouette of campus brick buildings and tall oaks barely visible through the "
-            "atmospheric fog; soft diffused white-grey ambient lighting"
+            f"{BASE}; thick fog rolls across campus — Wilbur Cross is visible only as "
+            "a soft red-brick silhouette through the atmospheric haze on the glass; "
+            "diffused white-grey ambient studio lighting"
         )
     elif "overcast" in c or "cloud" in c:
         return (
-            "an overcast grey sky hangs over the UConn Storrs campus visible through the studio "
-            "windows — the central green and brick academic buildings under flat even cloud cover; "
+            f"{BASE}; an overcast grey sky hangs over campus — Wilbur Cross sits under "
+            "flat even cloud cover, no shadows on the brick facade; "
             "cool diffused studio lighting with no harsh shadows"
         )
     elif "sunny" in c or "clear" in c:
         return (
-            "warm golden sunlight bathes the UConn Storrs campus visible through the studio "
-            "windows — the Homer Babbidge Library, the sunlit central green, and blue skies above "
-            "the iconic Georgian brick buildings; bright warm-white studio lighting with a clean "
+            f"{BASE}; warm golden sunlight floods through the studio glass — Wilbur "
+            "Cross glows in the afternoon sun, blue skies and sharp shadows on the "
+            "Georgian brick facade; bright warm-white studio lighting with a clean "
             "energetic feel"
         )
     elif "sleet" in c or "ice" in c or "freezing" in c or "precipitation" in c or "mixed" in c:
         return (
-            "a wintry grey sky hangs over the UConn Storrs campus visible through the studio "
-            "windows — the Homer Babbidge Library and the central green dusted with frost, "
-            "bare oak trees under a heavy overcast sky with light frozen precipitation; "
-            "cold diffused white studio lighting with a bleak wintry feel"
+            f"{BASE}; freezing precipitation ticks against the studio glass — Wilbur "
+            "Cross is dusted with frost and ice, bare oak branches glazed under a "
+            "heavy grey sky; cold diffused white studio lighting with a bleak wintry feel"
         )
     else:
         return (
-            "the UConn Storrs campus is visible through the broadcast studio's large windows — "
-            "the central green and brick academic buildings under a neutral sky; "
-            "professional broadcast lighting"
+            f"{BASE}; the campus is calm under a neutral sky — Wilbur Cross stands "
+            "clearly through the clean studio glass; professional broadcast lighting"
         )
 
 
