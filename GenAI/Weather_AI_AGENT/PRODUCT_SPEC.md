@@ -236,6 +236,15 @@ The base lighting shifts automatically based on the **time of day** when the pip
 | **Evening (5:00 pm – 7:30 pm)** | Warm amber-orange twilight deepening behind the building; campus path lights flickering on along the oak-lined walkways |
 | **Night (8:00 pm – 11:00 pm)** | Fully dark outside; Wilbur Cross lit by exterior floodlights against a deep navy sky; warm amber campus lanterns glowing; studio interior bright against the dark glass |
 
+**Residual snow** from recent weather history is also automatically layered into the base view, sourced from `weather_report.csv`:
+
+| Historical Snow Event | Persistence | Effect on Base |
+|-----------------------|-------------|----------------|
+| Blizzard / heavy snow condition **or** major winter storm alert | **30 days** | Deep snow blankets the ground, heavy accumulation on the rooftop, ledges, and oak branches; thick snowbanks lining the walkways |
+| Any snowy condition (`Snowy=True`) | **7 days** | Layer of snow on the ground, patches of white on ledges and a light dusting on oak branches |
+
+Residual snow is only applied on non-snowy days (when it's currently snowing, the active snow effect already describes the scene).
+
 Weather-specific **effects** are then layered on top of the active base to match today's conditions:
 
 | Condition | Effect on the Wilbur Cross view |

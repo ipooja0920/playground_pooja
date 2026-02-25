@@ -1,6 +1,8 @@
 import os
+import csv
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 from google import genai
 from google.genai import types
 
@@ -88,6 +90,67 @@ def _get_weather_label(condition):
         return label
 
 
+def _get_residual_snow_level():
+    """
+    Reads weather_report.csv to determine whether residual snow from recent
+    weather events should be visible in the studio background.
+
+    Rules:
+      - Blizzard / heavy snow condition OR major winter storm alert
+        within the past 30 days  → 'heavy'  (deep snow accumulation)
+      - Any snowy condition (Snowy=True) within the past 7 days → 'light'
+      - Otherwise                                                → 'none'
+
+    Returns one of: 'heavy', 'light', 'none'
+    """
+    csv_path = Path(__file__).parent / "weather_report.csv"
+    if not csv_path.exists():
+        return 'none'
+
+    today = datetime.now().date()
+    heavy_cutoff = today - timedelta(days=30)
+    light_cutoff  = today - timedelta(days=7)
+
+    heavy_found = False
+    light_found  = False
+
+    try:
+        with open(csv_path, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    row_date = datetime.strptime(row['Date'], '%Y-%m-%d %H:%M:%S').date()
+                except ValueError:
+                    continue
+
+                condition   = row.get('Condition', '').lower()
+                alert_event = row.get('Alert Event', '').lower()
+                snowy       = str(row.get('Snowy', 'false')).strip().lower() == 'true'
+
+                is_major_snow = (
+                    'blizzard'     in condition    or
+                    'heavy snow'   in condition    or
+                    'blizzard'     in alert_event  or
+                    'winter storm' in alert_event  or
+                    'ice storm'    in alert_event  or
+                    'snow storm'   in alert_event
+                )
+
+                if is_major_snow and row_date >= heavy_cutoff:
+                    heavy_found = True
+                elif snowy and row_date >= light_cutoff:
+                    light_found = True
+
+    except Exception:
+        return 'none'
+
+    if heavy_found:
+        return 'heavy'
+    if light_found:
+        return 'light'
+    return 'none'
+
+
 def _get_studio_environment(condition):
     """
     Returns a visual description of the studio backdrop for Veo.
@@ -125,7 +188,25 @@ def _get_studio_environment(condition):
             "arched windows, a pitched slate roof, and tall oaks lining the path in front"
         )
 
+    # Residual snow — layer onto BASE from recent history (skip if currently snowing,
+    # as the active snow effect already describes snow in the scene)
     c = condition.lower()
+    is_currently_snowy = "snow" in c or "blizzard" in c
+
+    if not is_currently_snowy:
+        snow_level = _get_residual_snow_level()
+        if snow_level == 'heavy':
+            BASE += (
+                "; deep snow still blankets the ground around Wilbur Cross and the campus "
+                "paths from a recent major storm — heavy accumulation on the rooftop, ledges, "
+                "and oak branches, thick snowbanks lining the walkways"
+            )
+        elif snow_level == 'light':
+            BASE += (
+                "; a layer of snow remains on the ground around Wilbur Cross from recent "
+                "snowfall — patches of white on the rooftop ledges and a light dusting on "
+                "the oak branches"
+            )
 
     if "thunder" in c or ("storm" in c and "light" not in c):
         return (
