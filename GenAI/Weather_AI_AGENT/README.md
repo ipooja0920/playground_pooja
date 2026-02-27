@@ -48,9 +48,10 @@ sudo apt install ffmpeg
 cd GenAI/Weather_AI_AGENT
 python main.py
 ```
+The pipeline runs end-to-end: fetches weather → generates script → validates → generates Veo video → validates frame → composites overlay. `final_video.mp4` is written on success.
 
 ### 5. Schedule Automated Runs (macOS)
-The pipeline is pre-scheduled via cron to run at **8:00 am**, **6:00 pm**, and **9:00 pm EST** daily using `run_pipeline.sh`. To install the cron jobs:
+The pipeline is scheduled via cron to run at **8:00 am**, **6:00 pm**, and **9:00 pm EST** daily. To install the cron jobs:
 ```bash
 (crontab -l 2>/dev/null; cat <<'EOF'
 # Weather AI Agent — 8am, 6pm, 9pm EST daily
@@ -62,7 +63,7 @@ EOF
 ```
 Each scheduled run retries up to **5 times** (5 min apart) on RAI filter blocks, validation failures, or network errors. Logs are written to `logs/pipeline_YYYYMMDD_HHMMSS.log`.
 
-> **Note:** Cron only runs when the Mac is awake. Runs scheduled while the machine is asleep will be skipped.
+> ⚠️ **Mandatory for automated runs: the Mac must be on and awake.** Cron does not run if the machine is asleep — that slot is silently skipped with no retry. Keep the Mac plugged in with sleep disabled during scheduled hours, or use an app like [Amphetamine](https://apps.apple.com/us/app/amphetamine/id937984704) to prevent sleep on a schedule.
 
 ---
 

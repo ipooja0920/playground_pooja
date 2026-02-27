@@ -364,6 +364,17 @@ gcloud auth application-default set-quota-project your-gcp-project-id
 
 ---
 
+## Running the Pipeline
+
+### Manual Run
+```bash
+cd GenAI/Weather_AI_AGENT
+python main.py
+```
+The pipeline fetches live weather, generates and validates the script, generates the Veo video, validates the frame, and composites the final overlay — all in sequence. `final_video.mp4` is written on success.
+
+---
+
 ## Scheduled Automation
 
 The pipeline runs automatically three times a day via **cron** using `run_pipeline.sh`:
@@ -373,6 +384,17 @@ The pipeline runs automatically three times a day via **cron** using `run_pipeli
 | **8:00 am** | Morning broadcast |
 | **6:00 pm** | Evening broadcast |
 | **9:00 pm** | Night broadcast |
+
+### Install Cron Jobs
+```bash
+(crontab -l 2>/dev/null; cat <<'EOF'
+# Weather AI Agent — 8am, 6pm, 9pm EST daily
+0  8 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
+0 18 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
+0 21 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
+EOF
+) | crontab -
+```
 
 ### Retry Logic (`run_pipeline.sh`)
 Each scheduled slot runs `main.py` and retries up to **5 times** (5 minutes apart) if the pipeline fails. Retries are triggered by:
@@ -388,7 +410,11 @@ Every run writes a timestamped log to `logs/pipeline_YYYYMMDD_HHMMSS.log` (gitig
 cat logs/$(ls logs/ | tail -1)
 ```
 
-> **macOS note:** Cron only executes when the Mac is awake. Runs scheduled while the machine is asleep are skipped.
+### ⚠️ Mandatory Requirement — Mac Must Be Awake
+Cron only executes when the Mac is **on and awake**. This is a hard requirement for automated runs:
+- If the Mac is **asleep** at a scheduled time, that run is **silently skipped** — no retry, no log entry
+- The Mac does **not** need to be actively used, but it must not be in sleep mode
+- **Recommended:** Keep the Mac plugged in and disable sleep in **System Settings → Energy Saver** during the hours you want the pipeline to run (or use an app like [Amphetamine](https://apps.apple.com/us/app/amphetamine/id937984704) to prevent sleep on a schedule)
 
 ---
 
