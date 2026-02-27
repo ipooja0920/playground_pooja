@@ -43,11 +43,26 @@ brew install ffmpeg
 sudo apt install ffmpeg
 ```
 
-### 4. Run the Pipeline
+### 4. Run the Pipeline Manually
 ```bash
-cd GenAI/python_weather_reporter
+cd GenAI/Weather_AI_AGENT
 python main.py
 ```
+
+### 5. Schedule Automated Runs (macOS)
+The pipeline is pre-scheduled via cron to run at **8:00 am**, **6:00 pm**, and **9:00 pm EST** daily using `run_pipeline.sh`. To install the cron jobs:
+```bash
+(crontab -l 2>/dev/null; cat <<'EOF'
+# Weather AI Agent — 8am, 6pm, 9pm EST daily
+0  8 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
+0 18 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
+0 21 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
+EOF
+) | crontab -
+```
+Each scheduled run retries up to **5 times** (5 min apart) on RAI filter blocks, validation failures, or network errors. Logs are written to `logs/pipeline_YYYYMMDD_HHMMSS.log`.
+
+> **Note:** Cron only runs when the Mac is awake. Runs scheduled while the machine is asleep will be skipped.
 
 ---
 
@@ -87,6 +102,7 @@ Video is only generated if all **Hard** checks pass.
 - **Anchor framing**: Maya stands slightly to the right of frame center (screen right), keeping the left side open for the weather display card
 - **Post-generation frame validation**: Gemini Vision checks each rendered frame for any text overlay — retries up to 3 times if Veo hallucinates on-screen graphics
 - **Feels-like temperature**: Included in the script prompt so Gemini can describe how it actually feels outside
+- **Automated scheduling**: `run_pipeline.sh` runs daily at **8 am, 6 pm, and 9 pm EST** via cron, with up to 5 automatic retries on RAI blocks, validation failures, or network errors — each run logged to `logs/`
 
 ---
 
@@ -101,3 +117,4 @@ All output files are gitignored (auto-generated at runtime):
 | `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3) |
 | `output_video.mp4` | Raw Veo output — clean video of Maya with no text overlays |
 | `final_video.mp4` | Broadcast-ready video with composited weather display card and UConn NEWS logo |
+| `logs/` | Timestamped log files from each scheduled run (`pipeline_YYYYMMDD_HHMMSS.log`) |

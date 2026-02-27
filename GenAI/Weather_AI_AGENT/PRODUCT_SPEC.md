@@ -111,6 +111,7 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `validator.py` | Runs all validation checks before and after video generation |
 | `compositor.py` | Post-production step — renders the 4-row weather display card and UConn NEWS channel logo using Pillow, then composites both onto the clean Veo video using moviepy |
 | `sheets_service.py` | Google Sheets integration — OAuth2 helper to append weather data to a Drive spreadsheet |
+| `run_pipeline.sh` | Scheduled runner — wraps `main.py` with up to 5 automatic retries on RAI blocks, validation failures, or network errors; writes timestamped logs to `logs/` |
 | `.env` | Local secrets file (gitignored) — stores `GOOGLE_CLOUD_PROJECT` |
 
 ### Output Files (generated at runtime, gitignored)
@@ -120,7 +121,8 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `weather_script.txt` | Latest generated spoken script |
 | `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3, reused for consistency) |
 | `output_video.mp4` | Raw Veo output — clean video of Maya with no text overlays |
-| `final_video.mp4` | Final broadcast-ready video with composited weather display card |
+| `final_video.mp4` | Final broadcast-ready video with composited weather display card and UConn NEWS logo |
+| `logs/` | Timestamped log files written by `run_pipeline.sh` — one file per scheduled run |
 
 ---
 
@@ -359,6 +361,34 @@ No need to `export` manually each session.
 gcloud auth application-default login
 gcloud auth application-default set-quota-project your-gcp-project-id
 ```
+
+---
+
+## Scheduled Automation
+
+The pipeline runs automatically three times a day via **cron** using `run_pipeline.sh`:
+
+| Scheduled Time (EST) | Purpose |
+|----------------------|---------|
+| **8:00 am** | Morning broadcast |
+| **6:00 pm** | Evening broadcast |
+| **9:00 pm** | Night broadcast |
+
+### Retry Logic (`run_pipeline.sh`)
+Each scheduled slot runs `main.py` and retries up to **5 times** (5 minutes apart) if the pipeline fails. Retries are triggered by:
+- **RAI filter blocks** — Veo's Responsible AI filter blocks all 3 generation attempts
+- **Script/prompt validation failures** — Gemini generates a non-passing script (non-deterministic)
+- **Network errors** — transient SSL failures from wttr.in or NWS API
+
+On success, logs `SUCCESS: final_video.mp4 saved on attempt N`. After all retries exhausted, logs `FAILED: Pipeline did not complete after 5 attempts`.
+
+### Logs
+Every run writes a timestamped log to `logs/pipeline_YYYYMMDD_HHMMSS.log` (gitignored). To check the latest run:
+```bash
+cat logs/$(ls logs/ | tail -1)
+```
+
+> **macOS note:** Cron only executes when the Mac is awake. Runs scheduled while the machine is asleep are skipped.
 
 ---
 
