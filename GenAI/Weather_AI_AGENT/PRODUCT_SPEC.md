@@ -111,7 +111,6 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `validator.py` | Runs all validation checks before and after video generation |
 | `compositor.py` | Post-production step — renders the 4-row weather display card and UConn NEWS channel logo using Pillow, then composites both onto the clean Veo video using moviepy |
 | `sheets_service.py` | Google Sheets integration — OAuth2 helper to append weather data to a Drive spreadsheet |
-| `run_pipeline.sh` | Scheduled runner — wraps `main.py` with up to 5 automatic retries on RAI blocks, validation failures, or network errors; writes timestamped logs to `logs/` |
 | `.env` | Local secrets file (gitignored) — stores `GOOGLE_CLOUD_PROJECT` |
 
 ### Output Files (generated at runtime, gitignored)
@@ -122,7 +121,6 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
 | `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3, reused for consistency) |
 | `output_video.mp4` | Raw Veo output — clean video of Maya with no text overlays |
 | `final_video.mp4` | Final broadcast-ready video with composited weather display card and UConn NEWS logo |
-| `logs/` | Timestamped log files written by `run_pipeline.sh` — one file per scheduled run |
 
 ---
 
@@ -372,49 +370,6 @@ cd GenAI/Weather_AI_AGENT
 python main.py
 ```
 The pipeline fetches live weather, generates and validates the script, generates the Veo video, validates the frame, and composites the final overlay — all in sequence. `final_video.mp4` is written on success.
-
----
-
-## Scheduled Automation
-
-The pipeline runs automatically three times a day via **cron** using `run_pipeline.sh`:
-
-| Scheduled Time (EST) | Purpose |
-|----------------------|---------|
-| **8:00 am** | Morning broadcast |
-| **6:00 pm** | Evening broadcast |
-| **9:00 pm** | Night broadcast |
-
-### Install Cron Jobs
-```bash
-(crontab -l 2>/dev/null; cat <<'EOF'
-# Weather AI Agent — 8am, 6pm, 9pm EST daily
-0  8 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
-0 18 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
-0 21 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
-EOF
-) | crontab -
-```
-
-### Retry Logic (`run_pipeline.sh`)
-Each scheduled slot runs `main.py` and retries up to **5 times** (5 minutes apart) if the pipeline fails. Retries are triggered by:
-- **RAI filter blocks** — Veo's Responsible AI filter blocks all 3 generation attempts
-- **Script/prompt validation failures** — Gemini generates a non-passing script (non-deterministic)
-- **Network errors** — transient SSL failures from wttr.in or NWS API
-
-On success, logs `SUCCESS: final_video.mp4 saved on attempt N`. After all retries exhausted, logs `FAILED: Pipeline did not complete after 5 attempts`.
-
-### Logs
-Every run writes a timestamped log to `logs/pipeline_YYYYMMDD_HHMMSS.log` (gitignored). To check the latest run:
-```bash
-cat logs/$(ls logs/ | tail -1)
-```
-
-### ⚠️ Mandatory Requirement — Mac Must Be Awake
-Cron only executes when the Mac is **on and awake**. This is a hard requirement for automated runs:
-- If the Mac is **asleep** at a scheduled time, that run is **silently skipped** — no retry, no log entry
-- The Mac does **not** need to be actively used, but it must not be in sleep mode
-- **Recommended:** Keep the Mac plugged in and disable sleep in **System Settings → Energy Saver** during the hours you want the pipeline to run (or use an app like [Amphetamine](https://apps.apple.com/us/app/amphetamine/id937984704) to prevent sleep on a schedule)
 
 ---
 

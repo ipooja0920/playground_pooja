@@ -50,21 +50,6 @@ python main.py
 ```
 The pipeline runs end-to-end: fetches weather → generates script → validates → generates Veo video → validates frame → composites overlay. `final_video.mp4` is written on success.
 
-### 5. Schedule Automated Runs (macOS)
-The pipeline is scheduled via cron to run at **8:00 am**, **6:00 pm**, and **9:00 pm EST** daily. To install the cron jobs:
-```bash
-(crontab -l 2>/dev/null; cat <<'EOF'
-# Weather AI Agent — 8am, 6pm, 9pm EST daily
-0  8 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
-0 18 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
-0 21 * * * /Users/pokeapokemon/playground_pooja/GenAI/Weather_AI_AGENT/run_pipeline.sh
-EOF
-) | crontab -
-```
-Each scheduled run retries up to **5 times** (5 min apart) on RAI filter blocks, validation failures, or network errors. Logs are written to `logs/pipeline_YYYYMMDD_HHMMSS.log`.
-
-> ⚠️ **Mandatory for automated runs: the Mac must be on and awake.** Cron does not run if the machine is asleep — that slot is silently skipped with no retry. Keep the Mac plugged in with sleep disabled during scheduled hours, or use an app like [Amphetamine](https://apps.apple.com/us/app/amphetamine/id937984704) to prevent sleep on a schedule.
-
 ---
 
 ## How It Works
@@ -103,7 +88,6 @@ Video is only generated if all **Hard** checks pass.
 - **Anchor framing**: Maya stands slightly to the right of frame center (screen right), keeping the left side open for the weather display card
 - **Post-generation frame validation**: Gemini Vision checks each rendered frame for any text overlay — retries up to 3 times if Veo hallucinates on-screen graphics
 - **Feels-like temperature**: Included in the script prompt so Gemini can describe how it actually feels outside
-- **Automated scheduling**: `run_pipeline.sh` runs daily at **8 am, 6 pm, and 9 pm EST** via cron, with up to 5 automatic retries on RAI blocks, validation failures, or network errors — each run logged to `logs/`
 
 ---
 
@@ -118,4 +102,3 @@ All output files are gitignored (auto-generated at runtime):
 | `maya_reference.jpg` | Maya's anchor reference image (auto-generated once via Imagen 3) |
 | `output_video.mp4` | Raw Veo output — clean video of Maya with no text overlays |
 | `final_video.mp4` | Broadcast-ready video with composited weather display card and UConn NEWS logo |
-| `logs/` | Timestamped log files from each scheduled run (`pipeline_YYYYMMDD_HHMMSS.log`) |
