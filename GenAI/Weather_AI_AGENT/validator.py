@@ -104,20 +104,20 @@ def validate_video_prompt(prompt_text, weather_data):
     # 6. Landmark checks
     landmark_checks = {
         ("sunny", "clear"): (
-            ["Homer Babbidge", "central green", "golden sunlight"],
-            "Sunny prompt missing UConn landmark."
+            ["Wilbur Cross", "Georgian brick", "golden sunlight"],
+            "Sunny prompt missing UConn landmark (Wilbur Cross Building)."
         ),
         ("overcast", "cloud"): (
-            ["Georgian brick", "brick", "central green"],
-            "Cloudy prompt missing UConn landmark."
+            ["Wilbur Cross", "Georgian brick", "brick"],
+            "Cloudy prompt missing UConn landmark (Wilbur Cross Building)."
         ),
         ("heavy rain", "rain", "shower"): (
-            ["UConn green", "UConn Storrs", "central UConn"],
-            "Rainy prompt missing UConn landmark."
+            ["Wilbur Cross", "UConn Storrs", "studio glass"],
+            "Rainy prompt missing UConn landmark (Wilbur Cross Building)."
         ),
         ("snow", "blizzard"): (
-            ["Homer Babbidge", "central green", "UConn Storrs"],
-            "Snowy prompt missing UConn Storrs landmark (Homer Babbidge Library or central green)."
+            ["Wilbur Cross", "UConn Storrs", "studio glass"],
+            "Snowy prompt missing UConn Storrs landmark (Wilbur Cross Building)."
         ),
     }
 
