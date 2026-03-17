@@ -157,7 +157,12 @@ RAGPythonApp/
 ├── requirements.txt    # All Python dependencies
 ├── .env.example        # Template for environment variables
 ├── PRODUCT_SPEC.md     # This file
-└── TASKS.md            # Implementation task list
+├── TASKS.md            # Implementation task list
+└── tests/
+    ├── conftest.py              # sys.path setup + dummy API key for test imports
+    ├── test_doc_processor.py    # 7 unit tests for PDF parsing and chunking
+    ├── test_vector_db.py        # 12 unit tests for hashing, indexing, retrieval
+    └── test_llm_client.py       # 10 unit tests for GPT-4o wrapper
 ```
 
 ### Runtime Outputs (gitignored)
@@ -355,6 +360,138 @@ If the answer cannot be found in the context, say so clearly.
 | Empty PDF (no extractable text) | Warning shown; file skipped |
 | No documents indexed yet | Chat input disabled with prompt to upload documents first |
 | Qdrant storage locked by Streamlit | `eval.py` prints clear message: stop Streamlit first, then re-run eval |
+
+---
+
+## Unit Testing
+
+The project has a `tests/` directory with **29 unit tests** covering all three core modules. Tests run in seconds with no API credits spent and no disk storage required.
+
+### Testing Philosophy
+
+| Principle | How it's applied |
+|-----------|-----------------|
+| **No real API calls** | OpenAI `_client` is mocked in every `test_llm_client.py` test — zero billing cost |
+| **No real disk I/O** | `QdrantClient(":memory:")` in `test_vector_db.py` — no `qdrant_storage/` needed |
+| **No real PDF files** | `PDFReader` is mocked in `test_doc_processor.py` — no binary test fixtures |
+| **Fast** | All 29 tests complete in ~7 seconds |
+| **Isolated** | Each test is independent; no shared state between tests |
+
+### How to Run Tests
+
+```bash
+# From the RAGPythonApp directory:
+python -m pytest tests/ -v
+```
+
+Expected output:
+```
+29 passed in ~7s
+```
+
+Run a specific test file:
+```bash
+python -m pytest tests/test_llm_client.py -v
+```
+
+Run a single test by name:
+```bash
+python -m pytest tests/test_vector_db.py::test_score_threshold_filters_low_similarity -v
+```
+
+### Test Files and What They Cover
+
+#### `tests/conftest.py` — Shared Setup
+- Adds `RAGPythonApp/` to `sys.path` so all modules are importable from tests
+- Sets `OPENAI_API_KEY=sk-test-dummy-key-for-unit-tests` so `llm_client.py` can be imported without a real key (actual calls are mocked)
+
+---
+
+#### `tests/test_doc_processor.py` — 7 tests
+
+Tests `load_and_chunk_pdf()` in [doc_processor.py](doc_processor.py). `PDFReader` is mocked — no actual PDF file is needed.
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_returns_nonempty_list_of_nodes` | A valid PDF produces at least one chunk |
+| `test_nodes_have_text` | Every chunk has non-empty text content |
+| `test_filename_metadata_is_set_from_path` | `filename` in chunk metadata comes from the file path, not PDFReader's internal value |
+| `test_page_label_metadata_is_preserved` | `page_label` set by PDFReader flows through to the chunk |
+| `test_empty_pdf_raises_value_error` | PDF with no extractable text raises `ValueError` with clear message |
+| `test_unreadable_pdf_raises_value_error` | Corrupt/unreadable file raises `ValueError` |
+| `test_multiple_pages_produce_chunks` | A multi-page document produces chunks from all pages |
+
+---
+
+#### `tests/test_vector_db.py` — 12 tests
+
+Tests [vector_db.py](vector_db.py) using `QdrantClient(":memory:")` — no disk I/O, no Qdrant storage lock.
+The embedding model is mocked to return a fixed 384-dim vector — no HuggingFace download required.
+
+**`hash_file()` tests (3):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_hash_file_is_deterministic` | Same bytes always produce the same hash (needed for duplicate PDF detection) |
+| `test_hash_file_different_inputs_differ` | Different bytes produce different hashes |
+| `test_hash_file_returns_64_char_hex` | Output is a 64-character lowercase hex string (SHA-256 format) |
+
+**Collection management tests (2):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_collection_is_created` | `get_or_create_collection()` creates the `rag_docs` collection |
+| `test_create_collection_is_idempotent` | Calling twice does not raise and leaves exactly one collection |
+
+**Indexing + retrieval tests (7):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_indexed_node_is_retrievable` | A node upserted with `index_chunks()` is returned by `retrieve()` |
+| `test_retrieve_returns_correct_text` | The retrieved text matches exactly what was indexed |
+| `test_retrieve_returns_correct_metadata` | filename and page_label are returned correctly |
+| `test_retrieve_returns_three_tuple` | Each result is a `(text, filename, page_label)` triple |
+| `test_retrieve_empty_collection_returns_empty` | Querying an empty collection returns `[]` |
+| `test_score_threshold_filters_low_similarity` | Orthogonal vectors (cosine ≈ 0.0) are filtered out by `score_threshold=0.3` |
+| `test_multiple_nodes_all_indexed` | All 3 indexed nodes are returned when `top_k=3` |
+
+---
+
+#### `tests/test_llm_client.py` — 10 tests
+
+Tests `get_answer()` in [llm_client.py](llm_client.py). The OpenAI `_client` module-level object is mocked — no real API calls, no billing.
+
+**Happy-path tests (8):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_returns_stripped_string` | Whitespace is stripped from the model's response |
+| `test_uses_gpt4o_model` | The API call always requests `model="gpt-4o"` |
+| `test_temperature_is_zero` | `temperature=0` is always set (deterministic answers) |
+| `test_context_chunks_appear_in_user_message` | All chunks are included in the user message sent to GPT-4o |
+| `test_question_appears_in_user_message` | The question is included in the user message |
+| `test_system_message_is_present` | A system-role message is included in the messages list |
+| `test_system_message_enforces_grounding` | The system prompt contains grounding instructions |
+| `test_multiple_chunks_joined_in_message` | Multiple chunks result in exactly one API call (not one per chunk) |
+
+**Error-handling tests (2):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_api_failure_raises_runtime_error` | Any OpenAI exception is re-raised as `RuntimeError` |
+| `test_runtime_error_message_includes_original_error` | The original error message is preserved in the `RuntimeError` |
+
+---
+
+### Unit Tests vs RAGAS Evaluation
+
+| | Unit Tests (`pytest`) | RAGAS Evaluation (`eval.py`) |
+|---|---|---|
+| **Purpose** | Verify code correctness | Measure answer quality |
+| **Speed** | ~7 seconds | ~5–10 minutes |
+| **API cost** | Free (fully mocked) | Uses OpenAI credits |
+| **When to run** | Every code change | After tuning retrieval or prompt |
+| **What it catches** | Bugs in logic, regressions, error handling | Hallucination, poor retrieval, irrelevant answers |
 
 ---
 
