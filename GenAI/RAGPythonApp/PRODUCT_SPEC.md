@@ -17,6 +17,119 @@ A Retrieval-Augmented Generation (RAG) application built with Python and Streaml
 
 ---
 
+## High-Level Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          User (Web Browser)                             │
+└─────────────────────────────────┬───────────────────────────────────────┘
+                                  │ HTTP localhost:8501
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        Streamlit App  (app.py)                          │
+│                                                                         │
+│   ┌──────────────────────────┐      ┌──────────────────────────────┐   │
+│   │        Sidebar           │      │       Main Chat Area         │   │
+│   │  • PDF file uploader     │      │  • Chat history display      │   │
+│   │  • Process Documents btn │      │  • Chat input (bottom)       │   │
+│   │  • Indexed docs list     │      │  • Answer + citations        │   │
+│   └────────────┬─────────────┘      └──────────────┬───────────────┘   │
+└────────────────┼────────────────────────────────────┼───────────────────┘
+                 │ PDF bytes                          │ question
+                 ▼                                   ▼
+   ┌─────────────────────────┐         ┌─────────────────────────────┐
+   │    doc_processor.py     │         │       vector_db.py          │
+   │  • PDFReader (LlamaIdx) │         │  • Embed query (BGE model)  │
+   │  • SentenceSplitter     │─chunks─▶│  • query_points() in Qdrant │
+   │    chunk=300, overlap=40│         │  • Filter: score ≥ 0.3      │
+   └────────────┬────────────┘         │  • Return top-7 chunks      │
+                │ TextNodes            └──────────────┬──────────────┘
+                ▼                                     │ chunks + question
+   ┌─────────────────────────┐                        ▼
+   │    vector_db.py         │         ┌─────────────────────────────┐
+   │  • Embed chunks (BGE)   │         │      llm_client.py          │
+   │  • Upsert into Qdrant   │         │  • Build context prompt     │
+   └────────────┬────────────┘         │  • Call gpt-4o (temp=0)    │
+                │                      │  • Return answer string     │
+                ▼                      └──────────────┬──────────────┘
+   ┌─────────────────────────┐                        │ answer
+   │   Qdrant Storage        │◀──── read/write        ▼
+   │   (local disk)          │              back to app.py
+   │   qdrant_storage/       │              display + citations
+   └─────────────────────────┘
+
+   ┌─────────────────────────┐              ┌─────────────────────────┐
+   │   BGE Embedding Model   │              │     OpenAI API          │
+   │   BAAI/bge-small-en-v1.5│              │  • gpt-4o  (chat)       │
+   │   (runs locally, free)  │              │  • gpt-4o-mini (eval)   │
+   └─────────────────────────┘              └─────────────────────────┘
+```
+
+---
+
+## Application Data Flow
+
+Two separate flows run through the app — **indexing** (when PDFs are uploaded) and **querying** (when a question is asked):
+
+```
+  ╔══════════════════════════════════════════════════════════════╗
+  ║                  INDEXING FLOW (one-time per PDF)           ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  User uploads PDF
+        │
+        ▼
+  [app.py] SHA-256 hash check → skip if already indexed
+        │ new PDF
+        ▼
+  [doc_processor.py] PDFReader → parse pages
+        │ Document objects with page_label metadata
+        ▼
+  [doc_processor.py] SentenceSplitter → chunk (300 tokens, 40 overlap)
+        │ TextNode list
+        ▼
+  [vector_db.py] BGE model → embed each chunk (384-dim vector)
+        │ vectors + payload (text, filename, page_label)
+        ▼
+  [Qdrant] upsert vectors into "rag_docs" collection
+        │
+        ▼
+  PDF indexed — persisted to qdrant_storage/
+
+
+  ╔══════════════════════════════════════════════════════════════╗
+  ║               QUERYING FLOW (every question)                ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  User types question
+        │
+        ▼
+  [app.py] add to chat history, show spinner
+        │
+        ▼
+  [vector_db.py] BGE model → embed question (with query instruction)
+        │ 384-dim query vector
+        ▼
+  [Qdrant] query_points() → cosine similarity search
+        │ top-7 results, filtered to score ≥ 0.3
+        ▼
+  [vector_db.py] return (text, filename, page_label) tuples
+        │
+        ▼
+  [llm_client.py] build prompt: system + "Context:\n...\n\nQuestion: ..."
+        │
+        ▼
+  [OpenAI] gpt-4o API call (temperature=0)
+        │ answer string
+        ▼
+  [app.py] deduplicate citations (filename + page_label)
+        │
+        ▼
+  Display answer + Sources: filename, p.X
+```
+
+---
+
 ## Technical Stack
 
 | Component | Technology |
