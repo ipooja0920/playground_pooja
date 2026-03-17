@@ -13,7 +13,7 @@ A Retrieval-Augmented Generation (RAG) application built with Python and Streaml
 **Why this design:**
 - Zero additional infrastructure cost
 - Simpler to run locally and deploy
-- Modular file structure ensures it can be split into a Streamlit frontend + FastAPI/worker backend later without major rewrites
+- Each concern (parsing, embedding, retrieval, LLM) is its own module — easy to swap components without touching the rest
 
 ---
 
@@ -53,6 +53,92 @@ RAGPythonApp/
 | `qdrant_storage/` | Local Qdrant vector database — persists between sessions |
 | `.env` | API keys (never committed) |
 | `eval_results.txt` | RAGAS evaluation output — saved with `python eval.py \| tee eval_results.txt` |
+
+---
+
+## APIs Required
+
+| API | Used For | Where to Get |
+|-----|----------|--------------|
+| **OpenAI API key** (`OPENAI_API_KEY`) | GPT-4o answer generation (chat app) + GPT-4o-mini as RAGAS judge LLM (eval only) | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+
+> **No other external APIs needed.** The embedding model (`BAAI/bge-small-en-v1.5`) runs fully locally via HuggingFace. Qdrant runs fully locally with no server or account required.
+
+> **Cost note:** The chat app calls `gpt-4o` once per question. The eval script calls `gpt-4o` for each of 8 test cases, then calls `gpt-4o-mini` many times as the RAGAS judge. Both use your OpenAI billing credits — add credits at [platform.openai.com/settings/billing](https://platform.openai.com/settings/billing).
+
+---
+
+## How to Run
+
+### Prerequisites
+- Python 3.9 or later
+- An OpenAI API key with billing credits
+
+### 1. Install Dependencies
+
+Navigate to the project folder and install all packages:
+
+```bash
+cd GenAI/RAGPythonApp
+pip install -r requirements.txt
+```
+
+> The first run will also download the BGE embedding model (~90 MB) from HuggingFace automatically.
+
+### 2. Set Up Your API Key
+
+Copy the example env file and fill in your key:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set:
+```
+OPENAI_API_KEY=sk-proj-your-key-here
+```
+
+### 3. Run the Streamlit App
+
+```bash
+streamlit run app.py
+```
+
+This opens the app in your browser at `http://localhost:8501`.
+
+### 4. Index Your PDFs
+
+1. In the **sidebar**, click **"Browse files"** and select one or more PDF files
+2. Click **"Process Documents"** — a progress indicator shows for each file
+3. Once indexed, the PDF names appear under **"Indexed Documents"** in the sidebar
+
+> If you restart the app, `qdrant_storage/` persists — already-indexed PDFs do not need to be re-uploaded unless you delete the storage folder.
+
+### 5. Ask Questions
+
+Type a question in the chat box at the bottom. Each answer includes citations showing which PDF and page number the information came from.
+
+### 6. Run Evaluation (Optional)
+
+RAGAS evaluation measures answer quality against ground-truth questions in `eval.py`.
+
+**Important:** Qdrant's local storage only allows one process at a time. Stop Streamlit (`Ctrl+C`) before running eval.
+
+```bash
+# From the RAGPythonApp directory, with Streamlit stopped:
+python eval.py | tee eval_results.txt
+```
+
+Results are printed to the terminal and saved to `eval_results.txt`.
+
+### Re-indexing After Config Changes
+
+If you change the embedding model or chunk size in `vector_db.py` / `doc_processor.py`, the existing Qdrant index becomes stale. Delete it and re-upload your PDFs:
+
+```bash
+rm -rf qdrant_storage/
+streamlit run app.py   # then re-upload PDFs in the sidebar
+```
 
 ---
 
@@ -206,9 +292,11 @@ python eval.py | tee eval_results.txt
 
 ## Future Extensibility
 
+> **Note:** FastAPI is **not** used in this project. The app is a single Streamlit process. The items below are potential future upgrades only.
+
 The modular structure (`doc_processor.py`, `vector_db.py`, `llm_client.py`) makes it straightforward to:
 - Swap GPT-4o for another LLM (Claude, Gemini, local models via Ollama)
 - Swap Qdrant for a hosted vector DB (Pinecone, Weaviate)
-- Upgrade to `BAAI/bge-base-en-v1.5` (768-dim) for even better retrieval quality
-- Extract the RAG logic into a FastAPI backend with a job queue
-- Add a reranker (e.g. `cross-encoder/ms-marco-MiniLM-L-6-v2`) between retrieval and generation for further precision gains
+- Upgrade to `BAAI/bge-base-en-v1.5` (768-dim) for even better retrieval quality at the cost of re-indexing
+- Extract the RAG logic into a FastAPI backend with a job queue (for multi-user or production deployments)
+- Add a cross-encoder reranker (e.g. `cross-encoder/ms-marco-MiniLM-L-6-v2`) between retrieval and generation for further precision gains
