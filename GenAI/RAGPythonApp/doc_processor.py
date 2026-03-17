@@ -29,7 +29,7 @@ def load_and_chunk_pdf(file_path: str) -> list:
     for doc in documents:
         doc.metadata["filename"] = path.name
 
-    splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
+    splitter = SentenceSplitter(chunk_size=300, chunk_overlap=40)
 
     try:
         nodes = splitter.get_nodes_from_documents(documents)

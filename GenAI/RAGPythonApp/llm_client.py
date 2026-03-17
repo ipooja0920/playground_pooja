@@ -18,6 +18,9 @@ def get_answer(question: str, context_chunks: list[str]) -> str:
     system_prompt = (
         "You are a helpful assistant that answers questions strictly based on the "
         "provided document context. Do not use any outside knowledge. "
+        "Every statement in your answer must be directly supported by the provided context. "
+        "Cover all key points from the context that are relevant to the question — "
+        "do not leave out important details. "
         "If the answer cannot be found in the context, say so clearly."
     )
 

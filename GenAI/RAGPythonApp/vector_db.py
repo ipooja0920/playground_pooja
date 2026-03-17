@@ -5,8 +5,8 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-VECTOR_SIZE = 384  # all-MiniLM-L6-v2 output dimension
+EMBED_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+VECTOR_SIZE = 384  # bge-small-en-v1.5 output dimension
 QDRANT_PATH = str(Path(__file__).parent / "qdrant_storage")
 COLLECTION_NAME = "rag_docs"
 
@@ -15,8 +15,12 @@ def get_embed_model() -> HuggingFaceEmbedding:
     """
     Load the HuggingFace embedding model.
     Wrap this in @st.cache_resource in app.py so it loads only once.
+    BGE models require a query instruction prefix for retrieval tasks.
     """
-    return HuggingFaceEmbedding(model_name=EMBED_MODEL_NAME)
+    return HuggingFaceEmbedding(
+        model_name=EMBED_MODEL_NAME,
+        query_instruction="Represent this sentence for searching relevant passages: ",
+    )
 
 
 def get_qdrant_client() -> QdrantClient:
@@ -70,17 +74,21 @@ def retrieve(
     embed_model: HuggingFaceEmbedding,
     client: QdrantClient,
     collection_name: str = COLLECTION_NAME,
-    top_k: int = 5,
+    top_k: int = 7,
+    score_threshold: float = 0.3,
 ) -> list[tuple[str, str, str]]:
     """
-    Embed the query and return the top-k most relevant chunks.
+    Embed the query and return the top-k most relevant chunks above the score threshold.
     Returns a list of (text, filename, page_label) tuples.
+    Chunks with cosine similarity below score_threshold are discarded to avoid
+    passing noisy context to the LLM.
     """
     query_vector = embed_model.get_text_embedding(question)
     results = client.query_points(
         collection_name=collection_name,
         query=query_vector,
         limit=top_k,
+        score_threshold=score_threshold,
     )
     return [
         (
