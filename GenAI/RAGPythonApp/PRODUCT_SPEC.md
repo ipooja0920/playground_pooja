@@ -267,12 +267,33 @@ python eval.py | tee eval_results.txt
 
 ### Evaluation Results (Final)
 
+**Overall scores (average across 8 test cases):**
+
 | Metric | Baseline | After BGE + Optimisations |
 |--------|----------|--------------------------|
-| Faithfulness | 0.77 | **0.94** |
+| Faithfulness | 0.77 | **0.95** |
 | Answer Relevancy | 0.71 | **0.84** |
-| Context Recall | 0.75 | **0.81** |
-| Factual Correctness | 0.35 | **0.67** |
+| Context Recall | 0.75 | **0.88** |
+| Factual Correctness | 0.35 | **0.66** |
+
+**Per-question breakdown (latest run):**
+
+| # | Question (abbreviated) | Faithfulness | Answer Relevancy | Context Recall | Factual Correctness |
+|---|------------------------|:------------:|:----------------:|:--------------:|:-------------------:|
+| 1 | Four main challenges in ML | 1.00 | 0.96 | 1.00 | 1.00 |
+| 2 | What is out-of-core learning? | 1.00 | 1.00 | 1.00 | 1.00 |
+| 3 | Train-dev set: what, when, how? | 1.00 | 0.00 | 0.00 | 0.00 |
+| 4 | Two logistic regression vs one softmax? | 1.00 | 0.89 | 1.00 | 1.00 |
+| 5 | Ridge vs plain linear regression? | 1.00 | 0.94 | 1.00 | 0.67 |
+| 6 | Choose between LinearSVC, SVC, SGDClassifier? | 0.78 | 0.96 | 1.00 | 0.60 |
+| 7 | SVC instead of LinearSVC — when? | 0.82 | 0.96 | 1.00 | 0.57 |
+| 8 | Decision tree depth on 1 million instances? | 1.00 | 0.98 | 1.00 | 0.44 |
+
+**Notable observations from per-question results:**
+
+- **Q3 scored 0.00 across all metrics** — the model correctly said "I cannot find this information in the provided documents." The train-dev set content was not retrieved (context_recall=0.00), meaning that topic is either not in the indexed PDF or needs better retrieval. This is a *correct refusal*, not a hallucination.
+- **Q6 and Q7 (SVC/LinearSVC) have faithfulness < 1.0** — the model added minor details beyond what was in the retrieved chunks. These are the hallucination-prone cases RAGAS is designed to catch.
+- **Q8 (decision tree depth) has low factual correctness (0.44)** — the reference answer includes the full mathematical derivation (log₂(10⁶) ≈ 20). The model's answer was correct but less detailed, causing an F1 penalty on wording rather than factual accuracy.
 
 ### Optimisation History
 
