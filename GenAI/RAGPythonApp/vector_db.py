@@ -77,9 +77,9 @@ def retrieve(
     Returns a list of (text, filename, page_label) tuples.
     """
     query_vector = embed_model.get_text_embedding(question)
-    results = client.search(
+    results = client.query_points(
         collection_name=collection_name,
-        query_vector=query_vector,
+        query=query_vector,
         limit=top_k,
     )
     return [
@@ -88,7 +88,7 @@ def retrieve(
             hit.payload["filename"],
             hit.payload["page_label"],
         )
-        for hit in results
+        for hit in results.points
     ]
 
 
