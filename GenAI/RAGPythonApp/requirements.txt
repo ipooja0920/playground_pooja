@@ -18,3 +18,7 @@ sentence-transformers>=2.7.0
 
 # Env var loading
 python-dotenv>=1.0.0
+
+# Evaluation
+ragas>=0.2.0
+langchain-openai>=0.1.0
