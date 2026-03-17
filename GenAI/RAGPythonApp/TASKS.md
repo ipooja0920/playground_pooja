@@ -9,7 +9,7 @@ Implementation order is sequential — each task builds on the previous one.
 
 - Create `requirements.txt` with all dependencies:
   - `streamlit` — UI framework
-  - `anthropic` — Claude API client
+  - `openai` — OpenAI API client
   - `llama-index-core` — RAG framework
   - `llama-index-readers-file` — PDF reader
   - `llama-index-vector-stores-qdrant` — Qdrant integration
@@ -17,7 +17,7 @@ Implementation order is sequential — each task builds on the previous one.
   - `qdrant-client` — local Qdrant vector store
   - `sentence-transformers` — HuggingFace `all-MiniLM-L6-v2` embeddings
   - `python-dotenv` — `.env` file loading
-- Create `.env.example` with `ANTHROPIC_API_KEY=your_key_here`
+- Create `.env.example` with `OPENAI_API_KEY=your_key_here`
 - Add `qdrant_storage/` and `.env` to `.gitignore`
 
 ---
@@ -25,11 +25,11 @@ Implementation order is sequential — each task builds on the previous one.
 ## Task 2: LLM Client (`llm_client.py`)
 **File:** `llm_client.py`
 
-- Load `ANTHROPIC_API_KEY` from environment
+- Load `OPENAI_API_KEY` from environment
 - `get_answer(question, context_chunks)` function:
   - Accepts a question string and a list of retrieved text chunks
-  - Builds a system prompt instructing Claude to answer only from provided context
-  - Calls `claude-sonnet-4-6` via the `anthropic` Python package
+  - Builds a system prompt instructing GPT-4o to answer only from provided context
+  - Calls `gpt-4o` via the `openai` Python package
   - Returns the answer string
 - Wrap the API call in `try/except` — raise a descriptive error on failure
 
@@ -99,7 +99,7 @@ Implementation order is sequential — each task builds on the previous one.
 
 Each task gets its own commit with a clear message, e.g.:
 - `Task 1: Add project scaffolding (requirements.txt, .env.example)`
-- `Task 2: Add LLM client (Claude wrapper)`
+- `Task 2: Add LLM client (GPT-4o wrapper)`
 - `Task 3: Add document processor (PDF ingestion + chunking)`
 - `Task 4: Add vector DB layer (Qdrant + HuggingFace embeddings)`
 - `Task 5: Add Streamlit app (UI + RAG orchestration)`

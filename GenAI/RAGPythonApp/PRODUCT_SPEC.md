@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Retrieval-Augmented Generation (RAG) application built with Python and Streamlit. Users upload multiple PDF documents and ask questions about their content. Anthropic Claude generates answers grounded in the retrieved document context, with clear citations back to the source material.
+A Retrieval-Augmented Generation (RAG) application built with Python and Streamlit. Users upload multiple PDF documents and ask questions about their content. OpenAI GPT-4o generates answers grounded in the retrieved document context, with clear citations back to the source material.
 
 ---
 
@@ -22,7 +22,7 @@ A Retrieval-Augmented Generation (RAG) application built with Python and Streaml
 | Component | Technology |
 |-----------|-----------|
 | **Frontend & Orchestration** | [Streamlit](https://streamlit.io) |
-| **LLM** | Anthropic Claude (`claude-sonnet-4-6`) via `anthropic` Python package |
+| **LLM** | OpenAI (`gpt-4o`) via `openai` Python package |
 | **RAG Framework** | [LlamaIndex](https://www.llamaindex.ai) — PDF parsing, chunking, retrieval |
 | **Vector Store** | [Qdrant](https://qdrant.tech) — local persistent mode (no Docker required) |
 | **Embeddings** | HuggingFace `all-MiniLM-L6-v2` via `sentence-transformers` — free, runs locally |
@@ -36,7 +36,7 @@ RAGPythonApp/
 ├── app.py              # Streamlit entry point — UI + RAG orchestration
 ├── doc_processor.py    # PDF ingestion, parsing, and chunking (LlamaIndex)
 ├── vector_db.py        # Qdrant setup, embedding, indexing, and retrieval
-├── llm_client.py       # Anthropic Claude wrapper — query answering
+├── llm_client.py       # OpenAI GPT-4o wrapper — query answering
 ├── requirements.txt    # All Python dependencies
 ├── .env.example        # Template for environment variables
 ├── PRODUCT_SPEC.md     # This file
@@ -79,7 +79,7 @@ User asks a question
        ↓
 vector_db.py — embed query → retrieve top-k most relevant chunks
        ↓
-llm_client.py — send chunks + question to Claude → generate answer
+llm_client.py — send chunks + question to GPT-4o → generate answer
        ↓
 app.py — display answer + citations (filename + page number)
 ```
@@ -102,7 +102,7 @@ app.py — display answer + citations (filename + page number)
 | Failure | Behaviour |
 |---------|-----------|
 | Unreadable / corrupted PDF | `st.error()` banner with filename; other files continue processing |
-| Anthropic API timeout or rate limit | `st.error()` banner; chat input remains available for retry |
+| OpenAI API timeout or rate limit | `st.error()` banner; chat input remains available for retry |
 | Empty PDF (no extractable text) | Warning shown; file skipped |
 | No documents indexed yet | Chat input disabled with prompt to upload documents first |
 
@@ -111,7 +111,7 @@ app.py — display answer + citations (filename + page number)
 ## Future Extensibility
 
 The modular structure (`doc_processor.py`, `vector_db.py`, `llm_client.py`) makes it straightforward to:
-- Swap Claude for another LLM
+- Swap GPT-4o for another LLM (Claude, Gemini, local models)
 - Swap Qdrant for a hosted vector DB (Pinecone, Weaviate)
-- Replace HuggingFace embeddings with Voyage or OpenAI embeddings
+- Replace HuggingFace embeddings with OpenAI or Voyage embeddings
 - Extract the RAG logic into a FastAPI backend with Inngest job queue (matching the Tim reference architecture)

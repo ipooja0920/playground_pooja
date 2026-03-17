@@ -27,6 +27,10 @@ venv/
 # Weather reporter — secrets (never commit)
 GenAI/Weather_AI_AGENT/.env
 
+# RAGPythonApp — secrets and runtime outputs (never commit)
+GenAI/RAGPythonApp/.env
+GenAI/RAGPythonApp/qdrant_storage/
+
 # Weather reporter — generated runtime outputs (auto-created on each run)
 GenAI/Weather_AI_AGENT/weather_report.csv
 GenAI/Weather_AI_AGENT/weather_script.txt
