@@ -160,9 +160,13 @@ RAGPythonApp/
 ├── TASKS.md            # Implementation task list
 └── tests/
     ├── conftest.py              # sys.path setup + dummy API key for test imports
-    ├── test_doc_processor.py    # 7 unit tests for PDF parsing and chunking
-    ├── test_vector_db.py        # 12 unit tests for hashing, indexing, retrieval
-    └── test_llm_client.py       # 10 unit tests for GPT-4o wrapper
+    ├── test_doc_processor.py    # 7 unit tests — PDF parsing and chunking
+    ├── test_vector_db.py        # 12 unit tests — hashing, indexing, retrieval
+    ├── test_llm_client.py       # 10 unit tests — GPT-4o wrapper
+    ├── test_integration.py      # 10 integration tests — full pipeline (index → retrieve → answer)
+    ├── test_retrieval.py        # 14 retrieval tests — basic, hard, and failure cases
+    ├── test_generation.py       # 17 generation tests — grounding, adversarial, error handling
+    └── test_edge_cases.py       # 23 edge case tests — robustness, Unicode, cross-component
 ```
 
 ### Runtime Outputs (gitignored)
@@ -365,16 +369,16 @@ If the answer cannot be found in the context, say so clearly.
 
 ## Unit Testing
 
-The project has a `tests/` directory with **29 unit tests** covering all three core modules. Tests run in seconds with no API credits spent and no disk storage required.
+The project has a `tests/` directory with **93 tests** across 7 test files, covering all three core modules plus integration, retrieval, generation, and edge case scenarios. Tests run in ~7 seconds with no API credits spent and no disk storage required.
 
 ### Testing Philosophy
 
 | Principle | How it's applied |
 |-----------|-----------------|
-| **No real API calls** | OpenAI `_client` is mocked in every `test_llm_client.py` test — zero billing cost |
-| **No real disk I/O** | `QdrantClient(":memory:")` in `test_vector_db.py` — no `qdrant_storage/` needed |
-| **No real PDF files** | `PDFReader` is mocked in `test_doc_processor.py` — no binary test fixtures |
-| **Fast** | All 29 tests complete in ~7 seconds |
+| **No real API calls** | OpenAI `_client` is mocked in all generation/LLM tests — zero billing cost |
+| **No real disk I/O** | `QdrantClient(":memory:")` used throughout — no `qdrant_storage/` needed |
+| **No real PDF files** | `PDFReader` is mocked in all doc_processor tests — no binary test fixtures |
+| **Fast** | All 93 tests complete in ~7 seconds |
 | **Isolated** | Each test is independent; no shared state between tests |
 
 ### How to Run Tests
@@ -386,17 +390,17 @@ python -m pytest tests/ -v
 
 Expected output:
 ```
-29 passed in ~7s
+93 passed in ~7s
 ```
 
 Run a specific test file:
 ```bash
-python -m pytest tests/test_llm_client.py -v
+python -m pytest tests/test_integration.py -v
 ```
 
 Run a single test by name:
 ```bash
-python -m pytest tests/test_vector_db.py::test_score_threshold_filters_low_similarity -v
+python -m pytest tests/test_retrieval.py::TestHardRetrieval::test_semantically_closer_chunk_scores_higher -v
 ```
 
 ### Test Files and What They Cover
@@ -480,6 +484,146 @@ Tests `get_answer()` in [llm_client.py](llm_client.py). The OpenAI `_client` mod
 |------|-----------------|
 | `test_api_failure_raises_runtime_error` | Any OpenAI exception is re-raised as `RuntimeError` |
 | `test_runtime_error_message_includes_original_error` | The original error message is preserved in the `RuntimeError` |
+
+---
+
+#### `tests/test_integration.py` — 10 tests
+
+End-to-end pipeline tests using real in-memory Qdrant + mocked OpenAI. Verifies all three modules working together: `doc_processor → vector_db → llm_client`.
+
+**`TestIndexThenRetrieve` (4 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_indexed_content_is_retrievable` | Content indexed with `index_chunks()` is returned by `retrieve()` |
+| `test_retrieved_text_matches_indexed_text` | Retrieved text is exactly what was indexed (no corruption in transit) |
+| `test_citations_carry_filename_and_page` | Every result includes the source filename and page number |
+| `test_chunks_from_multiple_pdfs_coexist` | Chunks from two different PDFs coexist in the same collection |
+
+**`TestRetrieveThenAnswer` (3 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_full_pipeline_returns_string_answer` | `index → retrieve → GPT-4o → answer` completes without error |
+| `test_retrieved_context_is_passed_to_llm` | Retrieved chunk text appears in the user message sent to OpenAI |
+| `test_openai_failure_does_not_corrupt_qdrant` | An OpenAI exception raises `RuntimeError` but Qdrant stays queryable |
+
+**`TestDocProcessorToVectorDb` (3 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_pdf_chunks_are_indexable_and_retrievable` | Chunks from `load_and_chunk_pdf()` can be indexed and retrieved end-to-end |
+| `test_filename_from_path_appears_in_citations` | Filename in citations comes from the upload path, not the temp PDFReader value |
+| `test_no_docs_indexed_returns_empty_list` | Querying with no documents indexed returns `[]` |
+
+---
+
+#### `tests/test_retrieval.py` — 14 tests
+
+Focused tests for retrieval correctness, ranking, and failure modes in [vector_db.py](vector_db.py).
+
+**`TestBasicRetrieval` (5 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_single_chunk_is_returned` | A single indexed chunk is returned for any query |
+| `test_multiple_chunks_all_returned` | All chunks that exceed `score_threshold` are returned |
+| `test_top_k_limits_results` | `top_k=2` returns at most 2 results even with 10 indexed |
+| `test_multi_source_retrieval` | Chunks from different PDFs are both retrieved |
+| `test_result_text_matches_indexed_text_exactly` | Retrieved text is byte-for-byte identical to indexed text |
+
+**`TestHardRetrieval` (4 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_semantically_closer_chunk_scores_higher` | The chunk with the closer embedding vector ranks first |
+| `test_answer_spanning_two_chunks_both_retrieved` | Both chunks are returned when an answer spans multiple chunks |
+| `test_page_numbers_are_preserved_across_chunks` | Page labels from different pages of the same PDF are preserved |
+| `test_duplicate_text_two_different_pages` | Identical text on two different pages produces two distinct results |
+
+**`TestRetrievalFailures` (5 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_orthogonal_query_filtered_by_score_threshold` | Query orthogonal to all indexed vectors returns `[]` with `threshold=0.3` |
+| `test_empty_kb_returns_empty_list` | Querying an empty collection returns `[]`, not an error |
+| `test_every_result_is_three_tuple` | Each result is always a `(str, str, str)` triple |
+| `test_zero_score_threshold_returns_all` | `score_threshold=0.0` returns all chunks regardless of similarity |
+| `test_high_score_threshold_filters_all` | A self-similar query passes `score_threshold=0.99` (cosine sim = 1.0) |
+
+---
+
+#### `tests/test_generation.py` — 17 tests
+
+Tests for LLM answer generation correctness, grounding, adversarial robustness, and error handling in [llm_client.py](llm_client.py).
+
+**`TestGrounding` (6 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_system_prompt_restricts_to_document` | System prompt contains grounding keywords (context/document/provided) |
+| `test_context_chunks_appear_in_user_message` | Every context chunk appears verbatim in the user message |
+| `test_question_appears_in_user_message` | The user's question text is present in the user message |
+| `test_multiple_context_chunks_all_included` | All five context chunks are present when five are provided |
+| `test_model_is_gpt4o` | The API call always uses `model="gpt-4o"` |
+| `test_temperature_is_zero` | `temperature=0` is always set for deterministic answers |
+
+**`TestAnswerRelevancy` (4 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_answer_is_string` | `get_answer()` always returns a `str` |
+| `test_answer_is_non_empty` | Returns a non-empty string when OpenAI replies |
+| `test_answer_matches_openai_response` | The string returned is exactly what OpenAI replied |
+| `test_single_api_call_per_question` | Exactly one OpenAI call is made per `get_answer()` invocation |
+
+**`TestAdversarial` (4 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_prompt_injection_in_context_still_returns_answer` | Injected instructions in context don't crash the pipeline |
+| `test_empty_context_list_does_not_crash` | `get_answer()` with `[]` context still returns a string |
+| `test_very_long_context_does_not_crash` | A very long context (500-sentence repeat) doesn't raise |
+| `test_special_characters_in_question_do_not_crash` | Questions with special characters are handled without error |
+
+**`TestErrorHandling` (3 tests):**
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_openai_exception_raises_runtime_error` | Any OpenAI exception is wrapped in `RuntimeError` |
+| `test_runtime_error_message_contains_original` | The `RuntimeError` message includes the original exception text |
+| `test_timeout_exception_wrapped_as_runtime_error` | `TimeoutError` from OpenAI is also wrapped in `RuntimeError` |
+
+---
+
+#### `tests/test_edge_cases.py` — 23 tests
+
+Robustness tests covering unusual inputs, Unicode content, and cross-component interactions.
+
+**`TestHashFileEdgeCases` (6 tests):** empty bytes, single byte, 1 MB payload, same-content determinism, different-content collision, lowercase hex format.
+
+**`TestDocProcessorEdgeCases` (4 tests):** Unicode PDF content, whitespace-only PDF raises `ValueError`, filenames with spaces, deeply nested paths use only the basename.
+
+**`TestVectorDbEdgeCases` (5 tests):** very long text nodes (2000 chars), re-indexing same content doesn't crash, empty node list is a no-op, collection reused across multiple `index_chunks()` calls, special characters in metadata stored correctly.
+
+**`TestLlmClientEdgeCases` (5 tests):** whitespace-only answer is stripped to `""`, newlines in answer are preserved, single-character context doesn't crash, context with only newlines doesn't crash, Unicode in question and context is handled.
+
+**`TestCrossComponentEdgeCases` (3 tests):** Unicode PDF content flows through the full pipeline, filename from upload path overrides temp PDFReader value, full pipeline returns a Unicode answer without error.
+
+---
+
+### Test Coverage Summary
+
+| File | Tests | Category | Key Techniques |
+|------|------:|----------|---------------|
+| `test_doc_processor.py` | 7 | Unit | Mock PDFReader, fake paths |
+| `test_vector_db.py` | 12 | Unit | In-memory Qdrant, mock embed model |
+| `test_llm_client.py` | 10 | Unit | Mock `_client`, inspect call args |
+| `test_integration.py` | 10 | Integration | In-memory Qdrant + mock OpenAI end-to-end |
+| `test_retrieval.py` | 14 | Retrieval | Orthogonal unit vectors for ranking tests |
+| `test_generation.py` | 17 | Generation | Adversarial context, error injection |
+| `test_edge_cases.py` | 23 | Edge Cases | Unicode, empty inputs, cross-component |
+| **Total** | **93** | | **~7 seconds, zero API cost** |
 
 ---
 
