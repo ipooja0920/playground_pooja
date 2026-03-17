@@ -34,17 +34,37 @@ load_dotenv()
 # Example (replace with real Q&A from your documents):
 TEST_CASES = [
     {
-        "question": "What is the main topic of the document?",
-        "reference": "Replace with the correct answer from your PDF.",
+        "question": "Can you name four of the main challenges in machine learning?",
+        "reference": "Some of the main challenges in Machine Learning are the lack of data, poor data quality, nonrepresentative data, uninformative features, excessively simple models that underfit the training data, and excessively complex models that overfit the data.",
     },
     {
-        "question": "What are the key conclusions or findings?",
-        "reference": "Replace with the correct answer from your PDF.",
+        "question": "What is out-of-core learning?",
+        "reference": "Out-of-core algorithms can handle vast quantities of data that cannot fit in a computer's main memory. An out-of-core learning algorithm chops the data into mini-batches and uses online learning techniques to learn from these mini-batches",
     },
     {
-        "question": "What methodology or approach was used?",
-        "reference": "Replace with the correct answer from your PDF.",
+        "question": "What is the train-dev set, when do you need it, and how do you use it?",
+        "reference": "The train-dev set is used when there is a risk of mismatch between the training data and the data used in the validation and test datasets (which should always be as close as possible to the data used once the model is in production). The train-dev set is a part of the training set that's held out (the model is not trained on it). The model is trained on the rest of the training set, and evaluated on both the train-dev set and the validation set. If the model performs well on the training set but not on the train-dev set, then the model is likely overfitting the training set. If it performs well on both the training set and the train-dev set, but not on the validation set, then there is probably a significant data mismatch between the training data and the validation + test data, and you should try to improve the training data to make it look more like the validation + test data.",
     },
+    {
+        "question": "Suppose you want to classify pictures as outdoor/indoor and daytime/nighttime. Should you implement two logistic regression classifiers or one softmax regression classifier?",
+        "reference": "If you want to classify pictures as outdoor/indoor and daytime/nighttime, since these are not exclusive classes (i.e., all four combinations are possible) you should train two Logistic Regression classifiers.",
+    },
+    {
+        "question": "Why would you want to use:Ridge regression instead of plain linear regression (i.e., without any regularization)?",
+        "reference": "A model with some regularization typically performs better than a model without any regularization, so you should generally prefer Ridge Regression over plain Linear Regression.",
+    },
+    {
+        "question": "How can you choose between LinearSVC, SVC, and SGDClassifier?",
+        "reference": "All three classes can be used for large-margin linear classification. The SVC class also supports the kernel trick, which makes it capable of handling nonlinear tasks. However, this comes at a cost: the SVC class does not scale well to datasets with many instances. It does scale well to a large number of features, though. The LinearSVC class implements an optimized algorithm for linear SVMs, while SGDClassifier uses Stochastic Gradient Descent. Depending on the dataset LinearSVC may be a bit faster than SGDClassifier, but not always, and SGDClassifier is more flexible, plus it supports incremental learning.",
+    },
+    {
+        "question": "When would you want to use:SVC instead of LinearSVC?",
+        "reference": "SVC can handle nonlinear classification tasks using the kernel trick, while LinearSVC can only handle linear classification tasks.",
+    },
+    {
+        "question": "What is the approximate depth of a decision tree trained (without restrictions) on a training set with one million instances?",
+        "reference": "The depth of a well-balanced binary tree containing m leaves is equal to log₂(m), rounded up. log₂ is the binary log; log₂(m) = log(m) / log(2). A binary Decision Tree (one that makes only binary decisions, as is the case with all trees in Scikit-Learn) will end up more or less well balanced at the end of training, with one leaf per training instance if it is trained without restrictions. Thus, if the training set contains one million instances, the Decision Tree will have a depth of log₂(106) ≈ 20 (actually a bit more since the tree will generally not be perfectly well balanced).",
+    }
 ]
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -52,7 +72,18 @@ TEST_CASES = [
 def main() -> None:
     print("Loading embedding model and Qdrant client...")
     embed_model = get_embed_model()
-    qdrant_client = get_qdrant_client()
+    try:
+        qdrant_client = get_qdrant_client()
+    except Exception as e:
+        if "already accessed" in str(e):
+            print(
+                "\nERROR: Qdrant storage is locked by another process (likely the Streamlit app).\n"
+                "Stop the Streamlit app first (Ctrl+C in its terminal), then re-run:\n"
+                "  python eval.py\n"
+            )
+        else:
+            print(f"\nERROR: Could not connect to Qdrant: {e}\n")
+        return
 
     samples = []
     print(f"\nRunning {len(TEST_CASES)} test cases through the RAG pipeline...\n")
