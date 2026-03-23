@@ -12,28 +12,6 @@ A Retrieval-Augmented Generation (RAG) application built with Python and Streaml
 - Ask questions in a chat interface
 - Get answers sourced directly from your documents, with citations showing the filename and page number
 
-## Screenshots
-
-<!-- To add a screenshot:
-     1. Take a screenshot and save it to the screenshots/ folder
-     2. Replace the placeholder line below with:
-        ![Description](screenshots/your-filename.png)
--->
-
-### Uploading PDFs and Indexing
-
-![PDF upload and indexing](screenshots/indexing.png)
-
-### Asking a Question and Getting a Cited Answer
-
-![Chat with citations](screenshots/chat.png)
-
-### RAGAS Evaluation Results
-
-![RAGAS evaluation scores](screenshots/eval.png)
-
----
-
 ## Tech Stack
 
 | Component | Technology |
