@@ -2,9 +2,9 @@
 
 ---
 
-# RAG Python App
+# DocuMind
 
-A Retrieval-Augmented Generation (RAG) application built with Python and Streamlit. Upload PDF documents and ask questions about their content. Answers are grounded in the documents with page-level citations — no hallucination from outside knowledge.
+**Intelligent document Q&A powered by RAG.** Upload your PDFs, ask questions in plain English, and get answers grounded in the documents with page-level citations — no hallucination from outside knowledge.
 
 ## What it does
 

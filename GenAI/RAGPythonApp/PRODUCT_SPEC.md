@@ -1,8 +1,8 @@
-# Product Specification: Production-Grade RAG Python App
+# DocuMind — Product Specification
 
 ## Overview
 
-A Retrieval-Augmented Generation (RAG) application built with Python and Streamlit. Users upload multiple PDF documents and ask questions about their content. OpenAI GPT-4o generates answers grounded in the retrieved document context, with clear citations back to the source material.
+**DocuMind** is an intelligent document Q&A application built with Python and Streamlit. Users upload multiple PDF documents and ask questions about their content in plain English. OpenAI GPT-4o generates answers grounded strictly in the retrieved document context, with clear citations back to the source filename and page number.
 
 ---
 
