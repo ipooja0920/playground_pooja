@@ -4,6 +4,9 @@
 
 **DocuMind** is an intelligent document Q&A application built with Python and Streamlit. Users upload multiple PDF documents and ask questions about their content in plain English. OpenAI GPT-4o generates answers grounded strictly in the retrieved document context, with clear citations back to the source filename and page number.
 
+## Dummy Output
+<img width="1139" height="664" alt="Screenshot 2026-03-24 at 6 34 55 PM" src="https://github.com/user-attachments/assets/ec2d1f6a-5af5-4b86-bb07-fbde74a5c51e" />
+
 ---
 
 ## Architecture
