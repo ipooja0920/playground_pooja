@@ -12,6 +12,10 @@
 - Ask questions in a chat interface
 - Get answers sourced directly from your documents, with citations showing the filename and page number
 
+## Dummy Output
+<img width="1140" height="662" alt="Screenshot 2026-03-24 at 6 33 11 PM" src="https://github.com/user-attachments/assets/39406ad4-371e-4dd6-8c14-47fb9edea7c1" />
+
+
 ## Tech Stack
 
 | Component | Technology |
