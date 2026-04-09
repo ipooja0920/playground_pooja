@@ -1,7 +1,21 @@
 import asyncio
 import os
+from pathlib import Path
+import yaml
 import streamlit as st
 from textwrap import dedent
+
+# Load API key from mcp_agent.secrets.yaml into the environment if not already set
+def _load_secrets():
+    secrets_path = Path(__file__).parent / "mcp_agent.secrets.yaml"
+    if secrets_path.exists():
+        with open(secrets_path) as f:
+            secrets = yaml.safe_load(f) or {}
+        api_key = secrets.get("openai", {}).get("api_key", "")
+        if api_key and api_key != "YOUR_OPENAI_API_KEY":
+            os.environ.setdefault("OPENAI_API_KEY", api_key)
+
+_load_secrets()
 
 from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
@@ -20,14 +34,14 @@ with st.sidebar:
     st.markdown("### Example Commands")
 
     st.markdown("**Navigation**")
-    st.markdown("- Go to github.com/Shubhamsaboo/awesome-llm-apps")
+    st.markdown("- Go to https://github.com/ipooja0920/playground_pooja")
 
     st.markdown("**Interactions**")
-    st.markdown("- click on mcp_ai_agents")
+    st.markdown("- click on GenAI")
     st.markdown("- Scroll down to view more content")
 
     st.markdown("**Multi-step Tasks**")
-    st.markdown("- Navigate to github.com/Shubhamsaboo/awesome-llm-apps, scroll down, and report details")
+    st.markdown("- Navigate to https://github.com/ipooja0920/playground_pooja, scroll down, and report details")
     st.markdown("- Scroll down and summarize the github readme")
 
     st.markdown("---")
@@ -143,27 +157,6 @@ else:
     # (your existing help text here)
     pass
 
-# Display help text for first-time users
-if 'result' not in locals():
-    st.markdown(
-        """<div style='padding: 20px; background-color: #f0f2f6; border-radius: 10px;'>
-        <h4>How to use this app:</h4>
-        <ol>
-            <li>Enter your OpenAI API key in your mcp_agent.secrets.yaml file</li>
-            <li>Type a command for the agent to navigate and interact with websites</li>
-            <li>Click 'Run Command' to see results</li>
-        </ol>
-        <p><strong>Capabilities:</strong></p>
-        <ul>
-            <li>Navigate to websites using Playwright</li>
-            <li>Click on elements, scroll, and type text</li>
-            <li>Take screenshots of specific elements</li>
-            <li>Extract information from web pages</li>
-            <li>Perform multi-step browsing tasks</li>
-        </ul>
-        </div>""",
-        unsafe_allow_html=True
-    )
 
 # Footer
 st.markdown("---")
