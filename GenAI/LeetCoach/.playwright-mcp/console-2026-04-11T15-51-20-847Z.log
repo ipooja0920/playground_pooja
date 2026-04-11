@@ -1,4 +1,0 @@
-[   13058ms] [WARNING] AdSense head tag doesn't support data-nscript attribute. @ https://leetcode.com/_next/static/chunks/pages/_app-20f1a3439c0105a1.js:12
-[   14264ms] [ERROR] Attestation check for Attribution Reporting on https://ad.doubleclick.net failed. @ https://leetcode.com/problems/maximum-average-subarray-i/description/?envType=study-plan-v2&envId=leetcode-75:0
-[   14276ms] [ERROR] Attestation check for Attribution Reporting on https://ad.doubleclick.net failed. @ https://leetcode.com/problems/maximum-average-subarray-i/description/?envType=study-plan-v2&envId=leetcode-75:0
-[   14726ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0

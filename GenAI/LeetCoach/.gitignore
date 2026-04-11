@@ -3,5 +3,6 @@ corrections.json
 feedback.json
 eval_history.json
 logs/
+.playwright-mcp/
 __pycache__/
 .env
