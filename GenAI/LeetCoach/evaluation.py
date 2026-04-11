@@ -266,11 +266,15 @@ async def run_full_evaluation(
     loop = asyncio.get_event_loop()
 
     judge_task = run_llm_judge_evaluation(problem_text, pattern, solution, complexity)
+
+    async def _no_ragas():
+        return {"error": "RAGAS not installed"}
+
     ragas_task = loop.run_in_executor(
         None,
         run_ragas_evaluations,
         problem_text, solution, complexity,
-    ) if RAGAS_AVAILABLE else asyncio.coroutine(lambda: {"error": "RAGAS not installed"})()
+    ) if RAGAS_AVAILABLE else _no_ragas()
 
     judge_scores, ragas_scores = await asyncio.gather(judge_task, ragas_task)
 
