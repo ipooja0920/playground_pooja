@@ -100,7 +100,13 @@ User pastes LeetCode URL
 - **Self-correction:** If score ≤ 3, the original agent retries with the critique injected into its prompt
 - **Learning:** Low-scoring runs save a lesson to `corrections.json`, which is injected into future runs automatically
 
-### 9. Supervisor with Fallback
+### 9. Human Feedback Memory
+- **Job:** Save likes/dislikes and comments separately for Pattern, Solution, and Complexity
+- **Persistence:** Raw examples are saved in `feedback.json`
+- **Distillation:** Compact default-behavior rules are saved in `feedback_rules.json`
+- **Same-session reuse:** After feedback or new critic lessons are written, the relevant agents are refreshed immediately so future runs in the same Streamlit session use the updated memory
+
+### 10. Supervisor with Fallback
 - **Job:** If the browser cannot access the LeetCode page, the UI asks the user to paste the full problem text and resumes the pipeline from there
 - **Benefit:** Keeps the app usable when LeetCode blocks scraping or Playwright fails
 
@@ -164,12 +170,15 @@ User pastes LeetCode URL
 - **Results rendered in 3 sections:**
   1. **Pattern Match** — pattern name, why it fits, key trick, difficulty
      - Optional debate expander showing classifier proposal, devil's advocate challenge, and judge reasoning
+     - Per-section 👍 👎 feedback that can regenerate the pattern and downstream sections
   2. **Solution** — analogy-based intuition, decision rules (→ format), code, walkthrough, edge cases
      - Competitive winner badge when the full pipeline runs
+     - Per-section 👍 👎 feedback that can regenerate solution + complexity
   3. **Complexity** — counting story for time/space + **interactive 2-question quiz**
      - User picks A/B/C for each question
      - Click "Check Answer" → correct/incorrect feedback + hint
      - Quiz resets automatically on each new problem
+     - Per-section 👍 👎 feedback that can regenerate the complexity explanation only
   4. **Fallback input** — appears only when browser scraping fails and lets the user paste the problem text
 
 ### Tab 2: Pattern Library
@@ -185,6 +194,8 @@ User pastes LeetCode URL
 - **Multi-agent badges:** Planner strategy, whether debate happened, competitive winner, model tiering
 - **Per-agent expandable rows** — failures auto-expanded, shows duration and details
 - **Self-correction details:** Shows attempt number, critic score, and issues for each retry
+- **Human Feedback Log:** Saved raw likes/dislikes/comments by section
+- **Learned Feedback Rules:** Compact rules distilled from human feedback and injected into future runs by default
 - **Lessons Learned section:** All saved lessons from `corrections.json` with dates — these are injected into future runs
 
 ---
@@ -195,7 +206,9 @@ User pastes LeetCode URL
 LeetCoach/
 ├── main.py                         # Streamlit app — 3 tabs, quiz rendering, agent pipeline
 ├── patterns.py                     # Pattern library data (20 patterns, examples, explanations)
-├── agents.py                       # Orchestration logic, multi-agent patterns, self-correction loop
+├── agents.py                       # Orchestration logic, multi-agent patterns, self-correction + agent refresh
+├── feedback.json                   # Auto-generated — raw human likes/dislikes/comments per section (gitignored)
+├── feedback_rules.json             # Auto-generated — compact rules distilled from human feedback (gitignored)
 ├── corrections.json                # Auto-generated — saves lessons learned across sessions (gitignored)
 ├── mcp_agent.config.yaml           # MCP config — model, logging, Playwright server
 ├── mcp_agent.secrets.yaml          # API key (gitignored)

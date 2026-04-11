@@ -11,6 +11,7 @@ from mcp_agent.workflows.llm.augmented_llm import RequestParams
 
 CORRECTIONS_FILE = Path(__file__).parent / "corrections.json"
 FEEDBACK_FILE    = Path(__file__).parent / "feedback.json"
+FEEDBACK_RULES_FILE = Path(__file__).parent / "feedback_rules.json"
 
 # --------------------------------------------------------------------------- #
 #  Model tiering — cheap agents use mini, heavy reasoning uses full
@@ -41,6 +42,7 @@ def save_correction(agent_name: str, issue: str, suggestion: str):
     corrections[agent_name] = corrections[agent_name][-5:]
     with open(CORRECTIONS_FILE, "w") as f:
         json.dump(corrections, f, indent=2)
+    save_feedback_rule(agent_name, "negative", suggestion, issue)
 
 def get_lessons(agent_name: str) -> str:
     corrections = load_corrections()
@@ -77,6 +79,47 @@ def save_feedback(agent_name: str, sentiment: str, snippet: str, comment: str = 
     feedback[agent_name][sentiment] = feedback[agent_name][sentiment][-5:]
     with open(FEEDBACK_FILE, "w") as f:
         json.dump(feedback, f, indent=2)
+    save_feedback_rule(agent_name, sentiment, comment, snippet)
+
+def load_feedback_rules() -> dict:
+    if FEEDBACK_RULES_FILE.exists():
+        with open(FEEDBACK_RULES_FILE) as f:
+            return json.load(f)
+    return {"classifier": [], "solution": [], "complexity": []}
+
+def _normalize_rule_text(text: str) -> str:
+    text = re.sub(r"\s+", " ", (text or "").strip())
+    text = text.strip(" -:.")
+    return text[:180]
+
+def save_feedback_rule(agent_name: str, sentiment: str, comment: str = "", snippet: str = ""):
+    rules = load_feedback_rules()
+    if agent_name not in rules:
+        rules[agent_name] = []
+
+    raw_text = _normalize_rule_text(comment or snippet)
+    if not raw_text:
+        return
+
+    prefix = "Do: " if sentiment == "positive" else "Avoid: "
+    rule = prefix + raw_text
+
+    existing = rules[agent_name]
+    if rule in existing:
+        existing.remove(rule)
+    existing.append(rule)
+    rules[agent_name] = existing[-5:]
+
+    with open(FEEDBACK_RULES_FILE, "w") as f:
+        json.dump(rules, f, indent=2)
+
+def get_feedback_rules(agent_name: str) -> str:
+    rules = load_feedback_rules()
+    agent_rules = rules.get(agent_name, [])[-5:]
+    if not agent_rules:
+        return ""
+    lines = "\n".join(f"- {rule}" for rule in agent_rules)
+    return f"\n\n**Behavior rules learned from human feedback — follow these by default:**\n{lines}"
 
 def get_feedback_context(agent_name: str) -> str:
     """Build a prompt block from past human feedback to inject into agent instructions."""
@@ -103,6 +146,14 @@ def get_feedback_context(agent_name: str) -> str:
             lines.append(f'- Bad example: "{fb["snippet"][:150]}..."{comment}')
 
     return "\n" + "\n".join(lines)
+
+def _compose_instruction(base_instruction: str, agent_name: str) -> str:
+    return (
+        base_instruction
+        + get_lessons(agent_name)
+        + get_feedback_rules(agent_name)
+        + get_feedback_context(agent_name)
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -298,46 +349,77 @@ async def _call_openai(model: str, system: str, user: str, max_tokens: int = 500
     return response.choices[0].message.content.strip()
 
 
+async def _build_browser_llm():
+    browser = Agent(name="browser", instruction=BROWSER_INSTRUCTION, server_names=["playwright"])
+    await browser.initialize()
+    return await browser.attach_llm(OpenAIAugmentedLLM)
+
+
+async def _build_classifier_llm():
+    classifier = Agent(
+        name="classifier",
+        instruction=_compose_instruction(CLASSIFIER_INSTRUCTION, "classifier"),
+        server_names=[],
+    )
+    await classifier.initialize()
+    return await classifier.attach_llm(OpenAIAugmentedLLM)
+
+
+async def _build_solution_llm():
+    solution = Agent(
+        name="solution",
+        instruction=_compose_instruction(SOLUTION_INSTRUCTION, "solution"),
+        server_names=[],
+    )
+    await solution.initialize()
+    return await solution.attach_llm(OpenAIAugmentedLLM)
+
+
+async def _build_complexity_llm():
+    complexity = Agent(
+        name="complexity",
+        instruction=_compose_instruction(COMPLEXITY_INSTRUCTION, "complexity"),
+        server_names=[],
+    )
+    await complexity.initialize()
+    return await complexity.attach_llm(OpenAIAugmentedLLM)
+
+
+async def _build_critic_llm():
+    critic = Agent(name="critic", instruction=CRITIC_INSTRUCTION, server_names=[])
+    await critic.initialize()
+    return await critic.attach_llm(OpenAIAugmentedLLM)
+
+
 # --------------------------------------------------------------------------- #
 #  Agent setup
 # --------------------------------------------------------------------------- #
 
 async def setup_agents(mcp_agent_app):
     """Initialize all agents. Returns dict of LLMs."""
-    agents = {}
+    return {
+        "browser_llm": await _build_browser_llm(),
+        "classifier_llm": await _build_classifier_llm(),
+        "solution_llm": await _build_solution_llm(),
+        "complexity_llm": await _build_complexity_llm(),
+        "critic_llm": await _build_critic_llm(),
+    }
 
-    browser = Agent(name="browser", instruction=BROWSER_INSTRUCTION, server_names=["playwright"])
-    await browser.initialize()
-    agents["browser_llm"] = await browser.attach_llm(OpenAIAugmentedLLM)
 
-    classifier = Agent(
-        name="classifier",
-        instruction=CLASSIFIER_INSTRUCTION + get_lessons("classifier") + get_feedback_context("classifier"),
-        server_names=[],
-    )
-    await classifier.initialize()
-    agents["classifier_llm"] = await classifier.attach_llm(OpenAIAugmentedLLM)
-
-    solution = Agent(
-        name="solution",
-        instruction=SOLUTION_INSTRUCTION + get_lessons("solution") + get_feedback_context("solution"),
-        server_names=[],
-    )
-    await solution.initialize()
-    agents["solution_llm"] = await solution.attach_llm(OpenAIAugmentedLLM)
-
-    complexity = Agent(
-        name="complexity",
-        instruction=COMPLEXITY_INSTRUCTION + get_lessons("complexity") + get_feedback_context("complexity"),
-        server_names=[],
-    )
-    await complexity.initialize()
-    agents["complexity_llm"] = await complexity.attach_llm(OpenAIAugmentedLLM)
-
-    critic = Agent(name="critic", instruction=CRITIC_INSTRUCTION, server_names=[])
-    await critic.initialize()
-    agents["critic_llm"] = await critic.attach_llm(OpenAIAugmentedLLM)
-
+async def refresh_agents(agents: dict, names: list[str] | None = None) -> dict:
+    """Refresh selected agents so newly saved feedback/corrections apply immediately."""
+    names = names or ["classifier", "solution", "complexity", "critic"]
+    for name in names:
+        if name == "browser":
+            agents["browser_llm"] = await _build_browser_llm()
+        elif name == "classifier":
+            agents["classifier_llm"] = await _build_classifier_llm()
+        elif name == "solution":
+            agents["solution_llm"] = await _build_solution_llm()
+        elif name == "complexity":
+            agents["complexity_llm"] = await _build_complexity_llm()
+        elif name == "critic":
+            agents["critic_llm"] = await _build_critic_llm()
     return agents
 
 
@@ -608,7 +690,7 @@ async def run_competitive_solution(problem_text: str, pattern: str, agents: dict
         t0 = time.time()
         result = await _call_openai(
             model=MODEL_FULL,
-            system=SOLUTION_INSTRUCTION + get_feedback_context("solution"),
+            system=_compose_instruction(SOLUTION_INSTRUCTION, "solution"),
             user=base_msg + "\n\nApproach: Creative — use the most elegant or optimized implementation. May differ slightly from the textbook approach if it's clearer.",
             max_tokens=2500,
         )

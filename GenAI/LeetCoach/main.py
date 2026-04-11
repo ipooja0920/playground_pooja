@@ -21,9 +21,33 @@ def _load_secrets():
 _load_secrets()
 
 from mcp_agent.app import MCPApp
-from agents import setup_agents, run_pipeline, rerun_section, save_feedback
+from agents import setup_agents, run_pipeline, rerun_section, save_feedback, refresh_agents
 from patterns import PATTERNS
 from evaluation import run_full_evaluation, load_eval_history
+
+SECTION_RESULT_KEY = {
+    "classifier": "pattern",
+    "solution": "solution",
+    "complexity": "complexity",
+}
+
+SECTION_LABEL = {
+    "classifier": "Pattern",
+    "solution": "Solution",
+    "complexity": "Complexity",
+}
+
+
+def _default_feedback_state():
+    return {
+        section: {
+            "sentiment": None,
+            "show_comment": False,
+            "submitted": False,
+            "regenerating": False,
+        }
+        for section in SECTION_RESULT_KEY
+    }
 
 # --------------------------------------------------------------------------- #
 #  Page config
@@ -65,9 +89,9 @@ if "fallback_mode" not in st.session_state:
 if "is_fallback_processing" not in st.session_state:
     st.session_state.is_fallback_processing = False
 
-# Single feedback state for the whole run
-if "fb" not in st.session_state:
-    st.session_state.fb = {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
+# Section-level feedback state
+if "feedback_state" not in st.session_state:
+    st.session_state.feedback_state = _default_feedback_state()
 
 # --------------------------------------------------------------------------- #
 #  Agent init
@@ -94,42 +118,102 @@ async def run(url: str, fallback_text: str = ""):
     return await run_pipeline(url, st.session_state.agents, fallback_text=fallback_text)
 
 # --------------------------------------------------------------------------- #
-#  Process pending regeneration (whole-run feedback)
+#  Process pending regeneration (section-level feedback)
 # --------------------------------------------------------------------------- #
-if st.session_state.fb.get("regenerating"):
-    _comment = st.session_state.get("_comment_run", "")
+_pending_section = next(
+    (section for section, state in st.session_state.feedback_state.items() if state.get("regenerating")),
+    None,
+)
+if _pending_section:
+    _comment = st.session_state.get(f"_comment_{_pending_section}", "")
+    _results = st.session_state.last_results or {}
     _context = {
-        "problem_text": (st.session_state.last_results or {}).get("problem_text", ""),
-        "pattern":      (st.session_state.last_results or {}).get("pattern", ""),
-        "solution":     (st.session_state.last_results or {}).get("solution", ""),
+        "problem_text": _results.get("problem_text", ""),
+        "pattern":      _results.get("pattern", ""),
+        "solution":     _results.get("solution", ""),
     }
-    with st.spinner("Regenerating solution based on your feedback..."):
-        _new_result, _ = st.session_state.loop.run_until_complete(
-            rerun_section("solution", _context, st.session_state.agents, _comment)
+    _old_snippet = (_results.get(SECTION_RESULT_KEY[_pending_section], "") or "")[:300]
+    save_feedback(_pending_section, "negative", _old_snippet, _comment)
+    if st.session_state.agents:
+        st.session_state.loop.run_until_complete(
+            refresh_agents(st.session_state.agents, [_pending_section])
         )
-    st.session_state.last_results["solution"] = _new_result
-    save_feedback("solution", "negative", _new_result[:300], _comment)
-    st.session_state.fb["regenerating"] = False
-    st.session_state.fb["submitted"] = True
-    st.session_state.quiz_state = {}
+
+    spinner_text = {
+        "classifier": "Regenerating pattern, then refreshing the solution and complexity...",
+        "solution": "Regenerating solution, then refreshing the complexity...",
+        "complexity": "Regenerating complexity based on your feedback...",
+    }[_pending_section]
+
+    with st.spinner(spinner_text):
+        if _pending_section == "classifier":
+            _new_pattern, _ = st.session_state.loop.run_until_complete(
+                rerun_section("classifier", _context, st.session_state.agents, _comment)
+            )
+            st.session_state.last_results["pattern"] = _new_pattern
+            _context["pattern"] = _new_pattern
+
+            _new_solution, _ = st.session_state.loop.run_until_complete(
+                rerun_section("solution", _context, st.session_state.agents, "")
+            )
+            st.session_state.last_results["solution"] = _new_solution
+            _context["solution"] = _new_solution
+
+            _new_complexity, _ = st.session_state.loop.run_until_complete(
+                rerun_section("complexity", _context, st.session_state.agents, "")
+            )
+            st.session_state.last_results["complexity"] = _new_complexity
+            st.session_state.quiz_state = {}
+            if st.session_state.agents:
+                st.session_state.loop.run_until_complete(
+                    refresh_agents(st.session_state.agents, ["classifier", "solution", "complexity"])
+                )
+        elif _pending_section == "solution":
+            _new_solution, _ = st.session_state.loop.run_until_complete(
+                rerun_section("solution", _context, st.session_state.agents, _comment)
+            )
+            st.session_state.last_results["solution"] = _new_solution
+            _context["solution"] = _new_solution
+
+            _new_complexity, _ = st.session_state.loop.run_until_complete(
+                rerun_section("complexity", _context, st.session_state.agents, "")
+            )
+            st.session_state.last_results["complexity"] = _new_complexity
+            st.session_state.quiz_state = {}
+            if st.session_state.agents:
+                st.session_state.loop.run_until_complete(
+                    refresh_agents(st.session_state.agents, ["solution", "complexity"])
+                )
+        else:
+            _new_complexity, _ = st.session_state.loop.run_until_complete(
+                rerun_section("complexity", _context, st.session_state.agents, _comment)
+            )
+            st.session_state.last_results["complexity"] = _new_complexity
+            if st.session_state.agents:
+                st.session_state.loop.run_until_complete(
+                    refresh_agents(st.session_state.agents, ["complexity"])
+                )
+
+    st.session_state.feedback_state[_pending_section]["regenerating"] = False
+    st.session_state.feedback_state[_pending_section]["submitted"] = True
     st.rerun()
 
 # --------------------------------------------------------------------------- #
-#  Single feedback UI (one block for the whole run)
+#  Section feedback UI
 # --------------------------------------------------------------------------- #
-def render_feedback():
-    """Render one 👍 👎 + optional comment + regenerate button for the whole run."""
-    state = st.session_state.fb
-
+def render_feedback(section: str, content: str):
+    """Render section feedback with immediate learning and optional regeneration."""
+    state = st.session_state.feedback_state[section]
+    label = SECTION_LABEL[section]
     st.markdown("---")
     if state["submitted"]:
         if state["sentiment"] == "liked":
-            st.caption("Thanks for the 👍 — noted for future runs!")
+            st.caption(f"Thanks for the 👍 on the {label.lower()} section — future runs will lean toward this style.")
         else:
-            st.caption("✅ Solution regenerated based on your feedback!")
+            st.caption(f"✅ {label} feedback saved and used to regenerate the section.")
         return
 
-    st.markdown("**Was this helpful?**")
+    st.markdown(f"**Was the {label.lower()} section helpful?**")
     col1, col2, col_space = st.columns([1, 1, 10])
 
     def _like():
@@ -141,11 +225,11 @@ def render_feedback():
         state["show_comment"] = True
 
     with col1:
-        st.button("👍", key="like_run",
+        st.button("👍", key=f"like_{section}",
                   type="primary" if state["sentiment"] == "liked" else "secondary",
                   on_click=_like)
     with col2:
-        st.button("👎", key="dislike_run",
+        st.button("👎", key=f"dislike_{section}",
                   type="primary" if state["sentiment"] == "disliked" else "secondary",
                   on_click=_dislike)
 
@@ -154,19 +238,23 @@ def render_feedback():
             "Add a comment (optional)",
             placeholder="Tell us what you liked or what could be better...",
             height=80,
-            key="comment_area_run",
+            key=f"comment_area_{section}",
         )
-        submit_label = "Submit & Regenerate Solution 🔄" if state["sentiment"] == "disliked" else "Submit Feedback"
+        submit_label = "Submit & Regenerate Section 🔄" if state["sentiment"] == "disliked" else "Submit Feedback"
 
         def _submit():
-            st.session_state["_comment_run"] = comment
+            st.session_state[f"_comment_{section}"] = comment
             if state["sentiment"] == "liked":
-                save_feedback("solution", "positive", "", comment)
+                save_feedback(section, "positive", content[:300], comment)
+                if st.session_state.agents:
+                    st.session_state.loop.run_until_complete(
+                        refresh_agents(st.session_state.agents, [section])
+                    )
                 state["submitted"] = True
             else:
                 state["regenerating"] = True
 
-        st.button(submit_label, key="submit_run", type="primary", on_click=_submit)
+        st.button(submit_label, key=f"submit_{section}", type="primary", on_click=_submit)
 
 
 # --------------------------------------------------------------------------- #
@@ -192,7 +280,7 @@ with tab1:
         st.session_state.quiz_state = {}
         st.session_state.eval_result = None
         st.session_state.fallback_mode = False
-        st.session_state.fb = {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
+        st.session_state.feedback_state = _default_feedback_state()
 
     st.button(
         "🚀 Analyze Problem",
@@ -210,6 +298,10 @@ with tab1:
             )
         st.session_state.last_results = results
         st.session_state.last_log = log
+        if st.session_state.agents:
+            st.session_state.loop.run_until_complete(
+                refresh_agents(st.session_state.agents, ["classifier", "solution", "complexity"])
+            )
         st.session_state.is_processing = False
 
         # Check if browser failed and fallback is needed
@@ -250,6 +342,10 @@ with tab1:
                 )
             st.session_state.last_results = results
             st.session_state.last_log = log
+            if st.session_state.agents:
+                st.session_state.loop.run_until_complete(
+                    refresh_agents(st.session_state.agents, ["classifier", "solution", "complexity"])
+                )
             st.session_state.is_fallback_processing = False
             st.rerun()
 
@@ -273,6 +369,7 @@ with tab1:
         # ---- Pattern & Debate summary ----
         st.markdown("## 🎯 Pattern Match")
         st.markdown(results["pattern"])
+        render_feedback("classifier", results["pattern"])
 
         debate = results.get("debate_summary")
         if debate and debate.get("debate_happened"):
@@ -299,6 +396,7 @@ with tab1:
                 )
 
             st.markdown(results["solution"])
+            render_feedback("solution", results["solution"])
 
         # ---- Complexity + Quiz ----
         if results.get("complexity"):
@@ -367,8 +465,7 @@ with tab1:
                             st.warning("Pick an option first!")
                     st.markdown("")
 
-        # Single feedback block at bottom
-        render_feedback()
+            render_feedback("complexity", results["complexity"])
 
     elif st.session_state.last_log and not st.session_state.fallback_mode:
         failed = [e for e in st.session_state.last_log if e["status"] == "failed"]
@@ -513,6 +610,26 @@ with tab3:
                 st.info("No human feedback yet. Use 👍 👎 buttons after analyzing a problem.")
         else:
             st.info("No human feedback yet.")
+
+        st.markdown("---")
+        st.markdown("### 🧭 Learned Feedback Rules")
+        st.caption("Compact rules distilled from human feedback and loaded into agent instructions by default.")
+
+        feedback_rules_path = Path(__file__).parent / "feedback_rules.json"
+        if feedback_rules_path.exists():
+            with open(feedback_rules_path) as f:
+                all_rules = json.load(f)
+            has_rules = any(len(v) > 0 for v in all_rules.values())
+            if has_rules:
+                for agent_name, rules in all_rules.items():
+                    if rules:
+                        st.markdown(f"**{agent_name.capitalize()} Agent**")
+                        for rule in rules:
+                            st.markdown(f"- {rule}")
+            else:
+                st.info("No learned feedback rules yet.")
+        else:
+            st.info("No learned feedback rules yet.")
 
         # Critic lessons
         st.markdown("---")
