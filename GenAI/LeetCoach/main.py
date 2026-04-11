@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 from pathlib import Path
 import yaml
 import streamlit as st
@@ -49,6 +50,8 @@ if "last_log" not in st.session_state:
     st.session_state.last_log = None
 if "last_url" not in st.session_state:
     st.session_state.last_url = ""
+if "quiz_state" not in st.session_state:
+    st.session_state.quiz_state = {}  # {q_key: {"selected": "A", "checked": False}}
 
 # --------------------------------------------------------------------------- #
 #  Agent init
@@ -104,6 +107,7 @@ with tab1:
     def start_run():
         st.session_state.is_processing = True
         st.session_state.last_url = url_input.strip()
+        st.session_state.quiz_state = {}  # reset quiz on new problem
 
     st.button(
         "🚀 Analyze Problem",
@@ -140,7 +144,70 @@ with tab1:
         if results.get("complexity"):
             st.markdown("---")
             st.markdown("## ⏱ Complexity")
-            st.markdown(results["complexity"])
+
+            complexity_text = results["complexity"]
+
+            # Split complexity explanation from quiz section
+            quiz_marker = "## 🧪 Quick Quiz"
+            if quiz_marker in complexity_text:
+                complexity_body = complexity_text[:complexity_text.index(quiz_marker)].strip()
+                quiz_body = complexity_text[complexity_text.index(quiz_marker):]
+            else:
+                complexity_body = complexity_text
+                quiz_body = ""
+
+            st.markdown(complexity_body)
+
+            # ---- Quiz ----
+            if quiz_body:
+                st.markdown("---")
+                st.markdown("## 🧪 Quick Quiz — Test Yourself!")
+                st.caption("Try to answer before peeking at the hint.")
+
+                # Parse questions
+                q_blocks = re.findall(
+                    r'\*\*Q(\d+):\*\*\s*(.+?)\n((?:\s*- [A-Ca-c]\).+\n)+)\s*ANSWER:\s*([A-Ca-c])\s*\nHINT:\s*(.+)',
+                    quiz_body,
+                    re.MULTILINE,
+                )
+
+                for q_num, question, options_raw, answer, hint in q_blocks:
+                    q_key = f"q{q_num}"
+                    options_parsed = re.findall(r'- ([A-Ca-c])\)\s*(.+)', options_raw)
+                    options_dict = {opt[0].upper(): opt[1].strip() for opt in options_parsed}
+                    correct = answer.strip().upper()
+
+                    st.markdown(f"**Q{q_num}: {question.strip()}**")
+
+                    radio_options = [f"{k}) {v}" for k, v in options_dict.items()]
+                    selected = st.radio(
+                        f"q{q_num}_radio",
+                        options=radio_options,
+                        index=None,
+                        key=f"radio_{q_key}",
+                        label_visibility="collapsed",
+                    )
+
+                    if st.button("Check Answer", key=f"check_{q_key}"):
+                        st.session_state.quiz_state[q_key] = {
+                            "selected": selected,
+                            "checked": True,
+                            "correct": correct,
+                            "hint": hint.strip(),
+                            "options": options_dict,
+                        }
+
+                    state = st.session_state.quiz_state.get(q_key, {})
+                    if state.get("checked"):
+                        if state["selected"] and state["selected"].startswith(state["correct"]):
+                            st.success(f"Correct! {state['hint']}")
+                        elif state["selected"]:
+                            st.error(f"Not quite. The answer is **{state['correct']}) {state['options'].get(state['correct'], '')}**")
+                            st.info(f"Hint: {state['hint']}")
+                        else:
+                            st.warning("Pick an option first!")
+
+                    st.markdown("")
 
     elif st.session_state.last_log:
         # Pipeline ran but no results — show top-level failure message
