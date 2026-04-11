@@ -497,18 +497,32 @@ with tab4:
             # ---- RAGAS scores ----
             st.markdown("#### RAGAS Metrics")
             ragas = ev.get("ragas", {})
+            # Check for any errors across the 3 evaluations
+            ragas_errors = [v for k, v in ragas.items() if k.endswith("_error") and v]
             if ragas.get("error"):
                 st.warning(f"RAGAS: {ragas['error']}")
             else:
-                rc1, rc2 = st.columns(2)
-                faith = ragas.get("faithfulness", 0)
-                relev = ragas.get("answer_relevancy", 0)
-                rc1.metric("Faithfulness", f"{faith:.0%}",
-                           help="Is the explanation grounded in the actual code? No made-up steps?")
-                rc2.metric("Answer Relevancy", f"{relev:.0%}",
+                rc1, rc2, rc3 = st.columns(3)
+                sol_faith  = ragas.get("solution_faithfulness")
+                comp_faith = ragas.get("complexity_faithfulness")
+                ans_relev  = ragas.get("answer_relevancy")
+
+                rc1.metric("Solution Faithfulness",
+                           f"{sol_faith:.0%}" if sol_faith is not None else "—",
+                           help="Is the walkthrough grounded in the actual code? No made-up steps?")
+                rc2.metric("Complexity Faithfulness",
+                           f"{comp_faith:.0%}" if comp_faith is not None else "—",
+                           help="Is the Big O explanation grounded in the code?")
+                rc3.metric("Answer Relevancy",
+                           f"{ans_relev:.0%}" if ans_relev is not None else "—",
                            help="Does the solution actually address the problem that was asked?")
-                if faith < 0.5 or relev < 0.5:
-                    st.warning("Low RAGAS scores — the explanation may not faithfully match the solution or problem.")
+
+                low = [s for s in [sol_faith, comp_faith, ans_relev] if s is not None and s < 0.5]
+                if low:
+                    st.warning("One or more RAGAS scores are low — the explanation may not faithfully match the solution or problem.")
+                if ragas_errors:
+                    for err in ragas_errors:
+                        st.caption(f"⚠️ Partial error: {err}")
 
             st.markdown("---")
 
@@ -574,8 +588,8 @@ with tab4:
                     "Date":             h.get("timestamp", "")[:10],
                     "Problem":          h.get("problem_title", "")[:40],
                     "Overall (Judge)":  f"{judge.get('overall', '—')}/5" if not judge.get("error") else "error",
-                    "Faithfulness":     f"{ragas.get('faithfulness', 0):.0%}" if not ragas.get("error") else "—",
-                    "Ans. Relevancy":   f"{ragas.get('answer_relevancy', 0):.0%}" if not ragas.get("error") else "—",
+                    "Sol. Faith.":   f"{ragas.get('solution_faithfulness', 0):.0%}" if not ragas.get("error") and ragas.get('solution_faithfulness') is not None else "—",
+                    "Ans. Relevancy": f"{ragas.get('answer_relevancy', 0):.0%}" if not ragas.get("error") and ragas.get('answer_relevancy') is not None else "—",
                     "Pattern ✓":        "✅" if pa.get("is_correct") else ("❌" if pa.get("in_ground_truth") else "—"),
                 })
 
