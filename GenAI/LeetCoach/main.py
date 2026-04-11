@@ -59,8 +59,13 @@ if "eval_result" not in st.session_state:
 if "is_evaluating" not in st.session_state:
     st.session_state.is_evaluating = False
 
+# Fallback mode: shown when browser agent fails
+if "fallback_mode" not in st.session_state:
+    st.session_state.fallback_mode = False
+if "is_fallback_processing" not in st.session_state:
+    st.session_state.is_fallback_processing = False
+
 # Single feedback state for the whole run
-_SECTIONS = ["classifier", "solution", "complexity"]
 if "fb" not in st.session_state:
     st.session_state.fb = {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
 
@@ -78,7 +83,7 @@ async def init_agents():
             return f"Initialization error: {str(e)}"
     return None
 
-async def run(url: str):
+async def run(url: str, fallback_text: str = ""):
     if not os.getenv("OPENAI_API_KEY"):
         return None, [{"agent": "Setup", "status": "failed",
                        "details": "OpenAI API key not found.", "duration": 0, "corrections": []}]
@@ -86,7 +91,7 @@ async def run(url: str):
     if error:
         return None, [{"agent": "Setup", "status": "failed",
                        "details": error, "duration": 0, "corrections": []}]
-    return await run_pipeline(url, st.session_state.agents)
+    return await run_pipeline(url, st.session_state.agents, fallback_text=fallback_text)
 
 # --------------------------------------------------------------------------- #
 #  Process pending regeneration (whole-run feedback)
@@ -99,7 +104,6 @@ if st.session_state.fb.get("regenerating"):
         "solution":     (st.session_state.last_results or {}).get("solution", ""),
     }
     with st.spinner("Regenerating solution based on your feedback..."):
-        # Regenerate the solution (most impactful section to redo)
         _new_result, _ = st.session_state.loop.run_until_complete(
             rerun_section("solution", _context, st.session_state.agents, _comment)
         )
@@ -186,7 +190,8 @@ with tab1:
         st.session_state.is_processing = True
         st.session_state.last_url = url_input.strip()
         st.session_state.quiz_state = {}
-        st.session_state.eval_result = None  # reset eval on new problem
+        st.session_state.eval_result = None
+        st.session_state.fallback_mode = False
         st.session_state.fb = {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
 
     st.button(
@@ -197,33 +202,105 @@ with tab1:
         on_click=start_run,
     )
 
-    # Run pipeline
+    # ---- Run pipeline ----
     if st.session_state.is_processing:
-        with st.spinner("Running agents: Browser → Classifier → Solution → Complexity..."):
+        with st.spinner("Running agents: Browser → Planner → Pattern → Solution → Complexity..."):
             results, log = st.session_state.loop.run_until_complete(
                 run(st.session_state.last_url)
             )
         st.session_state.last_results = results
         st.session_state.last_log = log
         st.session_state.is_processing = False
+
+        # Check if browser failed and fallback is needed
+        if results and results.get("needs_fallback"):
+            st.session_state.fallback_mode = True
+
         st.rerun()
 
-    # Results
+    # ---- Pattern 4: Supervisor with Fallback — manual paste UI ----
+    if st.session_state.fallback_mode:
+        st.warning(
+            "🚧 **Browser Agent couldn't access the page.** "
+            "Paste the problem text below and we'll continue from there."
+        )
+        pasted = st.text_area(
+            "Paste the full LeetCode problem text here",
+            placeholder="Paste the problem title, description, examples, and constraints...",
+            height=250,
+            key="fallback_paste",
+        )
+
+        def start_fallback():
+            st.session_state.is_fallback_processing = True
+            st.session_state.fallback_mode = False
+            st.session_state.last_results = None
+
+        st.button(
+            "▶️ Continue with Pasted Text",
+            type="primary",
+            disabled=not pasted.strip(),
+            on_click=start_fallback,
+        )
+
+        if st.session_state.is_fallback_processing:
+            with st.spinner("Running agents on pasted problem: Planner → Pattern → Solution → Complexity..."):
+                results, log = st.session_state.loop.run_until_complete(
+                    run(st.session_state.last_url, fallback_text=pasted.strip())
+                )
+            st.session_state.last_results = results
+            st.session_state.last_log = log
+            st.session_state.is_fallback_processing = False
+            st.rerun()
+
+    # ---- Results ----
     if st.session_state.last_results and st.session_state.last_results.get("pattern"):
         results = st.session_state.last_results
+
+        # ---- Pattern 3: Hierarchical Orchestrator — show Planner decision ----
+        planner_strategy  = results.get("planner_strategy")
+        planner_reasoning = results.get("planner_reasoning", "")
+        if planner_strategy:
+            strategy_icon  = "⚡" if planner_strategy == "simplified" else "🔬"
+            strategy_label = "Simplified pipeline" if planner_strategy == "simplified" else "Full pipeline (debate + competitive)"
+            st.info(
+                f"{strategy_icon} **Planner chose:** {strategy_label}"
+                + (f" — {planner_reasoning}" if planner_reasoning else "")
+            )
+
         st.markdown("---")
 
-        # --- Pattern ---
+        # ---- Pattern & Debate summary ----
         st.markdown("## 🎯 Pattern Match")
         st.markdown(results["pattern"])
 
-        # --- Solution ---
+        debate = results.get("debate_summary")
+        if debate and debate.get("debate_happened"):
+            with st.expander("⚖️ Pattern Debate — how we settled on this pattern", expanded=False):
+                st.markdown(f"**Initial proposal:** {debate.get('initial_pattern_name', '')}")
+                st.markdown(f"**Devil's Advocate challenged:** {debate.get('challenge', '')}")
+                st.markdown(f"**Alternative suggested:** `{debate.get('alternative', '')}`")
+                st.markdown(f"**Judge ruled (gpt-4o):** {debate.get('judge_reasoning', '')}")
+
+        # ---- Solution + Competitive winner badge ----
         if results.get("solution"):
             st.markdown("---")
             st.markdown("## 💡 Solution")
+
+            winner = results.get("competitive_winner")
+            reason = results.get("competitive_reason", "")
+            model_a = results.get("competitive_model_a", "gpt-4o-mini")
+            model_b = results.get("competitive_model_b", "gpt-4o")
+            if winner:
+                winner_model = model_a if winner == "A" else model_b
+                st.success(
+                    f"🏆 **Solution {winner} won** ({winner_model})"
+                    + (f" — {reason}" if reason else "")
+                )
+
             st.markdown(results["solution"])
 
-        # --- Complexity + Quiz ---
+        # ---- Complexity + Quiz ----
         if results.get("complexity"):
             st.markdown("---")
             st.markdown("## ⏱ Complexity")
@@ -290,12 +367,12 @@ with tab1:
                             st.warning("Pick an option first!")
                     st.markdown("")
 
-        # Single feedback block at bottom of all results
+        # Single feedback block at bottom
         render_feedback()
 
-    elif st.session_state.last_log:
+    elif st.session_state.last_log and not st.session_state.fallback_mode:
         failed = [e for e in st.session_state.last_log if e["status"] == "failed"]
-        if failed:
+        if failed and not (st.session_state.last_results or {}).get("needs_fallback"):
             st.error(f"Pipeline failed at **{failed[0]['agent']}**: {failed[0]['details']}")
             st.info("Check the Agent Log tab for full details.")
 
@@ -342,13 +419,26 @@ with tab3:
         if st.session_state.last_url:
             st.caption(f"Last run: {st.session_state.last_url}")
 
+        # Multi-agent summary badges
+        results = st.session_state.last_results or {}
+        if results.get("planner_strategy"):
+            col_p, col_d, col_c, col_m = st.columns(4)
+            strategy = results["planner_strategy"]
+            col_p.metric("Planner Strategy", strategy.upper())
+            debate = results.get("debate_summary")
+            col_d.metric("Pattern Debate", "YES" if debate and debate.get("debate_happened") else ("SKIPPED" if strategy == "simplified" else "NO"))
+            col_c.metric("Competitive Winner", f"Solution {results['competitive_winner']}" if results.get("competitive_winner") else ("SKIPPED" if strategy == "simplified" else "—"))
+            col_m.metric("Model Tiering", "gpt-4o + mini")
+
+        st.markdown("---")
+
         success_count   = sum(1 for e in log if e["status"] == "success")
         failed_count    = sum(1 for e in log if e["status"] == "failed")
         skipped_count   = sum(1 for e in log if e["status"] == "skipped")
         corrected_count = sum(1 for e in log if len(e.get("corrections", [])) > 1)
 
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Agents Run",     success_count + failed_count)
+        col1.metric("Steps Run",      success_count + failed_count)
         col2.metric("Succeeded",      success_count)
         col3.metric("Failed",         failed_count)
         col4.metric("Self-Corrected", corrected_count)
@@ -381,6 +471,18 @@ with tab3:
                         st.markdown(f"- Attempt {num}: Score :{score_color}[{score}/5] — {issues}")
                     if len(corrections) > 1:
                         st.success("Agent self-corrected and improved its output.")
+
+        # Multi-agent pattern details
+        if results.get("debate_summary"):
+            st.markdown("---")
+            st.markdown("### ⚖️ Debate Pattern Detail")
+            debate = results["debate_summary"]
+            st.markdown(f"- **Initial pattern:** {debate.get('initial_pattern_name', '')}")
+            st.markdown(f"- **Debate happened:** {'Yes' if debate.get('debate_happened') else 'No — Advocate agreed'}")
+            if debate.get("debate_happened"):
+                st.markdown(f"- **Challenge:** {debate.get('challenge', '')}")
+                st.markdown(f"- **Alternative proposed:** {debate.get('alternative', '')}")
+                st.markdown(f"- **Judge reasoning (gpt-4o):** {debate.get('judge_reasoning', '')}")
 
         # Human feedback summary
         st.markdown("---")
@@ -484,7 +586,6 @@ with tab4:
             # ---- RAGAS scores ----
             st.markdown("#### RAGAS Metrics")
             ragas = ev.get("ragas", {})
-            # Check for any errors across the 3 evaluations
             ragas_errors = [v for k, v in ragas.items() if k.endswith("_error") and v]
             if ragas.get("error"):
                 st.warning(f"RAGAS: {ragas['error']}")
@@ -563,9 +664,8 @@ with tab4:
         if not history:
             st.info("No evaluation history yet.")
         else:
-            recent = history[-10:][::-1]  # most recent first
+            recent = history[-10:][::-1]
 
-            # Build summary table
             rows = []
             for h in recent:
                 judge = h.get("llm_judge", {})
@@ -583,7 +683,6 @@ with tab4:
             import pandas as pd
             st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-            # Trend: overall judge score over time
             overall_scores = [
                 h["llm_judge"].get("overall")
                 for h in history

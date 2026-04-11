@@ -1,0 +1,427 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation [ref=e7]:
+        - generic [ref=e8]:
+          - list [ref=e9]:
+            - link "LeetCode Logo" [ref=e10] [cursor=pointer]:
+              - /url: /
+              - img "LeetCode Logo" [ref=e13]
+            - listitem [ref=e14]
+          - generic [ref=e480]:
+            - button "Expand Panel" [ref=e481] [cursor=pointer]:
+              - img [ref=e483]
+              - generic [ref=e486]: Problem List
+            - link "Prev Question" [ref=e488] [cursor=pointer]:
+              - /url: /problems/multiply-strings
+              - img [ref=e490]
+            - link "Next Question" [ref=e493] [cursor=pointer]:
+              - /url: /problems/jump-game-ii
+              - img [ref=e495]
+            - link "Pick one" [ref=e498] [cursor=pointer]:
+              - /url: /problems/count-number-of-maximum-bitwise-or-subsets
+              - img [ref=e500]
+        - generic [ref=e16]:
+          - generic [ref=e21]:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - generic: Debugging...
+                  - generic:
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+            - generic [ref=e23]:
+              - button "You need to log in / sign up to debug" [ref=e25] [cursor=pointer]:
+                - img [ref=e26]
+              - generic [ref=e29]:
+                - button "Run" [ref=e32] [cursor=pointer]:
+                  - img [ref=e34]
+                - button "Submit" [ref=e39] [cursor=pointer]:
+                  - img [ref=e41]
+                  - generic [ref=e43]: Submit
+          - button "More" [ref=e47] [cursor=pointer]:
+            - img [ref=e49]
+        - generic [ref=e53]:
+          - button "Layouts" [ref=e54] [cursor=pointer]:
+            - button "Layouts" [ref=e55]:
+              - img [ref=e57]
+          - button "Settings" [ref=e59] [cursor=pointer]:
+            - img [ref=e61]
+          - generic [ref=e65]:
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: 00:00:00
+                - button:
+                  - generic:
+                    - img
+            - button "Stopwatch" [ref=e68] [cursor=pointer]:
+              - img [ref=e71]
+          - link "Log in" [ref=e74] [cursor=pointer]:
+            - /url: /accounts/login/?next=%2Fproblems%2Fwildcard-matching%2Fdescription%2F
+      - generic [ref=e77]:
+        - generic [ref=e81] [cursor=pointer]:
+          - generic [ref=e84]:
+            - img [ref=e86]
+            - generic [ref=e89]: Description
+          - generic [ref=e93]:
+            - img [ref=e95]
+            - generic [ref=e97]:
+              - generic [ref=e98]: Editorial
+              - generic [ref=e99]: Editorial
+          - generic [ref=e103]:
+            - img [ref=e105]
+            - generic [ref=e107]:
+              - generic [ref=e108]: Solutions
+              - generic [ref=e109]: Solutions
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: Submissions
+              - generic [ref=e119]: Submissions
+        - generic [ref=e122] [cursor=pointer]:
+          - generic [ref=e127]:
+            - img [ref=e129]
+            - generic [ref=e132]: Code
+          - generic [ref=e134]:
+            - button [ref=e136]:
+              - img [ref=e138]
+            - button [ref=e141]:
+              - img [ref=e143]
+        - generic [ref=e149] [cursor=pointer]:
+          - generic [ref=e152]:
+            - img [ref=e154]
+            - generic [ref=e157]: Testcase
+          - generic [ref=e161]:
+            - img [ref=e163]
+            - generic [ref=e165]:
+              - generic [ref=e166]: Test Result
+              - generic [ref=e167]: Test Result
+        - generic [ref=e169]:
+          - generic [ref=e170]:
+            - link "44. Wildcard Matching" [ref=e174]:
+              - /url: /problems/wildcard-matching/
+            - generic [ref=e175]:
+              - generic [ref=e176]: Hard
+              - generic [ref=e177] [cursor=pointer]:
+                - img [ref=e179]
+                - text: Topics
+              - generic [ref=e181] [cursor=pointer]:
+                - img "premium lock icon" [ref=e182]
+                - generic [ref=e183]: Companies
+            - generic [ref=e186]:
+              - paragraph [ref=e187]:
+                - text: Given an input string (
+                - code [ref=e188]: s
+                - text: ) and a pattern (
+                - code [ref=e189]: p
+                - text: ), implement wildcard pattern matching with support for
+                - code [ref=e190]: "'?'"
+                - text: and
+                - code [ref=e191]: "'*'"
+                - text: "where:"
+              - list [ref=e192]:
+                - listitem [ref=e193]:
+                  - code [ref=e194]: "'?'"
+                  - text: Matches any single character.
+                - listitem [ref=e195]:
+                  - code [ref=e196]: "'*'"
+                  - text: Matches any sequence of characters (including the empty sequence).
+              - paragraph [ref=e197]:
+                - text: The matching should cover the
+                - strong [ref=e198]: entire
+                - text: input string (not partial).
+              - paragraph [ref=e199]
+              - paragraph [ref=e200]:
+                - strong [ref=e201]: "Example 1:"
+              - generic [ref=e202]:
+                - strong [ref=e203]: "Input:"
+                - text: s = "aa", p = "a"
+                - strong [ref=e204]: "Output:"
+                - text: "false"
+                - strong [ref=e205]: "Explanation:"
+                - text: "\"a\" does not match the entire string \"aa\"."
+              - paragraph [ref=e206]:
+                - strong [ref=e207]: "Example 2:"
+              - generic [ref=e208]:
+                - strong [ref=e209]: "Input:"
+                - text: s = "aa", p = "*"
+                - strong [ref=e210]: "Output:"
+                - text: "true"
+                - strong [ref=e211]: "Explanation:"
+                - text: "'*' matches any sequence."
+              - paragraph [ref=e212]:
+                - strong [ref=e213]: "Example 3:"
+              - generic [ref=e214]:
+                - strong [ref=e215]: "Input:"
+                - text: s = "cb", p = "?a"
+                - strong [ref=e216]: "Output:"
+                - text: "false"
+                - strong [ref=e217]: "Explanation:"
+                - text: "'?' matches 'c', but the second letter is 'a', which does not match 'b'."
+              - paragraph [ref=e218]
+              - paragraph [ref=e219]:
+                - strong [ref=e220]: "Constraints:"
+              - list [ref=e221]:
+                - listitem [ref=e222]:
+                  - code [ref=e223]: 0 <= s.length, p.length <= 2000
+                - listitem [ref=e224]:
+                  - code [ref=e225]: s
+                  - text: contains only lowercase English letters.
+                - listitem [ref=e226]:
+                  - code [ref=e227]: p
+                  - text: contains only lowercase English letters,
+                  - code [ref=e228]: "'?'"
+                  - text: or
+                  - code [ref=e229]: "'*'"
+                  - text: .
+            - generic [ref=e230]:
+              - generic [ref=e502]:
+                - generic [ref=e503]: Advertisement
+                - img [ref=e507] [cursor=pointer]
+              - generic [ref=e231]:
+                - generic [ref=e232]:
+                  - generic [ref=e233]: Accepted
+                  - generic [ref=e234]:
+                    - text: 863,117
+                    - generic [ref=e235]: /2.7M
+                - generic [ref=e237]:
+                  - generic [ref=e238]: Acceptance Rate
+                  - generic [ref=e239]: 31.7%
+              - separator [ref=e240]
+              - generic [ref=e242]:
+                - generic [ref=e243] [cursor=pointer]:
+                  - generic [ref=e245]:
+                    - img [ref=e247]
+                    - generic [ref=e249]: Topics
+                  - img [ref=e251]
+                - generic [ref=e253]:
+                  - link "String" [ref=e254] [cursor=pointer]:
+                    - /url: /tag/string/
+                  - link "Dynamic Programming" [ref=e255] [cursor=pointer]:
+                    - /url: /tag/dynamic-programming/
+                  - link "Greedy" [ref=e256] [cursor=pointer]:
+                    - /url: /tag/greedy/
+                  - link "Recursion" [ref=e257] [cursor=pointer]:
+                    - /url: /tag/recursion/
+              - separator [ref=e258]
+              - generic [ref=e261] [cursor=pointer]:
+                - generic [ref=e263]:
+                  - img "icon" [ref=e265]
+                  - generic [ref=e266]: Companies
+                - img [ref=e268]
+              - separator [ref=e270]
+              - generic [ref=e271]:
+                - generic [ref=e272] [cursor=pointer]:
+                  - generic [ref=e274]:
+                    - img [ref=e276]
+                    - generic [ref=e278]: Similar Questions
+                  - img [ref=e280]
+                - generic [ref=e282]:
+                  - generic [ref=e283]:
+                    - link "Regular Expression Matching" [ref=e287] [cursor=pointer]:
+                      - /url: /problems/regular-expression-matching/
+                    - generic [ref=e289]: Hard
+                  - generic [ref=e290]:
+                    - link "Substring Matching Pattern" [ref=e294] [cursor=pointer]:
+                      - /url: /problems/substring-matching-pattern/
+                    - generic [ref=e296]: Easy
+              - separator [ref=e297]
+              - generic [ref=e299]:
+                - generic [ref=e300] [cursor=pointer]:
+                  - generic [ref=e302]:
+                    - img [ref=e304]
+                    - generic [ref=e306]: Discussion (215)
+                  - img [ref=e308]
+                - generic [ref=e311]:
+                  - generic [ref=e315]:
+                    - textbox "Type comment here..." [ref=e316]
+                    - generic [ref=e317]:
+                      - generic [ref=e318]:
+                        - button "Choose a type" [ref=e322] [cursor=pointer]:
+                          - generic [ref=e323]: Choose a type
+                          - generic:
+                            - generic:
+                              - img
+                        - generic [ref=e324]:
+                          - img [ref=e326] [cursor=pointer]
+                          - img [ref=e329] [cursor=pointer]
+                          - img [ref=e332] [cursor=pointer]
+                          - img [ref=e335] [cursor=pointer]
+                      - button "Comment" [disabled] [ref=e338] [cursor=pointer]
+                  - generic [ref=e339]:
+                    - generic [ref=e341]:
+                      - generic [ref=e342]:
+                        - generic [ref=e343]: 💡 Discussion Rules
+                        - img [ref=e345] [cursor=pointer]
+                      - generic [ref=e347]:
+                        - paragraph [ref=e348]: 1. Please don't post any solutions in this discussion.
+                        - paragraph [ref=e349]: 2. The problem discussion is for asking questions about the problem or for sharing tips - anything except for solutions.
+                        - paragraph [ref=e350]: 3. If you'd like to share your solution for feedback and ideas, please head to the solutions tab and post it there.
+                    - button "Sort by:Best" [ref=e354] [cursor=pointer]:
+                      - generic [ref=e355]:
+                        - generic [ref=e356]: "Sort by:"
+                        - text: Best
+                      - generic:
+                        - img
+                  - generic [ref=e358]: No comments yet.
+                  - navigation [ref=e360]:
+                    - button "prev" [disabled]:
+                      - img
+                    - button "1"
+                    - button "2" [ref=e361] [cursor=pointer]
+                    - button "3" [ref=e362] [cursor=pointer]
+                    - button "4" [ref=e363] [cursor=pointer]
+                    - button "gap" [disabled]:
+                      - img
+                    - button "22" [ref=e364] [cursor=pointer]
+                    - button "next" [ref=e365] [cursor=pointer]:
+                      - img [ref=e366]
+            - generic [ref=e369]: Copyright © 2026 LeetCode. All rights reserved.
+          - generic [ref=e371]:
+            - generic [ref=e372]:
+              - generic [ref=e373]:
+                - generic [ref=e374]:
+                  - button "9.1K" [ref=e375] [cursor=pointer]:
+                    - img [ref=e377]
+                    - generic [ref=e379]: 9.1K
+                  - button [ref=e381] [cursor=pointer]:
+                    - img [ref=e383]
+                - button "215" [ref=e385] [cursor=pointer]:
+                  - img [ref=e387]
+                  - generic [ref=e389]: "215"
+              - generic [ref=e391]:
+                - img [ref=e394] [cursor=pointer]
+                - button [ref=e396] [cursor=pointer]:
+                  - img [ref=e398]
+                - button [ref=e400] [cursor=pointer]:
+                  - img [ref=e402]
+            - generic [ref=e406]: 66 Online
+        - generic [ref=e408]:
+          - generic [ref=e509]:
+            - generic [ref=e510]:
+              - button "C++" [ref=e512] [cursor=pointer]:
+                - text: C++
+                - img [ref=e514]
+              - button "Auto" [ref=e518] [cursor=pointer]: Auto
+            - generic [ref=e521]:
+              - button [ref=e522] [cursor=pointer]:
+                - img [ref=e524]
+              - button [ref=e526] [cursor=pointer]:
+                - img [ref=e528]
+              - button [ref=e530] [cursor=pointer]:
+                - img [ref=e532]
+              - button [ref=e534] [cursor=pointer]:
+                - img [ref=e535]
+          - code [ref=e540]:
+            - generic [ref=e541]:
+              - generic [ref=e544]:
+                - generic [ref=e547]: "1"
+                - generic [ref=e548]:
+                  - generic [ref=e549] [cursor=pointer]: 
+                  - generic [ref=e550]: "2"
+                - generic [ref=e552]: "3"
+                - generic [ref=e554]: "4"
+                - generic [ref=e556]: "5"
+                - generic [ref=e558]: "6"
+              - generic [ref=e570]:
+                - generic [ref=e572]: "class Solution {"
+                - generic [ref=e574]: "public:"
+                - generic [ref=e576]: "bool isMatch(string s, string p) {"
+                - generic [ref=e580]: "}"
+                - generic [ref=e582]: "};"
+              - textbox "Editor content;Press Alt+F1 for Accessibility Options." [ref=e584]: "class Solution { public: bool isMatch(string s, string p) { } };"
+          - generic [ref=e421]:
+            - generic [ref=e585]: Saved
+            - generic [ref=e422]: Ln 1, Col 1
+          - generic [ref=e424]:
+            - text: You need to
+            - link "log in / sign up" [ref=e425] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Fwildcard-matching%2Fdescription%2F
+            - text: to run or submit
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e427]:
+                - generic [ref=e429]:
+                  - button "Case 1" [ref=e430] [cursor=pointer]
+                  - button "Case 2" [ref=e431] [cursor=pointer]
+                  - button "Case 3" [ref=e432] [cursor=pointer]
+                  - button [ref=e433] [cursor=pointer]:
+                    - img [ref=e434]
+                - generic [ref=e436]:
+                  - generic [ref=e438]:
+                    - generic [ref=e439]: s =
+                    - generic [ref=e441]: "\"aa\""
+                  - generic [ref=e443]:
+                    - generic [ref=e444]: p =
+                    - generic [ref=e446]: "\"a\""
+              - generic [ref=e447]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic [ref=e449]:
+                            - generic [ref=e450]: "1"
+                            - generic [ref=e451]: "2"
+                            - generic [ref=e452]: "3"
+                            - generic [ref=e453]: "4"
+                            - generic [ref=e454]: "5"
+                            - generic [ref=e455]: "6"
+                          - textbox [ref=e458]:
+                            - generic [ref=e459]: "\"aa\""
+                            - generic [ref=e460]: "\"a\""
+                            - generic [ref=e461]: "\"aa\""
+                            - generic [ref=e462]: "\"*\""
+                            - generic [ref=e463]: "\"cb\""
+                            - generic [ref=e464]: "\"?a\""
+            - generic [ref=e466]:
+              - generic [ref=e468] [cursor=pointer]:
+                - img [ref=e470]
+                - generic [ref=e472]: Source
+              - link [ref=e473] [cursor=pointer]:
+                - /url: https://support.leetcode.com/hc/en-us/articles/32442719377939-How-to-create-test-cases-on-LeetCode
+                - img [ref=e475]
+    - region "Notifications (F8)":
+      - list
+  - alert [ref=e479]
+  - generic [ref=e586]:
+    - alert
+    - alert
+    - complementary
+    - complementary
+  - generic [ref=e587]:
+    - link [ref=e591] [cursor=pointer]:
+      - /url: /problemset/
+      - img [ref=e592]
+    - img [ref=e595] [cursor=pointer]
+    - generic [ref=e599]:
+      - generic [ref=e600]:
+        - textbox "Search questions" [ref=e601]
+        - img [ref=e603]
+      - button [ref=e606] [cursor=pointer]:
+        - img [ref=e608]
+      - button [ref=e612] [cursor=pointer]:
+        - img [ref=e615]

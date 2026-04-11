@@ -1,0 +1,419 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation [ref=e7]:
+        - generic [ref=e8]:
+          - list [ref=e9]:
+            - link "LeetCode Logo" [ref=e10] [cursor=pointer]:
+              - /url: /
+              - img "LeetCode Logo" [ref=e13]
+            - listitem [ref=e14]
+          - generic [ref=e480]:
+            - button "Expand Panel" [ref=e481] [cursor=pointer]:
+              - img [ref=e483]
+              - generic [ref=e486]: Problem List
+            - link "Prev Question" [ref=e488] [cursor=pointer]:
+              - /url: /problems/recover-binary-search-tree
+              - img [ref=e490]
+            - link "Next Question" [ref=e493] [cursor=pointer]:
+              - /url: /problems/symmetric-tree
+              - img [ref=e495]
+            - link "Pick one" [ref=e498] [cursor=pointer]:
+              - /url: /problems/count-mentions-per-user
+              - img [ref=e500]
+        - generic [ref=e16]:
+          - generic [ref=e21]:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - generic: Debugging...
+                  - generic:
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+            - generic [ref=e23]:
+              - button "You need to log in / sign up to debug" [ref=e25] [cursor=pointer]:
+                - img [ref=e26]
+              - generic [ref=e29]:
+                - button "Run" [ref=e32] [cursor=pointer]:
+                  - img [ref=e34]
+                - button "Submit" [ref=e39] [cursor=pointer]:
+                  - img [ref=e41]
+                  - generic [ref=e43]: Submit
+          - button "More" [ref=e47] [cursor=pointer]:
+            - img [ref=e49]
+        - generic [ref=e53]:
+          - button "Layouts" [ref=e54] [cursor=pointer]:
+            - button "Layouts" [ref=e55]:
+              - img [ref=e57]
+          - button "Settings" [ref=e59] [cursor=pointer]:
+            - img [ref=e61]
+          - generic [ref=e65]:
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: 00:00:00
+                - button:
+                  - generic:
+                    - img
+            - button "Stopwatch" [ref=e68] [cursor=pointer]:
+              - img [ref=e71]
+          - link "Log in" [ref=e74] [cursor=pointer]:
+            - /url: /accounts/login/?next=%2Fproblems%2Fsame-tree%2Fdescription%2F
+      - generic [ref=e77]:
+        - generic [ref=e81] [cursor=pointer]:
+          - generic [ref=e84]:
+            - img [ref=e86]
+            - generic [ref=e89]: Description
+          - generic [ref=e93]:
+            - img [ref=e95]
+            - generic [ref=e97]:
+              - generic [ref=e98]: Editorial
+              - generic [ref=e99]: Editorial
+          - generic [ref=e103]:
+            - img [ref=e105]
+            - generic [ref=e107]:
+              - generic [ref=e108]: Solutions
+              - generic [ref=e109]: Solutions
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: Submissions
+              - generic [ref=e119]: Submissions
+        - generic [ref=e127] [cursor=pointer]:
+          - img [ref=e129]
+          - generic [ref=e132]: Code
+        - generic [ref=e137] [cursor=pointer]:
+          - generic [ref=e140]:
+            - img [ref=e142]
+            - generic [ref=e145]: Testcase
+          - generic [ref=e149]:
+            - img [ref=e151]
+            - generic [ref=e153]:
+              - generic [ref=e154]: Test Result
+              - generic [ref=e155]: Test Result
+        - generic [ref=e157]:
+          - generic [ref=e158]:
+            - link "100. Same Tree" [ref=e162]:
+              - /url: /problems/same-tree/
+            - generic [ref=e163]:
+              - generic [ref=e164]: Easy
+              - generic [ref=e165] [cursor=pointer]:
+                - img [ref=e167]
+                - text: Topics
+              - generic [ref=e169] [cursor=pointer]:
+                - img "premium lock icon" [ref=e170]
+                - generic [ref=e171]: Companies
+            - generic [ref=e174]:
+              - paragraph [ref=e175]:
+                - text: Given the roots of two binary trees
+                - code [ref=e176]: p
+                - text: and
+                - code [ref=e177]: q
+                - text: ", write a function to check if they are the same or not."
+              - paragraph [ref=e178]: Two binary trees are considered the same if they are structurally identical, and the nodes have the same value.
+              - paragraph [ref=e179]
+              - paragraph [ref=e180]:
+                - strong [ref=e181]: "Example 1:"
+              - generic [ref=e182]:
+                - strong [ref=e183]: "Input:"
+                - text: p = [1,2,3], q = [1,2,3]
+                - strong [ref=e184]: "Output:"
+                - text: "true"
+              - paragraph [ref=e185]:
+                - strong [ref=e186]: "Example 2:"
+              - generic [ref=e187]:
+                - strong [ref=e188]: "Input:"
+                - text: p = [1,2], q = [1,null,2]
+                - strong [ref=e189]: "Output:"
+                - text: "false"
+              - paragraph [ref=e190]:
+                - strong [ref=e191]: "Example 3:"
+              - generic [ref=e192]:
+                - strong [ref=e193]: "Input:"
+                - text: p = [1,2,1], q = [1,1,2]
+                - strong [ref=e194]: "Output:"
+                - text: "false"
+              - paragraph [ref=e195]
+              - paragraph [ref=e196]:
+                - strong [ref=e197]: "Constraints:"
+              - list [ref=e198]:
+                - listitem [ref=e199]:
+                  - text: The number of nodes in both trees is in the range
+                  - code [ref=e200]: "[0, 100]"
+                  - text: .
+                - listitem [ref=e201]:
+                  - code [ref=e202]:
+                    - text: "-10"
+                    - superscript [ref=e203]: "4"
+                    - text: <= Node.val <= 10
+                    - superscript [ref=e204]: "4"
+            - generic [ref=e205]:
+              - generic [ref=e502]:
+                - generic [ref=e503]: Advertisement
+                - img [ref=e507] [cursor=pointer]
+              - generic [ref=e206]:
+                - generic [ref=e207]:
+                  - generic [ref=e208]: Accepted
+                  - generic [ref=e209]:
+                    - text: 3,373,558
+                    - generic [ref=e210]: /5M
+                - generic [ref=e212]:
+                  - generic [ref=e213]: Acceptance Rate
+                  - generic [ref=e214]: 66.9%
+              - separator [ref=e215]
+              - generic [ref=e217]:
+                - generic [ref=e218] [cursor=pointer]:
+                  - generic [ref=e220]:
+                    - img [ref=e222]
+                    - generic [ref=e224]: Topics
+                  - img [ref=e226]
+                - generic [ref=e228]:
+                  - link "Tree" [ref=e229] [cursor=pointer]:
+                    - /url: /tag/tree/
+                  - link "Depth-First Search" [ref=e230] [cursor=pointer]:
+                    - /url: /tag/depth-first-search/
+                  - link "Breadth-First Search" [ref=e231] [cursor=pointer]:
+                    - /url: /tag/breadth-first-search/
+                  - link "Binary Tree" [ref=e232] [cursor=pointer]:
+                    - /url: /tag/binary-tree/
+              - separator [ref=e233]
+              - generic [ref=e236] [cursor=pointer]:
+                - generic [ref=e238]:
+                  - img "icon" [ref=e240]
+                  - generic [ref=e241]: Companies
+                - img [ref=e243]
+              - separator [ref=e245]
+              - generic [ref=e247]:
+                - generic [ref=e248] [cursor=pointer]:
+                  - generic [ref=e250]:
+                    - img [ref=e252]
+                    - generic [ref=e254]: Discussion (257)
+                  - img [ref=e256]
+                - generic [ref=e259]:
+                  - generic [ref=e263]:
+                    - textbox "Type comment here..." [ref=e264]
+                    - generic [ref=e265]:
+                      - generic [ref=e266]:
+                        - button "Choose a type" [ref=e270] [cursor=pointer]:
+                          - generic [ref=e271]: Choose a type
+                          - generic:
+                            - generic:
+                              - img
+                        - generic [ref=e272]:
+                          - img [ref=e274] [cursor=pointer]
+                          - img [ref=e277] [cursor=pointer]
+                          - img [ref=e280] [cursor=pointer]
+                          - img [ref=e283] [cursor=pointer]
+                      - button "Comment" [disabled] [ref=e286] [cursor=pointer]
+                  - generic [ref=e287]:
+                    - generic [ref=e289]:
+                      - generic [ref=e290]:
+                        - generic [ref=e291]: 💡 Discussion Rules
+                        - img [ref=e293] [cursor=pointer]
+                      - generic [ref=e295]:
+                        - paragraph [ref=e296]: 1. Please don't post any solutions in this discussion.
+                        - paragraph [ref=e297]: 2. The problem discussion is for asking questions about the problem or for sharing tips - anything except for solutions.
+                        - paragraph [ref=e298]: 3. If you'd like to share your solution for feedback and ideas, please head to the solutions tab and post it there.
+                    - button "Sort by:Best" [ref=e302] [cursor=pointer]:
+                      - generic [ref=e303]:
+                        - generic [ref=e304]: "Sort by:"
+                        - text: Best
+                      - generic:
+                        - img
+                  - generic [ref=e306]: No comments yet.
+                  - navigation [ref=e308]:
+                    - button "prev" [disabled]:
+                      - img
+                    - button "1"
+                    - button "2" [ref=e309] [cursor=pointer]
+                    - button "3" [ref=e310] [cursor=pointer]
+                    - button "4" [ref=e311] [cursor=pointer]
+                    - button "gap" [disabled]:
+                      - img
+                    - button "26" [ref=e312] [cursor=pointer]
+                    - button "next" [ref=e313] [cursor=pointer]:
+                      - img [ref=e314]
+            - generic [ref=e317]: Copyright © 2026 LeetCode. All rights reserved.
+          - generic [ref=e319]:
+            - generic [ref=e320]:
+              - generic [ref=e321]:
+                - generic [ref=e322]:
+                  - button "12.9K" [ref=e323] [cursor=pointer]:
+                    - img [ref=e325]
+                    - generic [ref=e327]: 12.9K
+                  - button [ref=e329] [cursor=pointer]:
+                    - img [ref=e331]
+                - button "257" [ref=e333] [cursor=pointer]:
+                  - img [ref=e335]
+                  - generic [ref=e337]: "257"
+              - generic [ref=e339]:
+                - img [ref=e342] [cursor=pointer]
+                - button [ref=e344] [cursor=pointer]:
+                  - img [ref=e346]
+                - button [ref=e348] [cursor=pointer]:
+                  - img [ref=e350]
+            - generic [ref=e354]: 123 Online
+        - generic [ref=e356]:
+          - generic [ref=e509]:
+            - generic [ref=e510]:
+              - button "C++" [ref=e512] [cursor=pointer]:
+                - text: C++
+                - img [ref=e514]
+              - button "Auto" [ref=e518] [cursor=pointer]: Auto
+            - generic [ref=e521]:
+              - button [ref=e522] [cursor=pointer]:
+                - img [ref=e524]
+              - button [ref=e526] [cursor=pointer]:
+                - img [ref=e528]
+              - button [ref=e530] [cursor=pointer]:
+                - img [ref=e532]
+              - button [ref=e534] [cursor=pointer]:
+                - img [ref=e535]
+          - code [ref=e540]:
+            - generic [ref=e541]:
+              - generic [ref=e544]:
+                - generic [ref=e545]:
+                  - generic [ref=e547] [cursor=pointer]: 
+                  - generic [ref=e548]: "1"
+                - generic [ref=e550]: "2"
+                - generic [ref=e552]: "3"
+                - generic [ref=e554]: "4"
+                - generic [ref=e556]: "5"
+                - generic [ref=e558]: "6"
+                - generic [ref=e560]: "7"
+                - generic [ref=e563]: "8"
+                - generic [ref=e566]: "9"
+                - generic [ref=e570]: "10"
+                - generic [ref=e572]: "11"
+                - generic [ref=e574]: "12"
+                - generic [ref=e575]:
+                  - generic [ref=e576] [cursor=pointer]: 
+                  - generic [ref=e577]: "13"
+                - generic [ref=e579]: "14"
+              - generic [ref=e613]:
+                - generic [ref=e615]: /**
+                - generic [ref=e617]: "* Definition for a binary tree node."
+                - generic [ref=e619]: "* struct TreeNode {"
+                - generic [ref=e621]: "* int val;"
+                - generic [ref=e623]: "* TreeNode *left;"
+                - generic [ref=e625]: "* TreeNode *right;"
+                - generic [ref=e627]: "* TreeNode() : val(0), left"
+                - generic [ref=e629]: "(nullptr), right(nullptr) {}"
+                - generic [ref=e631]: "* TreeNode(int x) : val(x), left"
+                - generic [ref=e633]: "(nullptr), right(nullptr) {}"
+                - generic [ref=e635]: "* TreeNode(int x, TreeNode *left,"
+                - generic [ref=e637]: "TreeNode *right) : val(x), left(left),"
+                - generic [ref=e639]: "right(right) {}"
+                - generic [ref=e641]: "* };"
+                - generic [ref=e643]: "*/"
+                - generic [ref=e645]: "class Solution {"
+                - generic [ref=e647]: "public:"
+                - generic [ref=e649]: bool isSameTree(TreeNode* p,
+                - generic [ref=e651]: "TreeNode* q) {"
+              - textbox "Editor content;Press Alt+F1 for Accessibility Options." [ref=e653]: "/** * Definition for a binary tree node. * struct TreeNode { * int val; * TreeNode *left; * TreeNode *right; * TreeNode() : val(0), left(nullptr), right(nullptr) {} * TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}"
+          - generic [ref=e369]:
+            - generic [ref=e654]: Saved
+            - generic [ref=e370]: Ln 1, Col 1
+          - generic [ref=e372]:
+            - text: You need to
+            - link "log in / sign up" [ref=e373] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Fsame-tree%2Fdescription%2F
+            - text: to run or submit
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e375]:
+                - generic [ref=e376]:
+                  - generic [ref=e377]:
+                    - button "Case 1" [ref=e378] [cursor=pointer]
+                    - button "Case 2" [ref=e379] [cursor=pointer]
+                    - button "Case 3" [ref=e380] [cursor=pointer]
+                    - button [ref=e381] [cursor=pointer]:
+                      - img [ref=e382]
+                  - img [ref=e386] [cursor=pointer]
+                - generic [ref=e388]:
+                  - generic [ref=e390]:
+                    - generic [ref=e391]: p =
+                    - generic [ref=e393]: "[1,2,3]"
+                    - img [ref=e398]:
+                      - generic [ref=e400]:
+                        - generic "1" [ref=e407]
+                        - generic "2" [ref=e412]
+                        - generic "3" [ref=e417]
+                  - generic [ref=e419]:
+                    - generic [ref=e420]: q =
+                    - generic [ref=e422]: "[1,2,3]"
+                    - img [ref=e427]:
+                      - generic [ref=e429]:
+                        - generic "1" [ref=e436]
+                        - generic "2" [ref=e441]
+                        - generic "3" [ref=e446]
+              - generic [ref=e447]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic [ref=e449]:
+                            - generic [ref=e450]: "1"
+                            - generic [ref=e451]: "2"
+                            - generic [ref=e452]: "3"
+                            - generic [ref=e453]: "4"
+                            - generic [ref=e454]: "5"
+                            - generic [ref=e455]: "6"
+                          - textbox [ref=e458]:
+                            - generic [ref=e459]: "[1,2,3]"
+                            - generic [ref=e460]: "[1,2,3]"
+                            - generic [ref=e461]: "[1,2]"
+                            - generic [ref=e462]: "[1,null,2]"
+                            - generic [ref=e463]: "[1,2,1]"
+                            - generic [ref=e464]: "[1,1,2]"
+            - generic [ref=e466]:
+              - generic [ref=e468] [cursor=pointer]:
+                - img [ref=e470]
+                - generic [ref=e472]: Source
+              - link [ref=e473] [cursor=pointer]:
+                - /url: https://support.leetcode.com/hc/en-us/articles/32442719377939-How-to-create-test-cases-on-LeetCode
+                - img [ref=e475]
+    - region "Notifications (F8)":
+      - list
+  - alert [ref=e479]
+  - generic [ref=e655]:
+    - link [ref=e659] [cursor=pointer]:
+      - /url: /problemset/
+      - img [ref=e660]
+    - img [ref=e663] [cursor=pointer]
+    - generic [ref=e667]:
+      - generic [ref=e668]:
+        - textbox "Search questions" [ref=e669]
+        - img [ref=e671]
+      - button [ref=e674] [cursor=pointer]:
+        - img [ref=e676]
+      - button [ref=e680] [cursor=pointer]:
+        - img [ref=e683]
+  - generic [ref=e686]:
+    - alert
+    - alert
+    - complementary
+    - complementary

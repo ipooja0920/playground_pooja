@@ -32,20 +32,24 @@ User pastes LeetCode URL
   scrapes problem text, examples, constraints
           │
           ▼
-  Classifier Agent (LLM)
-  identifies pattern(s) + explains reasoning
+  Planner Agent (gpt-4o)
+  decides whether to run the full or simplified teaching pipeline
           │
           ▼
-  Solution Agent (LLM)
-  writes optimized code + step-by-step explanation
+  Debate Pattern
+  Classifier proposes → Devil's Advocate challenges → Judge decides
           │
           ▼
-  Complexity Agent (LLM)
+  Competitive Solution Pattern
+  Solution A vs Solution B → Critic picks winner
+          │
+          ▼
+  Complexity Agent (gpt-4o-mini)
   explains time/space complexity in plain English
           │
           ▼
   Streamlit UI renders full response
-  + Agent Failure Log if anything went wrong
+  + planner strategy, debate summary, winner badge, and fallback handling
 ```
 
 ---
@@ -57,28 +61,48 @@ User pastes LeetCode URL
 - **Job:** Navigate to the LeetCode problem URL, extract problem title, description, examples, constraints
 - **Failure mode:** URL unreachable, LeetCode login wall, scraping error
 
-### 2. Classifier Agent
+### 2. Planner Agent
+- **Model:** `gpt-4o`
+- **Job:** Read the scraped problem and choose the pipeline strategy before the teaching pipeline runs
+- **Strategies:**
+  - `full` → debate classification + competitive solutions
+  - `simplified` → direct classification + single solution
+
+### 3. Classifier Agent
 - **Job:** Read the scraped problem → identify which algorithmic pattern(s) apply → explain *why* this pattern fits in plain words
 - **Output:** Pattern name, reasoning (beginner-friendly), key trick in one sentence, difficulty
 - **Failure mode:** Problem too ambiguous, unsupported pattern
 
-### 3. Solution Agent
+### 4. Devil's Advocate + Judge
+- **Models:** `gpt-4o-mini` challenger, `gpt-4o` judge
+- **Job:** Challenge the initial pattern choice and settle disagreements when another pattern seems more appropriate
+- **Output:** Challenge text, alternative pattern, final judge ruling
+
+### 5. Solution Agent
 - **Job:** Given the problem + pattern → write the most readable optimized solution → explain it using real-life analogies a 5-year-old could follow
 - **Tone:** Explains with "Imagine..." analogies, uses "we" to talk with the reader, avoids jargon, explains technical words in brackets
 - **Output:** Intuition, big idea analogy, decision rules (→ format), code, walkthrough, edge cases
 - **Failure mode:** LLM generation error
 
-### 4. Complexity Agent
+### 6. Competitive Critic
+- **Job:** Compare two independently generated solutions and pick the clearer winner for beginners
+- **Output:** Winner (`A` or `B`) + short reason
+
+### 7. Complexity Agent
 - **Job:** Explain time and space complexity using counting stories tied to the actual problem elements. Generate a 2-question quiz testing why the complexity is what it is.
 - **Tone:** 5-year-old level — uses toy boxes, sticky notes, and counting stories. No jargon without a story.
 - **Output:** Time complexity story, space complexity story, quick take, 2-question interactive quiz
 - **Failure mode:** LLM generation error
 
-### 5. Critic Agent (internal)
+### 8. Critic Agent (internal)
 - **Job:** After each LLM agent runs, evaluate the output on a 1–5 scale for beginner-friendliness, format compliance, and accuracy
 - **Trigger:** Automatically after every Classifier, Solution, and Complexity agent run
 - **Self-correction:** If score ≤ 3, the original agent retries with the critique injected into its prompt
 - **Learning:** Low-scoring runs save a lesson to `corrections.json`, which is injected into future runs automatically
+
+### 9. Supervisor with Fallback
+- **Job:** If the browser cannot access the LeetCode page, the UI asks the user to paste the full problem text and resumes the pipeline from there
+- **Benefit:** Keeps the app usable when LeetCode blocks scraping or Playwright fails
 
 ---
 
@@ -115,7 +139,7 @@ User pastes LeetCode URL
 |-----------|-----------|---------|
 | **UI** | Streamlit | Web interface, pattern library, problem solver, failure log |
 | **Agent Framework** | `mcp-agent` | Connects LLMs to MCP tool servers |
-| **LLM** | OpenAI `gpt-4o-mini` | All agent reasoning (classify, solve, explain) |
+| **LLM** | OpenAI `gpt-4o-mini` + `gpt-4o` | Mini for cheaper agents, full model for planner/judge/heavy reasoning |
 | **Browser Control** | Playwright (`@playwright/mcp`) | Scrapes LeetCode problem content |
 | **MCP Server** | `npx @playwright/mcp@latest` | Runs Playwright as an MCP tool server |
 | **Async** | `asyncio` | Handles async multi-agent pipeline inside Streamlit |
@@ -136,14 +160,17 @@ User pastes LeetCode URL
 
 ### Tab 1: Problem Solver
 - **Input:** LeetCode problem URL text field
-- **Run button:** Triggers the 5-agent pipeline (Browser → Classifier → Solution → Complexity → Critic)
+- **Run button:** Triggers the orchestrated pipeline (Browser → Planner → Pattern stage → Solution stage → Complexity)
 - **Results rendered in 3 sections:**
   1. **Pattern Match** — pattern name, why it fits, key trick, difficulty
+     - Optional debate expander showing classifier proposal, devil's advocate challenge, and judge reasoning
   2. **Solution** — analogy-based intuition, decision rules (→ format), code, walkthrough, edge cases
+     - Competitive winner badge when the full pipeline runs
   3. **Complexity** — counting story for time/space + **interactive 2-question quiz**
      - User picks A/B/C for each question
      - Click "Check Answer" → correct/incorrect feedback + hint
      - Quiz resets automatically on each new problem
+  4. **Fallback input** — appears only when browser scraping fails and lets the user paste the problem text
 
 ### Tab 2: Pattern Library
 - Search bar to filter patterns by name or description
@@ -155,6 +182,7 @@ User pastes LeetCode URL
 
 ### Tab 3: Agent Log
 - **Metrics row:** Agents Run / Succeeded / Failed / Self-Corrected
+- **Multi-agent badges:** Planner strategy, whether debate happened, competitive winner, model tiering
 - **Per-agent expandable rows** — failures auto-expanded, shows duration and details
 - **Self-correction details:** Shows attempt number, critic score, and issues for each retry
 - **Lessons Learned section:** All saved lessons from `corrections.json` with dates — these are injected into future runs
@@ -167,7 +195,7 @@ User pastes LeetCode URL
 LeetCoach/
 ├── main.py                         # Streamlit app — 3 tabs, quiz rendering, agent pipeline
 ├── patterns.py                     # Pattern library data (20 patterns, examples, explanations)
-├── agents.py                       # 5 agent definitions, self-correction loop, corrections store
+├── agents.py                       # Orchestration logic, multi-agent patterns, self-correction loop
 ├── corrections.json                # Auto-generated — saves lessons learned across sessions (gitignored)
 ├── mcp_agent.config.yaml           # MCP config — model, logging, Playwright server
 ├── mcp_agent.secrets.yaml          # API key (gitignored)

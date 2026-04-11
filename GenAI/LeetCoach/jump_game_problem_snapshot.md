@@ -1,0 +1,415 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation [ref=e7]:
+        - generic [ref=e8]:
+          - list [ref=e9]:
+            - link "LeetCode Logo" [ref=e10] [cursor=pointer]:
+              - /url: /
+              - img "LeetCode Logo" [ref=e13]
+            - listitem [ref=e14]
+          - generic [ref=e496]:
+            - button "Expand Panel" [ref=e497] [cursor=pointer]:
+              - img [ref=e499]
+              - generic [ref=e502]: Problem List
+            - link "Prev Question" [ref=e504] [cursor=pointer]:
+              - /url: /problems/spiral-matrix
+              - img [ref=e506]
+            - link "Next Question" [ref=e509] [cursor=pointer]:
+              - /url: /problems/merge-intervals
+              - img [ref=e511]
+            - link "Pick one" [ref=e514] [cursor=pointer]:
+              - /url: /problems/minimum-swaps-to-make-sequences-increasing
+              - img [ref=e516]
+        - generic [ref=e16]:
+          - generic [ref=e21]:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - generic: Debugging...
+                  - generic:
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+            - generic [ref=e23]:
+              - button "You need to log in / sign up to debug" [ref=e25] [cursor=pointer]:
+                - img [ref=e26]
+              - generic [ref=e29]:
+                - button "Run" [ref=e32] [cursor=pointer]:
+                  - img [ref=e34]
+                - button "Submit" [ref=e39] [cursor=pointer]:
+                  - img [ref=e41]
+                  - generic [ref=e43]: Submit
+          - button "More" [ref=e47] [cursor=pointer]:
+            - img [ref=e49]
+        - generic [ref=e53]:
+          - button "Layouts" [ref=e54] [cursor=pointer]:
+            - button "Layouts" [ref=e55]:
+              - img [ref=e57]
+          - button "Settings" [ref=e59] [cursor=pointer]:
+            - img [ref=e61]
+          - generic [ref=e65]:
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: 00:00:00
+                - button:
+                  - generic:
+                    - img
+            - button "Stopwatch" [ref=e68] [cursor=pointer]:
+              - img [ref=e71]
+          - link "Log in" [ref=e74] [cursor=pointer]:
+            - /url: /accounts/login/?next=%2Fproblems%2Fjump-game%2Fdescription%2F
+      - generic [ref=e77]:
+        - generic [ref=e79] [cursor=pointer]:
+          - generic [ref=e81]:
+            - generic [ref=e84]:
+              - img [ref=e86]
+              - generic [ref=e89]: Description
+            - generic [ref=e93]:
+              - img [ref=e95]
+              - generic [ref=e97]:
+                - generic [ref=e98]: Editorial
+                - generic [ref=e99]: Editorial
+            - generic [ref=e103]:
+              - img [ref=e105]
+              - generic [ref=e107]:
+                - generic [ref=e108]: Solutions
+                - generic [ref=e109]: Solutions
+            - generic [ref=e113]:
+              - img [ref=e115]
+              - generic [ref=e117]:
+                - generic [ref=e118]: Submissions
+                - generic [ref=e119]: Submissions
+          - generic [ref=e121]:
+            - button [ref=e123]:
+              - img [ref=e125]
+            - button [ref=e128]:
+              - img [ref=e130]
+        - generic [ref=e134] [cursor=pointer]:
+          - generic [ref=e139]:
+            - img [ref=e141]
+            - generic [ref=e144]: Code
+          - generic [ref=e146]:
+            - button [ref=e148]:
+              - img [ref=e150]
+            - button [ref=e153]:
+              - img [ref=e155]
+        - generic [ref=e161] [cursor=pointer]:
+          - generic [ref=e164]:
+            - img [ref=e166]
+            - generic [ref=e169]: Testcase
+          - generic [ref=e173]:
+            - img [ref=e175]
+            - generic [ref=e177]:
+              - generic [ref=e178]: Test Result
+              - generic [ref=e179]: Test Result
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - link "55. Jump Game" [ref=e186]:
+              - /url: /problems/jump-game/
+            - generic [ref=e187]:
+              - generic [ref=e188]: Medium
+              - generic [ref=e189] [cursor=pointer]:
+                - img [ref=e191]
+                - text: Topics
+              - generic [ref=e193] [cursor=pointer]:
+                - img "premium lock icon" [ref=e194]
+                - generic [ref=e195]: Companies
+            - generic [ref=e198]:
+              - paragraph [ref=e199]:
+                - text: You are given an integer array
+                - code [ref=e200]: nums
+                - text: . You are initially positioned at the array's
+                - strong [ref=e201]: first index
+                - text: ", and each element in the array represents your maximum jump length at that position."
+              - paragraph [ref=e202]:
+                - text: Return
+                - code [ref=e203]: "true"
+                - emphasis [ref=e204]: if you can reach the last index, or
+                - code [ref=e205]: "false"
+                - emphasis [ref=e206]: otherwise
+                - text: .
+              - paragraph [ref=e207]
+              - paragraph [ref=e208]:
+                - strong [ref=e209]: "Example 1:"
+              - generic [ref=e210]:
+                - strong [ref=e211]: "Input:"
+                - text: nums = [2,3,1,1,4]
+                - strong [ref=e212]: "Output:"
+                - text: "true"
+                - strong [ref=e213]: "Explanation:"
+                - text: Jump 1 step from index 0 to 1, then 3 steps to the last index.
+              - paragraph [ref=e214]:
+                - strong [ref=e215]: "Example 2:"
+              - generic [ref=e216]:
+                - strong [ref=e217]: "Input:"
+                - text: nums = [3,2,1,0,4]
+                - strong [ref=e218]: "Output:"
+                - text: "false"
+                - strong [ref=e219]: "Explanation:"
+                - text: You will always arrive at index 3 no matter what. Its maximum jump length is 0, which makes it impossible to reach the last index.
+              - paragraph [ref=e220]
+              - paragraph [ref=e221]:
+                - strong [ref=e222]: "Constraints:"
+              - list [ref=e223]:
+                - listitem [ref=e224]:
+                  - code [ref=e225]:
+                    - text: 1 <= nums.length <= 10
+                    - superscript [ref=e226]: "4"
+                - listitem [ref=e227]:
+                  - code [ref=e228]:
+                    - text: 0 <= nums[i] <= 10
+                    - superscript [ref=e229]: "5"
+            - generic [ref=e230]:
+              - generic [ref=e518]:
+                - generic [ref=e519]: Advertisement
+                - img [ref=e523] [cursor=pointer]
+              - generic [ref=e231]:
+                - generic [ref=e232]:
+                  - generic [ref=e233]: Accepted
+                  - generic [ref=e234]:
+                    - text: 3,152,038
+                    - generic [ref=e235]: /7.7M
+                - generic [ref=e237]:
+                  - generic [ref=e238]: Acceptance Rate
+                  - generic [ref=e239]: 40.7%
+              - separator [ref=e240]
+              - generic [ref=e242]:
+                - generic [ref=e243] [cursor=pointer]:
+                  - generic [ref=e245]:
+                    - img [ref=e247]
+                    - generic [ref=e249]: Topics
+                  - img [ref=e251]
+                - generic [ref=e253]:
+                  - link "Array" [ref=e254] [cursor=pointer]:
+                    - /url: /tag/array/
+                  - link "Dynamic Programming" [ref=e255] [cursor=pointer]:
+                    - /url: /tag/dynamic-programming/
+                  - link "Greedy" [ref=e256] [cursor=pointer]:
+                    - /url: /tag/greedy/
+              - separator [ref=e257]
+              - generic [ref=e260] [cursor=pointer]:
+                - generic [ref=e262]:
+                  - img "icon" [ref=e264]
+                  - generic [ref=e265]: Companies
+                - img [ref=e267]
+              - separator [ref=e269]
+              - generic [ref=e270]:
+                - generic [ref=e271] [cursor=pointer]:
+                  - generic [ref=e273]:
+                    - img [ref=e275]
+                    - generic [ref=e277]: Similar Questions
+                  - img [ref=e279]
+                - generic [ref=e281]:
+                  - generic [ref=e282]:
+                    - link "Jump Game II" [ref=e286] [cursor=pointer]:
+                      - /url: /problems/jump-game-ii/
+                    - generic [ref=e288]: Medium
+                  - generic [ref=e289]:
+                    - link "Jump Game III" [ref=e293] [cursor=pointer]:
+                      - /url: /problems/jump-game-iii/
+                    - generic [ref=e295]: Medium
+                  - generic [ref=e296]:
+                    - link "Jump Game VII" [ref=e300] [cursor=pointer]:
+                      - /url: /problems/jump-game-vii/
+                    - generic [ref=e302]: Medium
+                  - generic [ref=e303]:
+                    - generic [ref=e304]:
+                      - link "Jump Game VIII" [ref=e307] [cursor=pointer]:
+                        - /url: /problems/jump-game-viii/
+                      - img [ref=e309]
+                    - generic [ref=e312]: Medium
+                  - generic [ref=e313]:
+                    - link "Minimum Number of Visited Cells in a Grid" [ref=e317] [cursor=pointer]:
+                      - /url: /problems/minimum-number-of-visited-cells-in-a-grid/
+                    - generic [ref=e319]: Hard
+                  - generic [ref=e320]:
+                    - link "Largest Element in an Array after Merge Operations" [ref=e324] [cursor=pointer]:
+                      - /url: /problems/largest-element-in-an-array-after-merge-operations/
+                    - generic [ref=e326]: Medium
+              - separator [ref=e327]
+              - generic [ref=e329]:
+                - generic [ref=e330] [cursor=pointer]:
+                  - generic [ref=e332]:
+                    - img [ref=e334]
+                    - generic [ref=e336]: Discussion (489)
+                  - img [ref=e338]
+                - generic [ref=e341]:
+                  - generic [ref=e345]:
+                    - textbox "Type comment here..." [ref=e346]
+                    - generic [ref=e347]:
+                      - generic [ref=e348]:
+                        - button "Choose a type" [ref=e352] [cursor=pointer]:
+                          - generic [ref=e353]: Choose a type
+                          - generic:
+                            - generic:
+                              - img
+                        - generic [ref=e354]:
+                          - img [ref=e356] [cursor=pointer]
+                          - img [ref=e359] [cursor=pointer]
+                          - img [ref=e362] [cursor=pointer]
+                          - img [ref=e365] [cursor=pointer]
+                      - button "Comment" [disabled] [ref=e368] [cursor=pointer]
+                  - generic [ref=e369]:
+                    - generic [ref=e371]:
+                      - generic [ref=e372]:
+                        - generic [ref=e373]: 💡 Discussion Rules
+                        - img [ref=e375] [cursor=pointer]
+                      - generic [ref=e377]:
+                        - paragraph [ref=e378]: 1. Please don't post any solutions in this discussion.
+                        - paragraph [ref=e379]: 2. The problem discussion is for asking questions about the problem or for sharing tips - anything except for solutions.
+                        - paragraph [ref=e380]: 3. If you'd like to share your solution for feedback and ideas, please head to the solutions tab and post it there.
+                    - button "Sort by:Best" [ref=e384] [cursor=pointer]:
+                      - generic [ref=e385]:
+                        - generic [ref=e386]: "Sort by:"
+                        - text: Best
+                      - generic:
+                        - img
+                  - generic [ref=e388]: No comments yet.
+                  - navigation [ref=e390]:
+                    - button "prev" [disabled]:
+                      - img
+                    - button "1"
+                    - button "2" [ref=e391] [cursor=pointer]
+                    - button "3" [ref=e392] [cursor=pointer]
+                    - button "4" [ref=e393] [cursor=pointer]
+                    - button "gap" [disabled]:
+                      - img
+                    - button "49" [ref=e394] [cursor=pointer]
+                    - button "next" [ref=e395] [cursor=pointer]:
+                      - img [ref=e396]
+            - generic [ref=e399]: Copyright © 2026 LeetCode. All rights reserved.
+          - generic [ref=e401]:
+            - generic [ref=e402]:
+              - generic [ref=e403]:
+                - generic [ref=e404]:
+                  - button "21.7K" [ref=e405] [cursor=pointer]:
+                    - img [ref=e407]
+                    - generic [ref=e409]: 21.7K
+                  - button [ref=e411] [cursor=pointer]:
+                    - img [ref=e413]
+                - button "489" [ref=e415] [cursor=pointer]:
+                  - img [ref=e417]
+                  - generic [ref=e419]: "489"
+              - generic [ref=e421]:
+                - img [ref=e424] [cursor=pointer]
+                - button [ref=e426] [cursor=pointer]:
+                  - img [ref=e428]
+                - button [ref=e430] [cursor=pointer]:
+                  - img [ref=e432]
+            - generic [ref=e436]: 130 Online
+        - generic [ref=e438]:
+          - generic [ref=e525]:
+            - generic [ref=e526]:
+              - button "C++" [ref=e528] [cursor=pointer]:
+                - text: C++
+                - img [ref=e530]
+              - button "Auto" [ref=e534] [cursor=pointer]: Auto
+            - generic [ref=e537]:
+              - button [ref=e538] [cursor=pointer]:
+                - img [ref=e540]
+              - button [ref=e542] [cursor=pointer]:
+                - img [ref=e544]
+              - button [ref=e546] [cursor=pointer]:
+                - img [ref=e548]
+              - button [ref=e550] [cursor=pointer]:
+                - img [ref=e551]
+          - code [ref=e556]:
+            - generic [ref=e557]:
+              - generic [ref=e560]:
+                - generic [ref=e563]: "1"
+                - generic [ref=e564]:
+                  - generic [ref=e565] [cursor=pointer]: 
+                  - generic [ref=e566]: "2"
+                - generic [ref=e568]: "3"
+                - generic [ref=e570]: "4"
+                - generic [ref=e572]: "5"
+                - generic [ref=e574]: "6"
+              - generic [ref=e586]:
+                - generic [ref=e588]: "class Solution {"
+                - generic [ref=e590]: "public:"
+                - generic [ref=e592]: "bool canJump(vector<int>& nums) {"
+                - generic [ref=e596]: "}"
+                - generic [ref=e598]: "};"
+              - textbox "Editor content;Press Alt+F1 for Accessibility Options." [ref=e600]: "class Solution { public: bool canJump(vector<int>& nums) { } };"
+          - generic [ref=e451]:
+            - generic [ref=e601]: Saved
+            - generic [ref=e452]: Ln 1, Col 1
+          - generic [ref=e454]:
+            - text: You need to
+            - link "log in / sign up" [ref=e455] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Fjump-game%2Fdescription%2F
+            - text: to run or submit
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e457]:
+                - generic [ref=e459]:
+                  - button "Case 1" [ref=e460] [cursor=pointer]
+                  - button "Case 2" [ref=e461] [cursor=pointer]
+                  - button [ref=e462] [cursor=pointer]:
+                    - img [ref=e463]
+                - generic [ref=e467]:
+                  - generic [ref=e468]: nums =
+                  - generic [ref=e470]: "[2,3,1,1,4]"
+              - generic [ref=e471]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic [ref=e473]:
+                            - generic [ref=e474]: "1"
+                            - generic [ref=e475]: "2"
+                          - textbox [ref=e478]:
+                            - generic [ref=e479]: "[2,3,1,1,4]"
+                            - generic [ref=e480]: "[3,2,1,0,4]"
+            - generic [ref=e482]:
+              - generic [ref=e484] [cursor=pointer]:
+                - img [ref=e486]
+                - generic [ref=e488]: Source
+              - link [ref=e489] [cursor=pointer]:
+                - /url: https://support.leetcode.com/hc/en-us/articles/32442719377939-How-to-create-test-cases-on-LeetCode
+                - img [ref=e491]
+    - region "Notifications (F8)":
+      - list
+  - alert [ref=e495]
+  - generic [ref=e602]:
+    - link [ref=e606] [cursor=pointer]:
+      - /url: /problemset/
+      - img [ref=e607]
+    - img [ref=e610] [cursor=pointer]
+    - generic [ref=e614]:
+      - generic [ref=e615]:
+        - textbox "Search questions" [ref=e616]
+        - img [ref=e618]
+      - button [ref=e621] [cursor=pointer]:
+        - img [ref=e623]
+      - button [ref=e627] [cursor=pointer]:
+        - img [ref=e630]
+  - generic [ref=e633]:
+    - alert
+    - alert
+    - complementary
+    - complementary

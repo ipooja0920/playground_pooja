@@ -1,0 +1,423 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation [ref=e7]:
+        - generic [ref=e8]:
+          - list [ref=e9]:
+            - link "LeetCode Logo" [ref=e10] [cursor=pointer]:
+              - /url: /
+              - img "LeetCode Logo" [ref=e13]
+            - listitem [ref=e14]
+          - generic [ref=e501]:
+            - button "Expand Panel" [ref=e502] [cursor=pointer]:
+              - img [ref=e504]
+              - generic [ref=e507]: Problem List
+            - link "Prev Question" [ref=e509] [cursor=pointer]:
+              - /url: /problems/simplify-path
+              - img [ref=e511]
+            - link "Next Question" [ref=e514] [cursor=pointer]:
+              - /url: /problems/set-matrix-zeroes
+              - img [ref=e516]
+            - link "Pick one" [ref=e519] [cursor=pointer]:
+              - /url: /problems/count-nice-pairs-in-an-array
+              - img [ref=e521]
+        - generic [ref=e16]:
+          - generic [ref=e21]:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - generic: Debugging...
+                  - generic:
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+            - generic [ref=e23]:
+              - button "You need to log in / sign up to debug" [ref=e25] [cursor=pointer]:
+                - img [ref=e26]
+              - generic [ref=e29]:
+                - button "Run" [ref=e32] [cursor=pointer]:
+                  - img [ref=e34]
+                - button "Submit" [ref=e39] [cursor=pointer]:
+                  - img [ref=e41]
+                  - generic [ref=e43]: Submit
+          - button "More" [ref=e47] [cursor=pointer]:
+            - img [ref=e49]
+        - generic [ref=e53]:
+          - button "Layouts" [ref=e54] [cursor=pointer]:
+            - button "Layouts" [ref=e55]:
+              - img [ref=e57]
+          - button "Settings" [ref=e59] [cursor=pointer]:
+            - img [ref=e61]
+          - generic [ref=e65]:
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: 00:00:00
+                - button:
+                  - generic:
+                    - img
+            - button "Stopwatch" [ref=e68] [cursor=pointer]:
+              - img [ref=e71]
+          - link "Log in" [ref=e74] [cursor=pointer]:
+            - /url: /accounts/login/?next=%2Fproblems%2Fedit-distance%2Fdescription%2F
+      - generic [ref=e77]:
+        - generic [ref=e81] [cursor=pointer]:
+          - generic [ref=e84]:
+            - img [ref=e86]
+            - generic [ref=e89]: Description
+          - generic [ref=e93]:
+            - img [ref=e95]
+            - generic [ref=e97]:
+              - generic [ref=e98]: Editorial
+              - generic [ref=e99]: Editorial
+          - generic [ref=e103]:
+            - img [ref=e105]
+            - generic [ref=e107]:
+              - generic [ref=e108]: Solutions
+              - generic [ref=e109]: Solutions
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: Submissions
+              - generic [ref=e119]: Submissions
+        - generic [ref=e122] [cursor=pointer]:
+          - generic [ref=e127]:
+            - img [ref=e129]
+            - generic [ref=e132]: Code
+          - generic [ref=e134]:
+            - button [ref=e136]:
+              - img [ref=e138]
+            - button [ref=e141]:
+              - img [ref=e143]
+        - generic [ref=e149] [cursor=pointer]:
+          - generic [ref=e152]:
+            - img [ref=e154]
+            - generic [ref=e157]: Testcase
+          - generic [ref=e161]:
+            - img [ref=e163]
+            - generic [ref=e165]:
+              - generic [ref=e166]: Test Result
+              - generic [ref=e167]: Test Result
+        - generic [ref=e169]:
+          - generic [ref=e170]:
+            - link "72. Edit Distance" [ref=e174]:
+              - /url: /problems/edit-distance/
+            - generic [ref=e175]:
+              - generic [ref=e176]: Medium
+              - generic [ref=e177] [cursor=pointer]:
+                - img [ref=e179]
+                - text: Topics
+              - generic [ref=e181] [cursor=pointer]:
+                - img "premium lock icon" [ref=e182]
+                - generic [ref=e183]: Companies
+            - generic [ref=e186]:
+              - paragraph [ref=e187]:
+                - text: Given two strings
+                - code [ref=e188]: word1
+                - text: and
+                - code [ref=e189]: word2
+                - text: ", return"
+                - emphasis [ref=e190]:
+                  - text: the minimum number of operations required to convert
+                  - code [ref=e191]: word1
+                  - text: to
+                  - code [ref=e192]: word2
+                - text: .
+              - paragraph [ref=e193]: "You have the following three operations permitted on a word:"
+              - list [ref=e194]:
+                - listitem [ref=e195]: Insert a character
+                - listitem [ref=e196]: Delete a character
+                - listitem [ref=e197]: Replace a character
+              - paragraph [ref=e198]
+              - paragraph [ref=e199]:
+                - strong [ref=e200]: "Example 1:"
+              - generic [ref=e201]:
+                - strong [ref=e202]: "Input:"
+                - text: word1 = "horse", word2 = "ros"
+                - strong [ref=e203]: "Output:"
+                - text: "3"
+                - strong [ref=e204]: "Explanation:"
+                - text: horse -> rorse (replace 'h' with 'r') rorse -> rose (remove 'r') rose -> ros (remove 'e')
+              - paragraph [ref=e205]:
+                - strong [ref=e206]: "Example 2:"
+              - generic [ref=e207]:
+                - strong [ref=e208]: "Input:"
+                - text: word1 = "intention", word2 = "execution"
+                - strong [ref=e209]: "Output:"
+                - text: "5"
+                - strong [ref=e210]: "Explanation:"
+                - text: intention -> inention (remove 't') inention -> enention (replace 'i' with 'e') enention -> exention (replace 'n' with 'x') exention -> exection (replace 'n' with 'c') exection -> execution (insert 'u')
+              - paragraph [ref=e211]
+              - paragraph [ref=e212]:
+                - strong [ref=e213]: "Constraints:"
+              - list [ref=e214]:
+                - listitem [ref=e215]:
+                  - code [ref=e216]: 0 <= word1.length, word2.length <= 500
+                - listitem [ref=e217]:
+                  - code [ref=e218]: word1
+                  - text: and
+                  - code [ref=e219]: word2
+                  - text: consist of lowercase English letters.
+            - generic [ref=e220]:
+              - generic [ref=e523]:
+                - generic [ref=e524]: Advertisement
+                - img [ref=e528] [cursor=pointer]
+              - generic [ref=e221]:
+                - generic [ref=e222]:
+                  - generic [ref=e223]: Accepted
+                  - generic [ref=e224]:
+                    - text: 1,434,638
+                    - generic [ref=e225]: /2.4M
+                - generic [ref=e227]:
+                  - generic [ref=e228]: Acceptance Rate
+                  - generic [ref=e229]: 60.4%
+              - separator [ref=e230]
+              - generic [ref=e232]:
+                - generic [ref=e233] [cursor=pointer]:
+                  - generic [ref=e235]:
+                    - img [ref=e237]
+                    - generic [ref=e239]: Topics
+                  - img [ref=e241]
+                - generic [ref=e243]:
+                  - link "String" [ref=e244] [cursor=pointer]:
+                    - /url: /tag/string/
+                  - link "Dynamic Programming" [ref=e245] [cursor=pointer]:
+                    - /url: /tag/dynamic-programming/
+              - separator [ref=e246]
+              - generic [ref=e249] [cursor=pointer]:
+                - generic [ref=e251]:
+                  - img "icon" [ref=e253]
+                  - generic [ref=e254]: Companies
+                - img [ref=e256]
+              - separator [ref=e258]
+              - generic [ref=e259]:
+                - generic [ref=e260] [cursor=pointer]:
+                  - generic [ref=e262]:
+                    - img [ref=e264]
+                    - generic [ref=e266]: Similar Questions
+                  - img [ref=e268]
+                - generic [ref=e270]:
+                  - generic [ref=e271]:
+                    - generic [ref=e272]:
+                      - link "One Edit Distance" [ref=e275] [cursor=pointer]:
+                        - /url: /problems/one-edit-distance/
+                      - img [ref=e277]
+                    - generic [ref=e280]: Medium
+                  - generic [ref=e281]:
+                    - link "Delete Operation for Two Strings" [ref=e285] [cursor=pointer]:
+                      - /url: /problems/delete-operation-for-two-strings/
+                    - generic [ref=e287]: Medium
+                  - generic [ref=e288]:
+                    - link "Minimum ASCII Delete Sum for Two Strings" [ref=e292] [cursor=pointer]:
+                      - /url: /problems/minimum-ascii-delete-sum-for-two-strings/
+                    - generic [ref=e294]: Medium
+                  - generic [ref=e295]:
+                    - link "Uncrossed Lines" [ref=e299] [cursor=pointer]:
+                      - /url: /problems/uncrossed-lines/
+                    - generic [ref=e301]: Medium
+                  - generic [ref=e302]:
+                    - link "Minimum White Tiles After Covering With Carpets" [ref=e306] [cursor=pointer]:
+                      - /url: /problems/minimum-white-tiles-after-covering-with-carpets/
+                    - generic [ref=e308]: Hard
+                  - generic [ref=e309]:
+                    - link "Longest Palindrome After Substring Concatenation II" [ref=e313] [cursor=pointer]:
+                      - /url: /problems/longest-palindrome-after-substring-concatenation-ii/
+                    - generic [ref=e315]: Hard
+                  - generic [ref=e316]:
+                    - link "Minimum Steps to Convert String with Operations" [ref=e320] [cursor=pointer]:
+                      - /url: /problems/minimum-steps-to-convert-string-with-operations/
+                    - generic [ref=e322]: Hard
+              - separator [ref=e323]
+              - generic [ref=e325]:
+                - generic [ref=e326] [cursor=pointer]:
+                  - generic [ref=e328]:
+                    - img [ref=e330]
+                    - generic [ref=e332]: Discussion (282)
+                  - img [ref=e334]
+                - generic [ref=e337]:
+                  - generic [ref=e341]:
+                    - textbox "Type comment here..." [ref=e342]
+                    - generic [ref=e343]:
+                      - generic [ref=e344]:
+                        - button "Choose a type" [ref=e348] [cursor=pointer]:
+                          - generic [ref=e349]: Choose a type
+                          - generic:
+                            - generic:
+                              - img
+                        - generic [ref=e350]:
+                          - img [ref=e352] [cursor=pointer]
+                          - img [ref=e355] [cursor=pointer]
+                          - img [ref=e358] [cursor=pointer]
+                          - img [ref=e361] [cursor=pointer]
+                      - button "Comment" [disabled] [ref=e364] [cursor=pointer]
+                  - generic [ref=e365]:
+                    - generic [ref=e367]:
+                      - generic [ref=e368]:
+                        - generic [ref=e369]: 💡 Discussion Rules
+                        - img [ref=e371] [cursor=pointer]
+                      - generic [ref=e373]:
+                        - paragraph [ref=e374]: 1. Please don't post any solutions in this discussion.
+                        - paragraph [ref=e375]: 2. The problem discussion is for asking questions about the problem or for sharing tips - anything except for solutions.
+                        - paragraph [ref=e376]: 3. If you'd like to share your solution for feedback and ideas, please head to the solutions tab and post it there.
+                    - button "Sort by:Best" [ref=e380] [cursor=pointer]:
+                      - generic [ref=e381]:
+                        - generic [ref=e382]: "Sort by:"
+                        - text: Best
+                      - generic:
+                        - img
+                  - generic [ref=e384]: No comments yet.
+                  - navigation [ref=e386]:
+                    - button "prev" [disabled]:
+                      - img
+                    - button "1"
+                    - button "2" [ref=e387] [cursor=pointer]
+                    - button "3" [ref=e388] [cursor=pointer]
+                    - button "4" [ref=e389] [cursor=pointer]
+                    - button "gap" [disabled]:
+                      - img
+                    - button "29" [ref=e390] [cursor=pointer]
+                    - button "next" [ref=e391] [cursor=pointer]:
+                      - img [ref=e392]
+            - generic [ref=e395]: Copyright © 2026 LeetCode. All rights reserved.
+          - generic [ref=e397]:
+            - generic [ref=e398]:
+              - generic [ref=e399]:
+                - generic [ref=e400]:
+                  - button "16.4K" [ref=e401] [cursor=pointer]:
+                    - img [ref=e403]
+                    - generic [ref=e405]: 16.4K
+                  - button [ref=e407] [cursor=pointer]:
+                    - img [ref=e409]
+                - button "282" [ref=e411] [cursor=pointer]:
+                  - img [ref=e413]
+                  - generic [ref=e415]: "282"
+              - generic [ref=e417]:
+                - img [ref=e420] [cursor=pointer]
+                - button [ref=e422] [cursor=pointer]:
+                  - img [ref=e424]
+                - button [ref=e426] [cursor=pointer]:
+                  - img [ref=e428]
+            - generic [ref=e432]: 129 Online
+        - generic [ref=e434]:
+          - generic [ref=e530]:
+            - generic [ref=e531]:
+              - button "C++" [ref=e533] [cursor=pointer]:
+                - text: C++
+                - img [ref=e535]
+              - button "Auto" [ref=e539] [cursor=pointer]: Auto
+            - generic [ref=e542]:
+              - button [ref=e543] [cursor=pointer]:
+                - img [ref=e545]
+              - button [ref=e547] [cursor=pointer]:
+                - img [ref=e549]
+              - button [ref=e551] [cursor=pointer]:
+                - img [ref=e553]
+              - button [ref=e555] [cursor=pointer]:
+                - img [ref=e556]
+          - code [ref=e561]:
+            - generic [ref=e562]:
+              - generic [ref=e565]:
+                - generic [ref=e568]: "1"
+                - generic [ref=e569]:
+                  - generic [ref=e570] [cursor=pointer]: 
+                  - generic [ref=e571]: "2"
+                - generic [ref=e573]: "3"
+                - generic [ref=e576]: "4"
+                - generic [ref=e578]: "5"
+                - generic [ref=e580]: "6"
+              - generic [ref=e593]:
+                - generic [ref=e595]: "class Solution {"
+                - generic [ref=e597]: "public:"
+                - generic [ref=e599]: int minDistance(string word1, string
+                - generic [ref=e601]: "word2) {"
+                - generic [ref=e605]: "}"
+                - generic [ref=e607]: "};"
+              - textbox "Editor content;Press Alt+F1 for Accessibility Options." [ref=e609]: "class Solution { public: int minDistance(string word1, string word2) { } };"
+          - generic [ref=e447]:
+            - generic [ref=e610]: Saved
+            - generic [ref=e448]: Ln 1, Col 1
+          - generic [ref=e450]:
+            - text: You need to
+            - link "log in / sign up" [ref=e451] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Fedit-distance%2Fdescription%2F
+            - text: to run or submit
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e453]:
+                - generic [ref=e455]:
+                  - button "Case 1" [ref=e456] [cursor=pointer]
+                  - button "Case 2" [ref=e457] [cursor=pointer]
+                  - button [ref=e458] [cursor=pointer]:
+                    - img [ref=e459]
+                - generic [ref=e461]:
+                  - generic [ref=e463]:
+                    - generic [ref=e464]: word1 =
+                    - generic [ref=e466]: "\"horse\""
+                  - generic [ref=e468]:
+                    - generic [ref=e469]: word2 =
+                    - generic [ref=e471]: "\"ros\""
+              - generic [ref=e472]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic [ref=e474]:
+                            - generic [ref=e475]: "1"
+                            - generic [ref=e476]: "2"
+                            - generic [ref=e477]: "3"
+                            - generic [ref=e478]: "4"
+                          - textbox [ref=e481]:
+                            - generic [ref=e482]: "\"horse\""
+                            - generic [ref=e483]: "\"ros\""
+                            - generic [ref=e484]: "\"intention\""
+                            - generic [ref=e485]: "\"execution\""
+            - generic [ref=e487]:
+              - generic [ref=e489] [cursor=pointer]:
+                - img [ref=e491]
+                - generic [ref=e493]: Source
+              - link [ref=e494] [cursor=pointer]:
+                - /url: https://support.leetcode.com/hc/en-us/articles/32442719377939-How-to-create-test-cases-on-LeetCode
+                - img [ref=e496]
+    - region "Notifications (F8)":
+      - list
+  - alert [ref=e500]
+  - generic [ref=e611]:
+    - link [ref=e615] [cursor=pointer]:
+      - /url: /problemset/
+      - img [ref=e616]
+    - img [ref=e619] [cursor=pointer]
+    - generic [ref=e623]:
+      - generic [ref=e624]:
+        - textbox "Search questions" [ref=e625]
+        - img [ref=e627]
+      - button [ref=e630] [cursor=pointer]:
+        - img [ref=e632]
+      - button [ref=e636] [cursor=pointer]:
+        - img [ref=e639]
+  - generic [ref=e642]:
+    - alert
+    - alert
+    - complementary
+    - complementary

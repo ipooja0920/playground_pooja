@@ -1,0 +1,391 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation [ref=e7]:
+        - generic [ref=e8]:
+          - list [ref=e9]:
+            - link "LeetCode Logo" [ref=e10] [cursor=pointer]:
+              - /url: /
+              - img "LeetCode Logo" [ref=e13]
+            - listitem [ref=e14]
+          - generic [ref=e488]:
+            - button "Expand Panel" [ref=e489] [cursor=pointer]:
+              - img [ref=e491]
+              - generic [ref=e494]: Problem List
+            - link "Prev Question" [ref=e496] [cursor=pointer]:
+              - /url: /problems/3sum-closest
+              - img [ref=e498]
+            - link "Next Question" [ref=e501] [cursor=pointer]:
+              - /url: /problems/4sum
+              - img [ref=e503]
+            - link "Pick one" [ref=e506] [cursor=pointer]:
+              - /url: /problems/minimum-array-length-after-pair-removals
+              - img [ref=e508]
+        - generic [ref=e16]:
+          - generic [ref=e21]:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - generic: Debugging...
+                  - generic:
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+            - generic [ref=e23]:
+              - button "You need to log in / sign up to debug" [ref=e25] [cursor=pointer]:
+                - img [ref=e26]
+              - generic [ref=e29]:
+                - button "Run" [ref=e32] [cursor=pointer]:
+                  - img [ref=e34]
+                - button "Submit" [ref=e39] [cursor=pointer]:
+                  - img [ref=e41]
+                  - generic [ref=e43]: Submit
+          - button "More" [ref=e512] [cursor=pointer]:
+            - img [ref=e514]
+        - generic [ref=e60]:
+          - button "Layouts" [ref=e61] [cursor=pointer]:
+            - button "Layouts" [ref=e62]:
+              - img [ref=e64]
+          - button "Settings" [ref=e66] [cursor=pointer]:
+            - img [ref=e68]
+          - generic [ref=e72]:
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: 00:00:00
+                - button:
+                  - generic:
+                    - img
+            - button "Stopwatch" [ref=e75] [cursor=pointer]:
+              - img [ref=e78]
+          - link "Log in" [ref=e83] [cursor=pointer]:
+            - /url: /accounts/login/?next=%2Fproblems%2Fletter-combinations-of-a-phone-number%2Fdescription%2F
+      - generic [ref=e89]:
+        - generic [ref=e93] [cursor=pointer]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - generic [ref=e101]: Description
+          - generic [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - generic [ref=e110]: Editorial
+              - generic [ref=e111]: Editorial
+          - generic [ref=e115]:
+            - img [ref=e117]
+            - generic [ref=e119]:
+              - generic [ref=e120]: Solutions
+              - generic [ref=e121]: Solutions
+          - generic [ref=e125]:
+            - img [ref=e127]
+            - generic [ref=e129]:
+              - generic [ref=e130]: Submissions
+              - generic [ref=e131]: Submissions
+        - generic [ref=e139] [cursor=pointer]:
+          - img [ref=e141]
+          - generic [ref=e144]: Code
+        - generic [ref=e161] [cursor=pointer]:
+          - generic [ref=e164]:
+            - img [ref=e166]
+            - generic [ref=e169]: Testcase
+          - generic [ref=e173]:
+            - img [ref=e175]
+            - generic [ref=e177]:
+              - generic [ref=e178]: Test Result
+              - generic [ref=e179]: Test Result
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - link "17. Letter Combinations of a Phone Number" [ref=e186]:
+              - /url: /problems/letter-combinations-of-a-phone-number/
+            - generic [ref=e187]:
+              - generic [ref=e188]: Medium
+              - generic [ref=e189] [cursor=pointer]:
+                - img [ref=e191]
+                - text: Topics
+              - generic [ref=e193] [cursor=pointer]:
+                - img "premium lock icon" [ref=e194]
+                - generic [ref=e195]: Companies
+            - generic [ref=e198]:
+              - paragraph [ref=e199]:
+                - text: Given a string containing digits from
+                - code [ref=e200]: 2-9
+                - text: inclusive, return all possible letter combinations that the number could represent. Return the answer in
+                - strong [ref=e201]: any order
+                - text: .
+              - paragraph [ref=e202]: A mapping of digits to letters (just like on the telephone buttons) is given below. Note that 1 does not map to any letters.
+              - paragraph [ref=e203]
+              - paragraph [ref=e204]:
+                - strong [ref=e205]: "Example 1:"
+              - generic [ref=e206]:
+                - strong [ref=e207]: "Input:"
+                - text: digits = "23"
+                - strong [ref=e208]: "Output:"
+                - text: "[\"ad\",\"ae\",\"af\",\"bd\",\"be\",\"bf\",\"cd\",\"ce\",\"cf\"]"
+              - paragraph [ref=e209]:
+                - strong [ref=e210]: "Example 2:"
+              - generic [ref=e211]:
+                - strong [ref=e212]: "Input:"
+                - text: digits = "2"
+                - strong [ref=e213]: "Output:"
+                - text: "[\"a\",\"b\",\"c\"]"
+              - paragraph [ref=e214]
+              - paragraph [ref=e215]:
+                - strong [ref=e216]: "Constraints:"
+              - list [ref=e217]:
+                - listitem [ref=e218]:
+                  - code [ref=e219]: 1 <= digits.length <= 4
+                - listitem [ref=e220]:
+                  - code [ref=e221]: digits[i]
+                  - text: is a digit in the range
+                  - code [ref=e222]: "['2', '9']"
+                  - text: .
+            - generic [ref=e223]:
+              - generic [ref=e516]:
+                - generic [ref=e517]: Advertisement
+                - img [ref=e521] [cursor=pointer]
+              - generic [ref=e224]:
+                - generic [ref=e225]:
+                  - generic [ref=e226]: Accepted
+                  - generic [ref=e227]:
+                    - text: 2,987,517
+                    - generic [ref=e228]: /4.5M
+                - generic [ref=e230]:
+                  - generic [ref=e231]: Acceptance Rate
+                  - generic [ref=e232]: 65.8%
+              - separator [ref=e233]
+              - generic [ref=e235]:
+                - generic [ref=e236] [cursor=pointer]:
+                  - generic [ref=e238]:
+                    - img [ref=e240]
+                    - generic [ref=e242]: Topics
+                  - img [ref=e244]
+                - generic [ref=e246]:
+                  - link "Hash Table" [ref=e247] [cursor=pointer]:
+                    - /url: /tag/hash-table/
+                  - link "String" [ref=e248] [cursor=pointer]:
+                    - /url: /tag/string/
+                  - link "Backtracking" [ref=e249] [cursor=pointer]:
+                    - /url: /tag/backtracking/
+              - separator [ref=e250]
+              - generic [ref=e253] [cursor=pointer]:
+                - generic [ref=e255]:
+                  - img "icon" [ref=e257]
+                  - generic [ref=e258]: Companies
+                - img [ref=e260]
+              - separator [ref=e262]
+              - generic [ref=e263]:
+                - generic [ref=e264] [cursor=pointer]:
+                  - generic [ref=e266]:
+                    - img [ref=e268]
+                    - generic [ref=e270]: Similar Questions
+                  - img [ref=e272]
+                - generic [ref=e274]:
+                  - generic [ref=e275]:
+                    - link "Generate Parentheses" [ref=e279] [cursor=pointer]:
+                      - /url: /problems/generate-parentheses/
+                    - generic [ref=e281]: Medium
+                  - generic [ref=e282]:
+                    - link "Combination Sum" [ref=e286] [cursor=pointer]:
+                      - /url: /problems/combination-sum/
+                    - generic [ref=e288]: Medium
+                  - generic [ref=e289]:
+                    - link "Binary Watch" [ref=e293] [cursor=pointer]:
+                      - /url: /problems/binary-watch/
+                    - generic [ref=e295]: Easy
+                  - generic [ref=e296]:
+                    - link "Count Number of Texts" [ref=e300] [cursor=pointer]:
+                      - /url: /problems/count-number-of-texts/
+                    - generic [ref=e302]: Medium
+                  - generic [ref=e303]:
+                    - link "Minimum Number of Pushes to Type Word I" [ref=e307] [cursor=pointer]:
+                      - /url: /problems/minimum-number-of-pushes-to-type-word-i/
+                    - generic [ref=e309]: Easy
+                  - generic [ref=e310]:
+                    - link "Minimum Number of Pushes to Type Word II" [ref=e524] [cursor=pointer]:
+                      - /url: /problems/minimum-number-of-pushes-to-type-word-ii/
+                    - generic [ref=e316]: Medium
+              - separator [ref=e317]
+              - generic [ref=e319]:
+                - generic [ref=e320] [cursor=pointer]:
+                  - generic [ref=e322]:
+                    - img [ref=e324]
+                    - generic [ref=e326]: Discussion (392)
+                  - img [ref=e328]
+                - generic [ref=e331]:
+                  - generic [ref=e335]:
+                    - textbox "Type comment here..." [ref=e336]
+                    - generic [ref=e337]:
+                      - generic [ref=e338]:
+                        - button "Choose a type" [ref=e342] [cursor=pointer]:
+                          - generic [ref=e343]: Choose a type
+                          - generic:
+                            - generic:
+                              - img
+                        - generic [ref=e344]:
+                          - img [ref=e346] [cursor=pointer]
+                          - img [ref=e349] [cursor=pointer]
+                          - img [ref=e352] [cursor=pointer]
+                          - img [ref=e355] [cursor=pointer]
+                      - button "Comment" [disabled] [ref=e358] [cursor=pointer]
+                  - generic [ref=e359]:
+                    - generic [ref=e361]:
+                      - generic [ref=e362]:
+                        - generic [ref=e363]: 💡 Discussion Rules
+                        - img [ref=e365] [cursor=pointer]
+                      - generic [ref=e367]:
+                        - paragraph [ref=e368]: 1. Please don't post any solutions in this discussion.
+                        - paragraph [ref=e369]: 2. The problem discussion is for asking questions about the problem or for sharing tips - anything except for solutions.
+                        - paragraph [ref=e370]: 3. If you'd like to share your solution for feedback and ideas, please head to the solutions tab and post it there.
+                    - button "Sort by:Best" [ref=e374] [cursor=pointer]:
+                      - generic [ref=e375]:
+                        - generic [ref=e376]: "Sort by:"
+                        - text: Best
+                      - generic:
+                        - img
+                  - generic [ref=e378]: No comments yet.
+                  - navigation [ref=e380]:
+                    - button "prev" [disabled]:
+                      - img
+                    - button "1"
+                    - button "2" [ref=e381] [cursor=pointer]
+                    - button "3" [ref=e382] [cursor=pointer]
+                    - button "4" [ref=e383] [cursor=pointer]
+                    - button "gap" [disabled]:
+                      - img
+                    - button "40" [ref=e525] [cursor=pointer]
+                    - button "next" [ref=e387] [cursor=pointer]:
+                      - img [ref=e388]
+            - generic [ref=e391]: Copyright © 2026 LeetCode. All rights reserved.
+          - generic [ref=e393]:
+            - generic [ref=e394]:
+              - generic [ref=e395]:
+                - generic [ref=e396]:
+                  - button "21K" [ref=e397] [cursor=pointer]:
+                    - img [ref=e399]
+                    - generic [ref=e401]: 21K
+                  - button [ref=e403] [cursor=pointer]:
+                    - img [ref=e405]
+                - button "392" [ref=e407] [cursor=pointer]:
+                  - img [ref=e409]
+                  - generic [ref=e411]: "392"
+              - generic [ref=e413]:
+                - img [ref=e416] [cursor=pointer]
+                - button [ref=e418] [cursor=pointer]:
+                  - img [ref=e420]
+                - button [ref=e422] [cursor=pointer]:
+                  - img [ref=e424]
+            - generic [ref=e428]: 183 Online
+        - generic [ref=e430]:
+          - generic [ref=e526]:
+            - generic [ref=e527]:
+              - button "C++" [ref=e529] [cursor=pointer]:
+                - text: C++
+                - img [ref=e531]
+              - button "Auto" [ref=e535] [cursor=pointer]: Auto
+            - generic [ref=e538]:
+              - button [ref=e539] [cursor=pointer]:
+                - img [ref=e541]
+              - button [ref=e543] [cursor=pointer]:
+                - img [ref=e545]
+              - button [ref=e547] [cursor=pointer]:
+                - img [ref=e549]
+              - button [ref=e551] [cursor=pointer]:
+                - img [ref=e552]
+          - code [ref=e557]:
+            - generic [ref=e558]:
+              - generic [ref=e561]:
+                - generic [ref=e564]: "1"
+                - generic [ref=e565]:
+                  - generic [ref=e566] [cursor=pointer]: 
+                  - generic [ref=e567]: "2"
+                - generic [ref=e569]: "3"
+                - generic [ref=e572]: "4"
+                - generic [ref=e574]: "5"
+                - generic [ref=e576]: "6"
+              - generic [ref=e589]:
+                - generic [ref=e591]: "class Solution {"
+                - generic [ref=e593]: "public:"
+                - generic [ref=e595]: vector<string> letterCombinations
+                - generic [ref=e597]: "(string digits) {"
+                - generic [ref=e601]: "}"
+                - generic [ref=e603]: "};"
+              - textbox "Editor content;Press Alt+F1 for Accessibility Options." [ref=e605]: "class Solution { public: vector<string> letterCombinations(string digits) { } };"
+          - generic [ref=e443]:
+            - generic [ref=e606]: Saved
+            - generic [ref=e444]: Ln 1, Col 1
+          - generic [ref=e446]:
+            - text: You need to
+            - link "log in / sign up" [ref=e447] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Fletter-combinations-of-a-phone-number%2Fdescription%2F
+            - text: to run or submit
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e449]:
+                - generic [ref=e451]:
+                  - button "Case 1" [ref=e452] [cursor=pointer]
+                  - button "Case 2" [ref=e453] [cursor=pointer]
+                  - button [ref=e454] [cursor=pointer]:
+                    - img [ref=e455]
+                - generic [ref=e459]:
+                  - generic [ref=e460]: digits =
+                  - generic [ref=e462]: "\"23\""
+              - generic [ref=e463]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic [ref=e465]:
+                            - generic [ref=e466]: "1"
+                            - generic [ref=e467]: "2"
+                          - textbox [ref=e470]:
+                            - generic [ref=e471]: "\"23\""
+                            - generic [ref=e472]: "\"2\""
+            - generic [ref=e474]:
+              - generic [ref=e476] [cursor=pointer]:
+                - img [ref=e478]
+                - generic [ref=e480]: Source
+              - link [ref=e481] [cursor=pointer]:
+                - /url: https://support.leetcode.com/hc/en-us/articles/32442719377939-How-to-create-test-cases-on-LeetCode
+                - img [ref=e483]
+    - region "Notifications (F8)":
+      - list
+  - alert [ref=e487]
+  - generic [ref=e607]:
+    - link [ref=e611] [cursor=pointer]:
+      - /url: /problemset/
+      - img [ref=e612]
+    - img [ref=e615] [cursor=pointer]
+    - generic [ref=e619]:
+      - generic [ref=e620]:
+        - textbox "Search questions" [ref=e621]
+        - img [ref=e623]
+      - button [ref=e626] [cursor=pointer]:
+        - img [ref=e628]
+      - button [ref=e632] [cursor=pointer]:
+        - img [ref=e635]
+  - generic [ref=e638]:
+    - alert
+    - alert
+    - complementary
+    - complementary
