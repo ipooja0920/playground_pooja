@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+import json
 from pathlib import Path
 import yaml
 import streamlit as st
@@ -20,7 +21,7 @@ def _load_secrets():
 _load_secrets()
 
 from mcp_agent.app import MCPApp
-from agents import setup_agents, run_pipeline
+from agents import setup_agents, run_pipeline, rerun_section, save_feedback
 from patterns import PATTERNS
 
 # --------------------------------------------------------------------------- #
@@ -31,7 +32,7 @@ st.markdown("# 🧠 LeetCoach")
 st.markdown("Paste a LeetCode URL — get the pattern, a beginner-friendly solution, and a plain-English complexity breakdown.")
 
 # --------------------------------------------------------------------------- #
-#  Session state
+#  Session state init
 # --------------------------------------------------------------------------- #
 if "initialized" not in st.session_state:
     st.session_state.initialized = False
@@ -51,7 +52,16 @@ if "last_log" not in st.session_state:
 if "last_url" not in st.session_state:
     st.session_state.last_url = ""
 if "quiz_state" not in st.session_state:
-    st.session_state.quiz_state = {}  # {q_key: {"selected": "A", "checked": False}}
+    st.session_state.quiz_state = {}
+
+# Feedback state — one per section
+_SECTIONS = ["classifier", "solution", "complexity"]
+if "fb" not in st.session_state:
+    # fb[section] = {sentiment, show_comment, submitted, regenerating}
+    st.session_state.fb = {
+        s: {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
+        for s in _SECTIONS
+    }
 
 # --------------------------------------------------------------------------- #
 #  Agent init
@@ -69,23 +79,94 @@ async def init_agents():
 
 async def run(url: str):
     if not os.getenv("OPENAI_API_KEY"):
-        return None, [{
-            "agent": "Setup",
-            "status": "failed",
-            "details": "OpenAI API key not found. Add it to mcp_agent.secrets.yaml",
-            "duration": 0,
-            "corrections": [],
-        }]
+        return None, [{"agent": "Setup", "status": "failed",
+                       "details": "OpenAI API key not found.", "duration": 0, "corrections": []}]
     error = await init_agents()
     if error:
-        return None, [{
-            "agent": "Setup",
-            "status": "failed",
-            "details": error,
-            "duration": 0,
-            "corrections": [],
-        }]
+        return None, [{"agent": "Setup", "status": "failed",
+                       "details": error, "duration": 0, "corrections": []}]
     return await run_pipeline(url, st.session_state.agents)
+
+# --------------------------------------------------------------------------- #
+#  Process any pending regenerations (must happen before tab rendering)
+# --------------------------------------------------------------------------- #
+for _section in _SECTIONS:
+    if st.session_state.fb[_section]["regenerating"]:
+        _comment = st.session_state.get(f"_comment_{_section}", "")
+        _context = {
+            "problem_text": (st.session_state.last_results or {}).get("problem_text", ""),
+            "pattern":      (st.session_state.last_results or {}).get("pattern", ""),
+            "solution":     (st.session_state.last_results or {}).get("solution", ""),
+        }
+        with st.spinner(f"Regenerating based on your feedback..."):
+            _new_result, _ = st.session_state.loop.run_until_complete(
+                rerun_section(_section, _context, st.session_state.agents, _comment)
+            )
+        # Map section name → result key
+        _result_key = {"classifier": "pattern", "solution": "solution", "complexity": "complexity"}[_section]
+        st.session_state.last_results[_result_key] = _new_result
+
+        # Save as negative feedback
+        save_feedback(_section, "negative", _new_result[:300], _comment)
+
+        st.session_state.fb[_section]["regenerating"] = False
+        st.session_state.fb[_section]["submitted"] = True
+        st.session_state.quiz_state = {}  # reset quiz if complexity changed
+        st.rerun()
+
+# --------------------------------------------------------------------------- #
+#  Feedback UI helper
+# --------------------------------------------------------------------------- #
+def render_feedback(section: str, label: str):
+    """Render 👍 👎 + optional comment below a result section."""
+    state = st.session_state.fb[section]
+
+    if state["submitted"]:
+        if state["sentiment"] == "liked":
+            st.caption("Thanks for the 👍 — noted for future runs!")
+        else:
+            st.caption("✅ Regenerated based on your feedback!")
+        return
+
+    st.markdown(f"<small>Was this {label} helpful?</small>", unsafe_allow_html=True)
+    col1, col2, col_space = st.columns([1, 1, 10])
+
+    def _like():
+        state["sentiment"] = "liked"
+        state["show_comment"] = True
+
+    def _dislike():
+        state["sentiment"] = "disliked"
+        state["show_comment"] = True
+
+    with col1:
+        st.button("👍", key=f"like_{section}",
+                  type="primary" if state["sentiment"] == "liked" else "secondary",
+                  on_click=_like)
+    with col2:
+        st.button("👎", key=f"dislike_{section}",
+                  type="primary" if state["sentiment"] == "disliked" else "secondary",
+                  on_click=_dislike)
+
+    if state["show_comment"]:
+        comment = st.text_area(
+            "Add a comment (optional)",
+            placeholder="Tell us what you liked or what could be better...",
+            height=80,
+            key=f"comment_area_{section}",
+        )
+        submit_label = "Submit & Regenerate 🔄" if state["sentiment"] == "disliked" else "Submit Feedback"
+
+        def _submit():
+            st.session_state[f"_comment_{section}"] = comment
+            if state["sentiment"] == "liked":
+                save_feedback(section, "positive", "", comment)
+                state["submitted"] = True
+            else:
+                state["regenerating"] = True
+
+        st.button(submit_label, key=f"submit_{section}", type="primary", on_click=_submit)
+
 
 # --------------------------------------------------------------------------- #
 #  Tabs
@@ -107,7 +188,13 @@ with tab1:
     def start_run():
         st.session_state.is_processing = True
         st.session_state.last_url = url_input.strip()
-        st.session_state.quiz_state = {}  # reset quiz on new problem
+        st.session_state.quiz_state = {}
+        # Reset feedback for all sections
+        for s in _SECTIONS:
+            st.session_state.fb[s] = {
+                "sentiment": None, "show_comment": False,
+                "submitted": False, "regenerating": False,
+            }
 
     st.button(
         "🚀 Analyze Problem",
@@ -133,38 +220,41 @@ with tab1:
         results = st.session_state.last_results
         st.markdown("---")
 
+        # --- Pattern ---
         st.markdown("## 🎯 Pattern Match")
         st.markdown(results["pattern"])
+        render_feedback("classifier", "pattern explanation")
 
+        # --- Solution ---
         if results.get("solution"):
             st.markdown("---")
             st.markdown("## 💡 Solution")
             st.markdown(results["solution"])
+            render_feedback("solution", "solution explanation")
 
+        # --- Complexity + Quiz ---
         if results.get("complexity"):
             st.markdown("---")
             st.markdown("## ⏱ Complexity")
 
             complexity_text = results["complexity"]
-
-            # Split complexity explanation from quiz section
             quiz_marker = "## 🧪 Quick Quiz"
             if quiz_marker in complexity_text:
                 complexity_body = complexity_text[:complexity_text.index(quiz_marker)].strip()
-                quiz_body = complexity_text[complexity_text.index(quiz_marker):]
+                quiz_body       = complexity_text[complexity_text.index(quiz_marker):]
             else:
                 complexity_body = complexity_text
-                quiz_body = ""
+                quiz_body       = ""
 
             st.markdown(complexity_body)
+            render_feedback("complexity", "complexity explanation")
 
-            # ---- Quiz ----
+            # Quiz
             if quiz_body:
                 st.markdown("---")
                 st.markdown("## 🧪 Quick Quiz — Test Yourself!")
                 st.caption("Try to answer before peeking at the hint.")
 
-                # Parse questions
                 q_blocks = re.findall(
                     r'\*\*Q(\d+):\*\*\s*(.+?)\n((?:\s*- [A-Ca-c]\).+\n)+)\s*ANSWER:\s*([A-Ca-c])\s*\nHINT:\s*(.+)',
                     quiz_body,
@@ -174,11 +264,10 @@ with tab1:
                 for q_num, question, options_raw, answer, hint in q_blocks:
                     q_key = f"q{q_num}"
                     options_parsed = re.findall(r'- ([A-Ca-c])\)\s*(.+)', options_raw)
-                    options_dict = {opt[0].upper(): opt[1].strip() for opt in options_parsed}
-                    correct = answer.strip().upper()
+                    options_dict   = {opt[0].upper(): opt[1].strip() for opt in options_parsed}
+                    correct        = answer.strip().upper()
 
                     st.markdown(f"**Q{q_num}: {question.strip()}**")
-
                     radio_options = [f"{k}) {v}" for k, v in options_dict.items()]
                     selected = st.radio(
                         f"q{q_num}_radio",
@@ -202,15 +291,16 @@ with tab1:
                         if state["selected"] and state["selected"].startswith(state["correct"]):
                             st.success(f"Correct! {state['hint']}")
                         elif state["selected"]:
-                            st.error(f"Not quite. The answer is **{state['correct']}) {state['options'].get(state['correct'], '')}**")
+                            st.error(
+                                f"Not quite. The answer is **{state['correct']}) "
+                                f"{state['options'].get(state['correct'], '')}**"
+                            )
                             st.info(f"Hint: {state['hint']}")
                         else:
                             st.warning("Pick an option first!")
-
                     st.markdown("")
 
     elif st.session_state.last_log:
-        # Pipeline ran but no results — show top-level failure message
         failed = [e for e in st.session_state.last_log if e["status"] == "failed"]
         if failed:
             st.error(f"Pipeline failed at **{failed[0]['agent']}**: {failed[0]['details']}")
@@ -235,14 +325,11 @@ with tab2:
     for pattern in filtered:
         with st.expander(f"**{pattern['id']:02d}. {pattern['name']}**", expanded=False):
             st.markdown(f"**What it is:** {pattern['description']}")
-
             st.markdown("**When to use it:**")
             for signal in pattern["when_to_use"]:
                 st.markdown(f"- {signal}")
-
             st.markdown("**Code template:**")
             st.code(pattern["template"], language="python")
-
             st.markdown("**Example problems:**")
             for ex in pattern["examples"]:
                 st.markdown(f"- [{ex['name']}]({ex['url']})")
@@ -262,16 +349,15 @@ with tab3:
         if st.session_state.last_url:
             st.caption(f"Last run: {st.session_state.last_url}")
 
-        # Summary row counts
-        success_count = sum(1 for e in log if e["status"] == "success")
-        failed_count  = sum(1 for e in log if e["status"] == "failed")
-        skipped_count = sum(1 for e in log if e["status"] == "skipped")
+        success_count   = sum(1 for e in log if e["status"] == "success")
+        failed_count    = sum(1 for e in log if e["status"] == "failed")
+        skipped_count   = sum(1 for e in log if e["status"] == "skipped")
         corrected_count = sum(1 for e in log if len(e.get("corrections", [])) > 1)
 
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Agents Run", success_count + failed_count)
-        col2.metric("Succeeded", success_count)
-        col3.metric("Failed", failed_count)
+        col1.metric("Agents Run",     success_count + failed_count)
+        col2.metric("Succeeded",      success_count)
+        col3.metric("Failed",         failed_count)
         col4.metric("Self-Corrected", corrected_count)
 
         st.markdown("---")
@@ -295,28 +381,53 @@ with tab3:
                 if corrections:
                     st.markdown("**Self-Correction Attempts:**")
                     for attempt in corrections:
-                        score = attempt.get("score", "?")
+                        score  = attempt.get("score", "?")
                         issues = attempt.get("issues", "none")
-                        attempt_num = attempt.get("attempt", "?")
+                        num    = attempt.get("attempt", "?")
                         score_color = "green" if score >= 4 else ("orange" if score == 3 else "red")
-                        st.markdown(
-                            f"- Attempt {attempt_num}: Score :{score_color}[{score}/5] — {issues}"
-                        )
-
+                        st.markdown(f"- Attempt {num}: Score :{score_color}[{score}/5] — {issues}")
                     if len(corrections) > 1:
                         st.success("Agent self-corrected and improved its output.")
 
-        # Saved lessons section
+        # Human feedback summary
         st.markdown("---")
-        st.markdown("### 📖 Lessons Learned (Persistent)")
-        st.caption("These are saved to corrections.json and injected into future runs automatically.")
+        st.markdown("### 💬 Human Feedback Log")
+        st.caption("Likes and dislikes saved from the UI — injected into future runs automatically.")
+
+        feedback_path = Path(__file__).parent / "feedback.json"
+        if feedback_path.exists():
+            with open(feedback_path) as f:
+                all_feedback = json.load(f)
+            has_any = any(
+                len(v.get("positive", [])) + len(v.get("negative", [])) > 0
+                for v in all_feedback.values()
+            )
+            if has_any:
+                for agent_name, fb in all_feedback.items():
+                    positives = fb.get("positive", [])
+                    negatives = fb.get("negative", [])
+                    if positives or negatives:
+                        st.markdown(f"**{agent_name.capitalize()} Agent**")
+                        for p in positives:
+                            comment = f' — "{p["comment"]}"' if p.get("comment") else ""
+                            st.markdown(f"- 👍 {p['timestamp'][:10]}{comment}")
+                        for n in negatives:
+                            comment = f' — "{n["comment"]}"' if n.get("comment") else ""
+                            st.markdown(f"- 👎 {n['timestamp'][:10]}{comment}")
+            else:
+                st.info("No human feedback yet. Use 👍 👎 buttons after analyzing a problem.")
+        else:
+            st.info("No human feedback yet.")
+
+        # Critic lessons
+        st.markdown("---")
+        st.markdown("### 📖 Critic Lessons Learned")
+        st.caption("Auto-saved when Critic scores output ≤ 3 — injected into future runs.")
 
         corrections_path = Path(__file__).parent / "corrections.json"
         if corrections_path.exists():
-            import json
             with open(corrections_path) as f:
                 all_corrections = json.load(f)
-
             has_any = any(len(v) > 0 for v in all_corrections.values())
             if has_any:
                 for agent_name, lessons in all_corrections.items():
@@ -325,9 +436,10 @@ with tab3:
                         for lesson in lessons:
                             st.markdown(f"- {lesson['suggestion']} *(saved {lesson['timestamp'][:10]})*")
             else:
-                st.info("No lessons saved yet. They appear here after a self-correction.")
+                st.info("No critic lessons yet.")
         else:
-            st.info("No lessons saved yet.")
+            st.info("No critic lessons yet.")
+
 
 # --------------------------------------------------------------------------- #
 #  Footer

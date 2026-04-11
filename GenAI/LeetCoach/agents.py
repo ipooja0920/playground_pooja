@@ -8,9 +8,10 @@ from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 from mcp_agent.workflows.llm.augmented_llm import RequestParams
 
 CORRECTIONS_FILE = Path(__file__).parent / "corrections.json"
+FEEDBACK_FILE    = Path(__file__).parent / "feedback.json"
 
 # --------------------------------------------------------------------------- #
-#  Corrections store — agents learn from past mistakes across sessions
+#  Corrections store — critic-driven, auto-saved after low scores
 # --------------------------------------------------------------------------- #
 
 def load_corrections() -> dict:
@@ -28,18 +29,71 @@ def save_correction(agent_name: str, issue: str, suggestion: str):
         "issue": issue,
         "suggestion": suggestion,
     })
-    corrections[agent_name] = corrections[agent_name][-5:]  # keep last 5 per agent
+    corrections[agent_name] = corrections[agent_name][-5:]
     with open(CORRECTIONS_FILE, "w") as f:
         json.dump(corrections, f, indent=2)
 
 def get_lessons(agent_name: str) -> str:
-    """Return past lesson strings to inject into agent instructions."""
     corrections = load_corrections()
     lessons = corrections.get(agent_name, [])[-3:]
     if not lessons:
         return ""
     lines = "\n".join(f"- {c['suggestion']}" for c in lessons)
     return f"\n\n**Lessons from past mistakes — always follow these:**\n{lines}"
+
+
+# --------------------------------------------------------------------------- #
+#  Human feedback store — like/dislike + optional comment from the UI
+# --------------------------------------------------------------------------- #
+
+def load_feedback() -> dict:
+    if FEEDBACK_FILE.exists():
+        with open(FEEDBACK_FILE) as f:
+            return json.load(f)
+    return {"classifier": {"positive": [], "negative": []},
+            "solution":   {"positive": [], "negative": []},
+            "complexity":  {"positive": [], "negative": []}}
+
+def save_feedback(agent_name: str, sentiment: str, snippet: str, comment: str = ""):
+    """sentiment: 'positive' or 'negative'"""
+    feedback = load_feedback()
+    if agent_name not in feedback:
+        feedback[agent_name] = {"positive": [], "negative": []}
+    feedback[agent_name][sentiment].append({
+        "timestamp": datetime.now().isoformat(),
+        "snippet": snippet[:300],
+        "comment": comment,
+    })
+    # Keep last 5 of each type per agent
+    feedback[agent_name][sentiment] = feedback[agent_name][sentiment][-5:]
+    with open(FEEDBACK_FILE, "w") as f:
+        json.dump(feedback, f, indent=2)
+
+def get_feedback_context(agent_name: str) -> str:
+    """Build a prompt block from past human feedback to inject into agent instructions."""
+    feedback = load_feedback()
+    agent_fb = feedback.get(agent_name, {"positive": [], "negative": []})
+
+    positives = agent_fb["positive"][-2:]
+    negatives = agent_fb["negative"][-2:]
+
+    if not positives and not negatives:
+        return ""
+
+    lines = []
+    if positives:
+        lines.append("\n**Users have loved this style before — match it:**")
+        for fb in positives:
+            comment = f' — user said: "{fb["comment"]}"' if fb["comment"] else ""
+            lines.append(f'- Example: "{fb["snippet"][:150]}..."{comment}')
+
+    if negatives:
+        lines.append("\n**Users have disliked this style before — avoid it:**")
+        for fb in negatives:
+            comment = f' — user said: "{fb["comment"]}"' if fb["comment"] else ""
+            lines.append(f'- Bad example: "{fb["snippet"][:150]}..."{comment}')
+
+    return "\n" + "\n".join(lines)
 
 
 # --------------------------------------------------------------------------- #
@@ -189,7 +243,7 @@ async def setup_agents(mcp_agent_app):
 
     classifier = Agent(
         name="classifier",
-        instruction=CLASSIFIER_INSTRUCTION + get_lessons("classifier"),
+        instruction=CLASSIFIER_INSTRUCTION + get_lessons("classifier") + get_feedback_context("classifier"),
         server_names=[],
     )
     await classifier.initialize()
@@ -197,7 +251,7 @@ async def setup_agents(mcp_agent_app):
 
     solution = Agent(
         name="solution",
-        instruction=SOLUTION_INSTRUCTION + get_lessons("solution"),
+        instruction=SOLUTION_INSTRUCTION + get_lessons("solution") + get_feedback_context("solution"),
         server_names=[],
     )
     await solution.initialize()
@@ -205,7 +259,7 @@ async def setup_agents(mcp_agent_app):
 
     complexity = Agent(
         name="complexity",
-        instruction=COMPLEXITY_INSTRUCTION + get_lessons("complexity"),
+        instruction=COMPLEXITY_INSTRUCTION + get_lessons("complexity") + get_feedback_context("complexity"),
         server_names=[],
     )
     await complexity.initialize()
@@ -223,13 +277,12 @@ async def setup_agents(mcp_agent_app):
 # --------------------------------------------------------------------------- #
 
 def _parse_score(critique: str) -> tuple[int, str, str]:
-    """Extract score, issues, suggestion from critic output."""
     try:
-        score_match = re.search(r"SCORE:\s*(\d)", critique)
-        issues_match = re.search(r"ISSUES:\s*(.+)", critique)
+        score_match      = re.search(r"SCORE:\s*(\d)", critique)
+        issues_match     = re.search(r"ISSUES:\s*(.+)", critique)
         suggestion_match = re.search(r"SUGGESTION:\s*(.+)", critique)
-        score = int(score_match.group(1)) if score_match else 3
-        issues = issues_match.group(1).strip() if issues_match else "unknown"
+        score      = int(score_match.group(1)) if score_match else 3
+        issues     = issues_match.group(1).strip() if issues_match else "unknown"
         suggestion = suggestion_match.group(1).strip() if suggestion_match else ""
         return score, issues, suggestion
     except Exception:
@@ -243,37 +296,24 @@ async def run_with_self_correction(
     agent_name: str,
     max_tokens: int = 2000,
 ) -> tuple[str, list]:
-    """
-    Run an agent, have the critic evaluate, retry once if score <= 3.
-    Returns (final_output, correction_log_entries).
-    """
     correction_log = []
 
-    # First attempt
     result = await agent_llm.generate_str(
         message=message,
         request_params=RequestParams(use_history=False, maxTokens=max_tokens),
     )
 
-    # Critic evaluation
     critique = await critic_llm.generate_str(
         message=f"Evaluate this output:\n\n{result}",
         request_params=RequestParams(use_history=False, maxTokens=300),
     )
     score, issues, suggestion = _parse_score(critique)
-
-    correction_log.append({
-        "attempt": 1,
-        "score": score,
-        "issues": issues,
-    })
+    correction_log.append({"attempt": 1, "score": score, "issues": issues})
 
     if score <= 3:
-        # Save lesson for future sessions
         if suggestion:
             save_correction(agent_name, issues, suggestion)
 
-        # Retry with critique context
         retry_message = (
             f"{message}\n\n"
             f"Your previous attempt scored {score}/5. Issues: {issues}. "
@@ -283,45 +323,65 @@ async def run_with_self_correction(
             message=retry_message,
             request_params=RequestParams(use_history=False, maxTokens=max_tokens),
         )
-
-        # Re-evaluate
         critique2 = await critic_llm.generate_str(
             message=f"Evaluate this output:\n\n{result}",
             request_params=RequestParams(use_history=False, maxTokens=300),
         )
         score2, issues2, _ = _parse_score(critique2)
-        correction_log.append({
-            "attempt": 2,
-            "score": score2,
-            "issues": issues2,
-        })
+        correction_log.append({"attempt": 2, "score": score2, "issues": issues2})
 
     return result, correction_log
 
 
 # --------------------------------------------------------------------------- #
-#  Pipeline runner
+#  Individual section rerun (triggered by human dislike feedback)
+# --------------------------------------------------------------------------- #
+
+# Maps section name → result key
+SECTION_KEY = {"classifier": "pattern", "solution": "solution", "complexity": "complexity"}
+
+async def rerun_section(
+    section: str,
+    context: dict,
+    agents: dict,
+    feedback_comment: str = "",
+) -> tuple[str, list]:
+    """
+    Re-run a single agent with human dislike feedback injected.
+    section: 'classifier' | 'solution' | 'complexity'
+    context: dict with problem_text, pattern, solution
+    """
+    feedback_note = (
+        f"\n\nIMPORTANT: A user was unhappy with the previous response."
+        f" Their feedback: \"{feedback_comment or 'no specific comment'}\"."
+        " Please rewrite it — make it noticeably simpler, friendlier, and more beginner-focused."
+    )
+
+    if section == "classifier":
+        message    = f"Here is the LeetCode problem:\n\n{context['problem_text']}{feedback_note}"
+        llm        = agents["classifier_llm"]
+        max_tokens = 800
+    elif section == "solution":
+        message    = f"Problem:\n{context['problem_text']}\n\nPattern:\n{context['pattern']}{feedback_note}"
+        llm        = agents["solution_llm"]
+        max_tokens = 2500
+    else:  # complexity
+        message    = f"Problem:\n{context['problem_text']}\n\nSolution:\n{context['solution']}{feedback_note}"
+        llm        = agents["complexity_llm"]
+        max_tokens = 1000
+
+    return await run_with_self_correction(llm, agents["critic_llm"], message, section, max_tokens)
+
+
+# --------------------------------------------------------------------------- #
+#  Full pipeline runner
 # --------------------------------------------------------------------------- #
 
 async def run_pipeline(url: str, agents: dict) -> tuple[dict, list]:
-    """
-    Run the 4-agent pipeline with self-correction.
-
-    Returns:
-        results: dict with problem_text, pattern, solution, complexity
-        log:     list of log entries per agent (status, details, duration, corrections)
-    """
     log = []
-    results = {
-        "problem_text": None,
-        "pattern": None,
-        "solution": None,
-        "complexity": None,
-    }
+    results = {"problem_text": None, "pattern": None, "solution": None, "complexity": None}
 
-    # ------------------------------------------------------------------ #
-    # Agent 1 — Browser
-    # ------------------------------------------------------------------ #
+    # --- Browser ---
     t0 = time.time()
     try:
         problem_text = await agents["browser_llm"].generate_str(
@@ -333,134 +393,79 @@ async def run_pipeline(url: str, agents: dict) -> tuple[dict, list]:
         )
         duration = round(time.time() - t0, 1)
         results["problem_text"] = problem_text
-        log.append({
-            "agent": "Browser Agent",
-            "status": "success",
-            "details": f"Scraped problem in {duration}s",
-            "duration": duration,
-            "corrections": [],
-        })
+        log.append({"agent": "Browser Agent", "status": "success",
+                    "details": f"Scraped problem in {duration}s", "duration": duration, "corrections": []})
     except Exception as e:
         duration = round(time.time() - t0, 1)
-        log.append({
-            "agent": "Browser Agent",
-            "status": "failed",
-            "details": str(e),
-            "duration": duration,
-            "corrections": [],
-        })
+        log.append({"agent": "Browser Agent", "status": "failed",
+                    "details": str(e), "duration": duration, "corrections": []})
         for name in ["Classifier Agent", "Solution Agent", "Complexity Agent"]:
             log.append({"agent": name, "status": "skipped",
                         "details": "Skipped — Browser Agent failed", "duration": 0, "corrections": []})
         return results, log
 
-    # ------------------------------------------------------------------ #
-    # Agent 2 — Classifier (with self-correction)
-    # ------------------------------------------------------------------ #
+    # --- Classifier ---
     t0 = time.time()
     try:
         pattern, corrections = await run_with_self_correction(
-            agents["classifier_llm"],
-            agents["critic_llm"],
+            agents["classifier_llm"], agents["critic_llm"],
             message=f"Here is the LeetCode problem:\n\n{results['problem_text']}",
-            agent_name="classifier",
-            max_tokens=800,
+            agent_name="classifier", max_tokens=800,
         )
         duration = round(time.time() - t0, 1)
         results["pattern"] = pattern
         retried = len(corrections) > 1
-        log.append({
-            "agent": "Classifier Agent",
-            "status": "success",
-            "details": f"Pattern identified in {duration}s" + (" (self-corrected)" if retried else ""),
-            "duration": duration,
-            "corrections": corrections,
-        })
+        log.append({"agent": "Classifier Agent", "status": "success",
+                    "details": f"Pattern identified in {duration}s" + (" (self-corrected)" if retried else ""),
+                    "duration": duration, "corrections": corrections})
     except Exception as e:
         duration = round(time.time() - t0, 1)
-        log.append({
-            "agent": "Classifier Agent",
-            "status": "failed",
-            "details": str(e),
-            "duration": duration,
-            "corrections": [],
-        })
+        log.append({"agent": "Classifier Agent", "status": "failed",
+                    "details": str(e), "duration": duration, "corrections": []})
         for name in ["Solution Agent", "Complexity Agent"]:
             log.append({"agent": name, "status": "skipped",
                         "details": "Skipped — Classifier Agent failed", "duration": 0, "corrections": []})
         return results, log
 
-    # ------------------------------------------------------------------ #
-    # Agent 3 — Solution (with self-correction)
-    # ------------------------------------------------------------------ #
+    # --- Solution ---
     t0 = time.time()
     try:
         solution, corrections = await run_with_self_correction(
-            agents["solution_llm"],
-            agents["critic_llm"],
-            message=(
-                f"Problem:\n{results['problem_text']}\n\n"
-                f"Pattern:\n{results['pattern']}"
-            ),
-            agent_name="solution",
-            max_tokens=2500,
+            agents["solution_llm"], agents["critic_llm"],
+            message=f"Problem:\n{results['problem_text']}\n\nPattern:\n{results['pattern']}",
+            agent_name="solution", max_tokens=2500,
         )
         duration = round(time.time() - t0, 1)
         results["solution"] = solution
         retried = len(corrections) > 1
-        log.append({
-            "agent": "Solution Agent",
-            "status": "success",
-            "details": f"Solution generated in {duration}s" + (" (self-corrected)" if retried else ""),
-            "duration": duration,
-            "corrections": corrections,
-        })
+        log.append({"agent": "Solution Agent", "status": "success",
+                    "details": f"Solution generated in {duration}s" + (" (self-corrected)" if retried else ""),
+                    "duration": duration, "corrections": corrections})
     except Exception as e:
         duration = round(time.time() - t0, 1)
-        log.append({
-            "agent": "Solution Agent",
-            "status": "failed",
-            "details": str(e),
-            "duration": duration,
-            "corrections": [],
-        })
+        log.append({"agent": "Solution Agent", "status": "failed",
+                    "details": str(e), "duration": duration, "corrections": []})
         log.append({"agent": "Complexity Agent", "status": "skipped",
                     "details": "Skipped — Solution Agent failed", "duration": 0, "corrections": []})
         return results, log
 
-    # ------------------------------------------------------------------ #
-    # Agent 4 — Complexity (with self-correction)
-    # ------------------------------------------------------------------ #
+    # --- Complexity ---
     t0 = time.time()
     try:
         complexity, corrections = await run_with_self_correction(
-            agents["complexity_llm"],
-            agents["critic_llm"],
-            message=(
-                f"Problem:\n{results['problem_text']}\n\n"
-                f"Solution:\n{results['solution']}"
-            ),
-            agent_name="complexity",
-            max_tokens=600,
+            agents["complexity_llm"], agents["critic_llm"],
+            message=f"Problem:\n{results['problem_text']}\n\nSolution:\n{results['solution']}",
+            agent_name="complexity", max_tokens=1000,
         )
         duration = round(time.time() - t0, 1)
         results["complexity"] = complexity
         retried = len(corrections) > 1
-        log.append({
-            "agent": "Complexity Agent",
-            "status": "success",
-            "details": f"Complexity explained in {duration}s" + (" (self-corrected)" if retried else ""),
-            "duration": duration,
-            "corrections": corrections,
-        })
+        log.append({"agent": "Complexity Agent", "status": "success",
+                    "details": f"Complexity explained in {duration}s" + (" (self-corrected)" if retried else ""),
+                    "duration": duration, "corrections": corrections})
     except Exception as e:
         duration = round(time.time() - t0, 1)
-        log.append({
-            "agent": "Complexity Agent",
-            "status": "failed",
-            "details": str(e),
-            "duration": duration,
-            "corrections": [],
-        })
+        log.append({"agent": "Complexity Agent", "status": "failed",
+                    "details": str(e), "duration": duration, "corrections": []})
 
     return results, log
