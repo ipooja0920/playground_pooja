@@ -59,14 +59,10 @@ if "eval_result" not in st.session_state:
 if "is_evaluating" not in st.session_state:
     st.session_state.is_evaluating = False
 
-# Feedback state — one per section
+# Single feedback state for the whole run
 _SECTIONS = ["classifier", "solution", "complexity"]
 if "fb" not in st.session_state:
-    # fb[section] = {sentiment, show_comment, submitted, regenerating}
-    st.session_state.fb = {
-        s: {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
-        for s in _SECTIONS
-    }
+    st.session_state.fb = {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
 
 # --------------------------------------------------------------------------- #
 #  Agent init
@@ -93,47 +89,43 @@ async def run(url: str):
     return await run_pipeline(url, st.session_state.agents)
 
 # --------------------------------------------------------------------------- #
-#  Process any pending regenerations (must happen before tab rendering)
+#  Process pending regeneration (whole-run feedback)
 # --------------------------------------------------------------------------- #
-for _section in _SECTIONS:
-    if st.session_state.fb[_section]["regenerating"]:
-        _comment = st.session_state.get(f"_comment_{_section}", "")
-        _context = {
-            "problem_text": (st.session_state.last_results or {}).get("problem_text", ""),
-            "pattern":      (st.session_state.last_results or {}).get("pattern", ""),
-            "solution":     (st.session_state.last_results or {}).get("solution", ""),
-        }
-        with st.spinner(f"Regenerating based on your feedback..."):
-            _new_result, _ = st.session_state.loop.run_until_complete(
-                rerun_section(_section, _context, st.session_state.agents, _comment)
-            )
-        # Map section name → result key
-        _result_key = {"classifier": "pattern", "solution": "solution", "complexity": "complexity"}[_section]
-        st.session_state.last_results[_result_key] = _new_result
-
-        # Save as negative feedback
-        save_feedback(_section, "negative", _new_result[:300], _comment)
-
-        st.session_state.fb[_section]["regenerating"] = False
-        st.session_state.fb[_section]["submitted"] = True
-        st.session_state.quiz_state = {}  # reset quiz if complexity changed
-        st.rerun()
+if st.session_state.fb.get("regenerating"):
+    _comment = st.session_state.get("_comment_run", "")
+    _context = {
+        "problem_text": (st.session_state.last_results or {}).get("problem_text", ""),
+        "pattern":      (st.session_state.last_results or {}).get("pattern", ""),
+        "solution":     (st.session_state.last_results or {}).get("solution", ""),
+    }
+    with st.spinner("Regenerating solution based on your feedback..."):
+        # Regenerate the solution (most impactful section to redo)
+        _new_result, _ = st.session_state.loop.run_until_complete(
+            rerun_section("solution", _context, st.session_state.agents, _comment)
+        )
+    st.session_state.last_results["solution"] = _new_result
+    save_feedback("solution", "negative", _new_result[:300], _comment)
+    st.session_state.fb["regenerating"] = False
+    st.session_state.fb["submitted"] = True
+    st.session_state.quiz_state = {}
+    st.rerun()
 
 # --------------------------------------------------------------------------- #
-#  Feedback UI helper
+#  Single feedback UI (one block for the whole run)
 # --------------------------------------------------------------------------- #
-def render_feedback(section: str, label: str):
-    """Render 👍 👎 + optional comment below a result section."""
-    state = st.session_state.fb[section]
+def render_feedback():
+    """Render one 👍 👎 + optional comment + regenerate button for the whole run."""
+    state = st.session_state.fb
 
+    st.markdown("---")
     if state["submitted"]:
         if state["sentiment"] == "liked":
             st.caption("Thanks for the 👍 — noted for future runs!")
         else:
-            st.caption("✅ Regenerated based on your feedback!")
+            st.caption("✅ Solution regenerated based on your feedback!")
         return
 
-    st.markdown(f"<small>Was this {label} helpful?</small>", unsafe_allow_html=True)
+    st.markdown("**Was this helpful?**")
     col1, col2, col_space = st.columns([1, 1, 10])
 
     def _like():
@@ -145,11 +137,11 @@ def render_feedback(section: str, label: str):
         state["show_comment"] = True
 
     with col1:
-        st.button("👍", key=f"like_{section}",
+        st.button("👍", key="like_run",
                   type="primary" if state["sentiment"] == "liked" else "secondary",
                   on_click=_like)
     with col2:
-        st.button("👎", key=f"dislike_{section}",
+        st.button("👎", key="dislike_run",
                   type="primary" if state["sentiment"] == "disliked" else "secondary",
                   on_click=_dislike)
 
@@ -158,19 +150,19 @@ def render_feedback(section: str, label: str):
             "Add a comment (optional)",
             placeholder="Tell us what you liked or what could be better...",
             height=80,
-            key=f"comment_area_{section}",
+            key="comment_area_run",
         )
-        submit_label = "Submit & Regenerate 🔄" if state["sentiment"] == "disliked" else "Submit Feedback"
+        submit_label = "Submit & Regenerate Solution 🔄" if state["sentiment"] == "disliked" else "Submit Feedback"
 
         def _submit():
-            st.session_state[f"_comment_{section}"] = comment
+            st.session_state["_comment_run"] = comment
             if state["sentiment"] == "liked":
-                save_feedback(section, "positive", "", comment)
+                save_feedback("solution", "positive", "", comment)
                 state["submitted"] = True
             else:
                 state["regenerating"] = True
 
-        st.button(submit_label, key=f"submit_{section}", type="primary", on_click=_submit)
+        st.button(submit_label, key="submit_run", type="primary", on_click=_submit)
 
 
 # --------------------------------------------------------------------------- #
@@ -195,12 +187,7 @@ with tab1:
         st.session_state.last_url = url_input.strip()
         st.session_state.quiz_state = {}
         st.session_state.eval_result = None  # reset eval on new problem
-        # Reset feedback for all sections
-        for s in _SECTIONS:
-            st.session_state.fb[s] = {
-                "sentiment": None, "show_comment": False,
-                "submitted": False, "regenerating": False,
-            }
+        st.session_state.fb = {"sentiment": None, "show_comment": False, "submitted": False, "regenerating": False}
 
     st.button(
         "🚀 Analyze Problem",
@@ -229,14 +216,12 @@ with tab1:
         # --- Pattern ---
         st.markdown("## 🎯 Pattern Match")
         st.markdown(results["pattern"])
-        render_feedback("classifier", "pattern explanation")
 
         # --- Solution ---
         if results.get("solution"):
             st.markdown("---")
             st.markdown("## 💡 Solution")
             st.markdown(results["solution"])
-            render_feedback("solution", "solution explanation")
 
         # --- Complexity + Quiz ---
         if results.get("complexity"):
@@ -253,7 +238,6 @@ with tab1:
                 quiz_body       = ""
 
             st.markdown(complexity_body)
-            render_feedback("complexity", "complexity explanation")
 
             # Quiz
             if quiz_body:
@@ -305,6 +289,9 @@ with tab1:
                         else:
                             st.warning("Pick an option first!")
                     st.markdown("")
+
+        # Single feedback block at bottom of all results
+        render_feedback()
 
     elif st.session_state.last_log:
         failed = [e for e in st.session_state.last_log if e["status"] == "failed"]
