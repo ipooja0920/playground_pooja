@@ -129,12 +129,15 @@ def run_ragas_evaluations(
     code_match = re.search(r"```python(.+?)```", solution, re.DOTALL)
     code_context = code_match.group(1).strip() if code_match else solution[:800]
 
+    ragas_llm = _make_ragas_llm()
+    ragas_emb = _make_ragas_embeddings()
+
     # 1. Solution Faithfulness
     sol_faith = _run_single_ragas(
         user_input=problem_text[:600],
         response=solution[:1500],
         contexts=[code_context],
-        metrics=[Faithfulness()],
+        metrics=[Faithfulness(llm=ragas_llm)],
     )
 
     # 2. Complexity Faithfulness
@@ -142,15 +145,15 @@ def run_ragas_evaluations(
         user_input=f"Explain the time and space complexity of this problem:\n{problem_text[:400]}",
         response=complexity[:800],
         contexts=[code_context],
-        metrics=[Faithfulness()],
+        metrics=[Faithfulness(llm=ragas_llm)],
     )
 
-    # 3. Answer Relevancy (no context needed)
+    # 3. Answer Relevancy
     ans_relev = _run_single_ragas(
         user_input=problem_text[:600],
         response=solution[:1500],
-        contexts=[problem_text[:600]],  # problem itself as context
-        metrics=[AnswerRelevancy()],
+        contexts=[problem_text[:600]],
+        metrics=[AnswerRelevancy(llm=ragas_llm, embeddings=ragas_emb)],
     )
 
     return {
