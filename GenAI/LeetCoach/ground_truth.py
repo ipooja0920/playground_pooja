@@ -120,10 +120,158 @@ GROUND_TRUTH = {
         "accepted_patterns": ["Top K Elements"], "difficulty": "Medium",
     },
 
-    # Linked List Cycle (Fast & Slow Pointers)
+    # Fast & Slow Pointers
     "https://leetcode.com/problems/linked-list-cycle/": {
         "title": "Linked List Cycle", "number": 141,
         "accepted_patterns": ["Fast & Slow Pointers"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/find-the-duplicate-number/": {
+        "title": "Find the Duplicate Number", "number": 287,
+        "accepted_patterns": ["Fast & Slow Pointers"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/middle-of-the-linked-list/": {
+        "title": "Middle of the Linked List", "number": 876,
+        "accepted_patterns": ["Fast & Slow Pointers"], "difficulty": "Easy",
+    },
+
+    # Merge Intervals
+    "https://leetcode.com/problems/merge-intervals/": {
+        "title": "Merge Intervals", "number": 56,
+        "accepted_patterns": ["Merge Intervals"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/insert-interval/": {
+        "title": "Insert Interval", "number": 57,
+        "accepted_patterns": ["Merge Intervals"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/non-overlapping-intervals/": {
+        "title": "Non-overlapping Intervals", "number": 435,
+        "accepted_patterns": ["Merge Intervals"], "difficulty": "Medium",
+    },
+
+    # Prefix Sum
+    "https://leetcode.com/problems/range-sum-query-immutable/": {
+        "title": "Range Sum Query - Immutable", "number": 303,
+        "accepted_patterns": ["Prefix Sum"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/subarray-sum-equals-k/": {
+        "title": "Subarray Sum Equals K", "number": 560,
+        "accepted_patterns": ["Prefix Sum"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/product-of-array-except-self/": {
+        "title": "Product of Array Except Self", "number": 238,
+        "accepted_patterns": ["Prefix Sum"], "difficulty": "Medium",
+    },
+
+    # Cyclic Sort
+    "https://leetcode.com/problems/missing-number/": {
+        "title": "Missing Number", "number": 268,
+        "accepted_patterns": ["Cyclic Sort", "Bit Manipulation"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/": {
+        "title": "Find All Numbers Disappeared in an Array", "number": 448,
+        "accepted_patterns": ["Cyclic Sort"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/find-all-duplicates-in-an-array/": {
+        "title": "Find All Duplicates in an Array", "number": 442,
+        "accepted_patterns": ["Cyclic Sort"], "difficulty": "Medium",
+    },
+
+    # Topological Sort
+    "https://leetcode.com/problems/course-schedule/": {
+        "title": "Course Schedule", "number": 207,
+        "accepted_patterns": ["Topological Sort", "DFS (Depth-First Search)"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/course-schedule-ii/": {
+        "title": "Course Schedule II", "number": 210,
+        "accepted_patterns": ["Topological Sort"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/find-eventual-safe-states/": {
+        "title": "Find Eventual Safe States", "number": 802,
+        "accepted_patterns": ["Topological Sort", "DFS (Depth-First Search)"], "difficulty": "Medium",
+    },
+
+    # Union Find
+    "https://leetcode.com/problems/redundant-connection/": {
+        "title": "Redundant Connection", "number": 684,
+        "accepted_patterns": ["Union Find (Disjoint Set)"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/accounts-merge/": {
+        "title": "Accounts Merge", "number": 721,
+        "accepted_patterns": ["Union Find (Disjoint Set)"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/number-of-provinces/": {
+        "title": "Number of Provinces", "number": 547,
+        "accepted_patterns": ["Union Find (Disjoint Set)", "DFS (Depth-First Search)"], "difficulty": "Medium",
+    },
+
+    # Trie
+    "https://leetcode.com/problems/implement-trie-prefix-tree/": {
+        "title": "Implement Trie (Prefix Tree)", "number": 208,
+        "accepted_patterns": ["Trie (Prefix Tree)"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/design-add-and-search-words-data-structure/": {
+        "title": "Design Add and Search Words Data Structure", "number": 211,
+        "accepted_patterns": ["Trie (Prefix Tree)"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/word-search-ii/": {
+        "title": "Word Search II", "number": 212,
+        "accepted_patterns": ["Trie (Prefix Tree)", "Backtracking"], "difficulty": "Hard",
+    },
+
+    # Two Heaps
+    "https://leetcode.com/problems/find-median-from-data-stream/": {
+        "title": "Find Median from Data Stream", "number": 295,
+        "accepted_patterns": ["Two Heaps"], "difficulty": "Hard",
+    },
+    "https://leetcode.com/problems/ipo/": {
+        "title": "IPO", "number": 502,
+        "accepted_patterns": ["Two Heaps", "Top K Elements"], "difficulty": "Hard",
+    },
+
+    # Subsets / Combinations
+    "https://leetcode.com/problems/subsets-ii/": {
+        "title": "Subsets II", "number": 90,
+        "accepted_patterns": ["Subsets / Combinations", "Backtracking"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/palindrome-partitioning/": {
+        "title": "Palindrome Partitioning", "number": 131,
+        "accepted_patterns": ["Subsets / Combinations", "Backtracking"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/letter-combinations-of-a-phone-number/": {
+        "title": "Letter Combinations of a Phone Number", "number": 17,
+        "accepted_patterns": ["Subsets / Combinations", "Backtracking"], "difficulty": "Medium",
+    },
+
+    # Bit Manipulation
+    "https://leetcode.com/problems/single-number/": {
+        "title": "Single Number", "number": 136,
+        "accepted_patterns": ["Bit Manipulation"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/number-of-1-bits/": {
+        "title": "Number of 1 Bits", "number": 191,
+        "accepted_patterns": ["Bit Manipulation"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/counting-bits/": {
+        "title": "Counting Bits", "number": 338,
+        "accepted_patterns": ["Bit Manipulation", "Dynamic Programming"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/reverse-bits/": {
+        "title": "Reverse Bits", "number": 190,
+        "accepted_patterns": ["Bit Manipulation"], "difficulty": "Easy",
+    },
+
+    # Divide & Conquer
+    "https://leetcode.com/problems/maximum-subarray/": {
+        "title": "Maximum Subarray", "number": 53,
+        "accepted_patterns": ["Divide & Conquer", "Dynamic Programming"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/sort-an-array/": {
+        "title": "Sort an Array", "number": 912,
+        "accepted_patterns": ["Divide & Conquer"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/median-of-two-sorted-arrays/": {
+        "title": "Median of Two Sorted Arrays", "number": 4,
+        "accepted_patterns": ["Divide & Conquer", "Binary Search"], "difficulty": "Hard",
     },
 }
 
