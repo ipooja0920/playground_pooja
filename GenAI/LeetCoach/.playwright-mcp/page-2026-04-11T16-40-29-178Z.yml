@@ -1,0 +1,488 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation [ref=e7]:
+        - list [ref=e9]:
+          - link "LeetCode Logo" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img "LeetCode Logo" [ref=e13]
+          - listitem [ref=e14]
+        - generic [ref=e16]:
+          - generic [ref=e21]:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - generic: Debugging...
+                  - generic:
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+            - generic [ref=e23]:
+              - button "You need to log in / sign up to debug" [ref=e25] [cursor=pointer]:
+                - img [ref=e26]
+              - generic [ref=e29]:
+                - button "Run" [ref=e32]:
+                  - img [ref=e34]
+                - button "Submit" [ref=e39]:
+                  - img [ref=e41]
+                  - generic [ref=e43]: Submit
+          - generic [ref=e45]:
+            - button "Note" [ref=e48] [cursor=pointer]:
+              - img [ref=e50]
+            - button "Ask Leet" [ref=e54] [cursor=pointer]:
+              - img [ref=e55]
+        - generic [ref=e60]:
+          - button "Layouts" [ref=e61] [cursor=pointer]:
+            - button "Layouts" [ref=e62]:
+              - img [ref=e64]
+          - button "Settings" [ref=e66] [cursor=pointer]:
+            - img [ref=e68]
+          - generic [ref=e72]:
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: 00:00:00
+                - button:
+                  - generic:
+                    - img
+            - button "Stopwatch" [ref=e75] [cursor=pointer]:
+              - img [ref=e78]
+          - generic [ref=e80]:
+            - link "Register" [ref=e81] [cursor=pointer]:
+              - /url: /accounts/signup/?next=%2Fproblems%2Ftwo-sum%2Fdescription%2F
+            - generic [ref=e82]: or
+            - link "Log in" [ref=e83] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Ftwo-sum%2Fdescription%2F
+          - link "Premium" [ref=e85] [cursor=pointer]:
+            - /url: /subscribe/?ref=lp_pl&source=qd
+            - generic [ref=e86]: Premium
+      - generic [ref=e89]:
+        - generic [ref=e91] [cursor=pointer]:
+          - generic [ref=e93]:
+            - generic [ref=e96]:
+              - img [ref=e98]
+              - generic [ref=e101]: Description
+            - generic [ref=e105]:
+              - img [ref=e107]
+              - generic [ref=e109]:
+                - generic [ref=e110]: Editorial
+                - generic [ref=e111]: Editorial
+            - generic [ref=e115]:
+              - img [ref=e117]
+              - generic [ref=e119]:
+                - generic [ref=e120]: Solutions
+                - generic [ref=e121]: Solutions
+            - generic [ref=e125]:
+              - img [ref=e127]
+              - generic [ref=e129]:
+                - generic [ref=e130]: Submissions
+                - generic [ref=e131]: Submissions
+          - generic [ref=e133]:
+            - button [ref=e135]:
+              - img [ref=e137]
+            - button [ref=e140]:
+              - img [ref=e142]
+        - generic [ref=e151] [cursor=pointer]:
+          - img [ref=e153]
+          - generic [ref=e156]: Code
+        - generic [ref=e161] [cursor=pointer]:
+          - generic [ref=e164]:
+            - img [ref=e166]
+            - generic [ref=e169]: Testcase
+          - generic [ref=e173]:
+            - img [ref=e175]
+            - generic [ref=e177]:
+              - generic [ref=e178]: Test Result
+              - generic [ref=e179]: Test Result
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - link "1. Two Sum" [ref=e186]:
+              - /url: /problems/two-sum/
+            - generic [ref=e187]:
+              - generic [ref=e188]: Easy
+              - generic [ref=e189] [cursor=pointer]:
+                - img [ref=e191]
+                - text: Topics
+              - generic [ref=e193] [cursor=pointer]:
+                - img "premium lock icon" [ref=e194]
+                - generic [ref=e195]: Companies
+              - generic [ref=e196] [cursor=pointer]:
+                - img [ref=e198]
+                - text: Hint
+            - generic [ref=e202]:
+              - paragraph [ref=e203]:
+                - text: Given an array of integers
+                - code [ref=e204]: nums
+                - text: and an integer
+                - code [ref=e205]: target
+                - text: ", return"
+                - emphasis [ref=e206]:
+                  - text: indices of the two numbers such that they add up to
+                  - code [ref=e207]: target
+                - text: .
+              - paragraph [ref=e208]:
+                - text: You may assume that each input would have
+                - strong [ref=e209]:
+                  - emphasis [ref=e210]: exactly
+                  - text: one solution
+                - text: ", and you may not use the"
+                - emphasis [ref=e211]: same
+                - text: element twice.
+              - paragraph [ref=e212]: You can return the answer in any order.
+              - paragraph [ref=e213]
+              - paragraph [ref=e214]:
+                - strong [ref=e215]: "Example 1:"
+              - generic [ref=e216]:
+                - strong [ref=e217]: "Input:"
+                - text: nums = [2,7,11,15], target = 9
+                - strong [ref=e218]: "Output:"
+                - text: "[0,1]"
+                - strong [ref=e219]: "Explanation:"
+                - text: Because nums[0] + nums[1] == 9, we return [0, 1].
+              - paragraph [ref=e220]:
+                - strong [ref=e221]: "Example 2:"
+              - generic [ref=e222]:
+                - strong [ref=e223]: "Input:"
+                - text: nums = [3,2,4], target = 6
+                - strong [ref=e224]: "Output:"
+                - text: "[1,2]"
+              - paragraph [ref=e225]:
+                - strong [ref=e226]: "Example 3:"
+              - generic [ref=e227]:
+                - strong [ref=e228]: "Input:"
+                - text: nums = [3,3], target = 6
+                - strong [ref=e229]: "Output:"
+                - text: "[0,1]"
+              - paragraph [ref=e230]
+              - paragraph [ref=e231]:
+                - strong [ref=e232]: "Constraints:"
+              - list [ref=e233]:
+                - listitem [ref=e234]:
+                  - code [ref=e235]:
+                    - text: 2 <= nums.length <= 10
+                    - superscript [ref=e236]: "4"
+                - listitem [ref=e237]:
+                  - code [ref=e238]:
+                    - text: "-10"
+                    - superscript [ref=e239]: "9"
+                    - text: <= nums[i] <= 10
+                    - superscript [ref=e240]: "9"
+                - listitem [ref=e241]:
+                  - code [ref=e242]:
+                    - text: "-10"
+                    - superscript [ref=e243]: "9"
+                    - text: <= target <= 10
+                    - superscript [ref=e244]: "9"
+                - listitem [ref=e245]:
+                  - strong [ref=e246]: Only one valid answer exists.
+              - paragraph [ref=e247]
+              - strong [ref=e248]: "Follow-up:"
+              - text: Can you come up with an algorithm that is less than
+              - code [ref=e249]:
+                - text: O(n
+                - superscript [ref=e250]: "2"
+                - text: )
+              - text: time complexity?
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - generic [ref=e253]:
+                  - generic [ref=e254]: Accepted
+                  - generic [ref=e255]:
+                    - text: 21,361,745
+                    - generic [ref=e256]: /37.3M
+                - generic [ref=e258]:
+                  - generic [ref=e259]: Acceptance Rate
+                  - generic [ref=e260]: 57.3%
+              - separator [ref=e261]
+              - generic [ref=e263]:
+                - generic [ref=e264] [cursor=pointer]:
+                  - generic [ref=e266]:
+                    - img [ref=e268]
+                    - generic [ref=e270]: Topics
+                  - img [ref=e272]
+                - generic [ref=e274]:
+                  - generic [ref=e275]: Junior
+                  - link "Array" [ref=e276] [cursor=pointer]:
+                    - /url: /tag/array/
+                  - link "Hash Table" [ref=e277] [cursor=pointer]:
+                    - /url: /tag/hash-table/
+              - separator [ref=e278]
+              - generic [ref=e281] [cursor=pointer]:
+                - generic [ref=e283]:
+                  - img "icon" [ref=e285]
+                  - generic [ref=e286]: Companies
+                - img [ref=e288]
+              - separator [ref=e290]
+              - generic [ref=e292]:
+                - generic [ref=e293] [cursor=pointer]:
+                  - generic [ref=e295]:
+                    - img [ref=e297]
+                    - generic [ref=e299]: Hint 1
+                  - img [ref=e301]
+                - generic [ref=e303]: A really brute force way would be to search for all possible pairs of numbers but that would be too slow. Again, it's best to try out brute force solutions just for completeness. It is from these brute force solutions that you can come up with optimizations.
+              - separator [ref=e304]
+              - generic [ref=e306]:
+                - generic [ref=e307] [cursor=pointer]:
+                  - generic [ref=e309]:
+                    - img [ref=e311]
+                    - generic [ref=e313]: Hint 2
+                  - img [ref=e315]
+                - generic [ref=e317]:
+                  - text: So, if we fix one of the numbers, say
+                  - code [ref=e318]: x
+                  - text: ", we have to scan the entire array to find the next number"
+                  - code [ref=e319]: "y"
+                  - text: which is
+                  - code [ref=e320]: value - x
+                  - text: where value is the input parameter. Can we change our array somehow so that this search becomes faster?
+              - separator [ref=e321]
+              - generic [ref=e323]:
+                - generic [ref=e324] [cursor=pointer]:
+                  - generic [ref=e326]:
+                    - img [ref=e328]
+                    - generic [ref=e330]: Hint 3
+                  - img [ref=e332]
+                - generic [ref=e334]: The second train of thought is, without changing the array, can we use additional space somehow? Like maybe a hash map to speed up the search?
+              - separator [ref=e335]
+              - generic [ref=e336]:
+                - generic [ref=e337] [cursor=pointer]:
+                  - generic [ref=e339]:
+                    - img [ref=e341]
+                    - generic [ref=e343]: Similar Questions
+                  - img [ref=e345]
+                - generic [ref=e347]:
+                  - generic [ref=e348]:
+                    - link "3Sum" [ref=e352] [cursor=pointer]:
+                      - /url: /problems/3sum/
+                    - generic [ref=e354]: Medium
+                  - generic [ref=e355]:
+                    - link "4Sum" [ref=e359] [cursor=pointer]:
+                      - /url: /problems/4sum/
+                    - generic [ref=e361]: Medium
+                  - generic [ref=e362]:
+                    - link "Two Sum II - Input Array Is Sorted" [ref=e366] [cursor=pointer]:
+                      - /url: /problems/two-sum-ii-input-array-is-sorted/
+                    - generic [ref=e368]: Medium
+                  - generic [ref=e369]:
+                    - generic [ref=e370]:
+                      - link "Two Sum III - Data structure design" [ref=e373] [cursor=pointer]:
+                        - /url: /problems/two-sum-iii-data-structure-design/
+                      - img [ref=e375]
+                    - generic [ref=e378]: Easy
+                  - generic [ref=e379]:
+                    - link "Subarray Sum Equals K" [ref=e383] [cursor=pointer]:
+                      - /url: /problems/subarray-sum-equals-k/
+                    - generic [ref=e385]: Medium
+                  - generic [ref=e386]:
+                    - link "Two Sum IV - Input is a BST" [ref=e390] [cursor=pointer]:
+                      - /url: /problems/two-sum-iv-input-is-a-bst/
+                    - generic [ref=e392]: Easy
+                  - generic [ref=e393]:
+                    - generic [ref=e394]:
+                      - link "Two Sum Less Than K" [ref=e397] [cursor=pointer]:
+                        - /url: /problems/two-sum-less-than-k/
+                      - img [ref=e399]
+                    - generic [ref=e402]: Easy
+                  - generic [ref=e403]:
+                    - link "Max Number of K-Sum Pairs" [ref=e407] [cursor=pointer]:
+                      - /url: /problems/max-number-of-k-sum-pairs/
+                    - generic [ref=e409]: Medium
+                  - generic [ref=e410]:
+                    - link "Count Good Meals" [ref=e414] [cursor=pointer]:
+                      - /url: /problems/count-good-meals/
+                    - generic [ref=e416]: Medium
+                  - generic [ref=e417]:
+                    - link "Count Number of Pairs With Absolute Difference K" [ref=e421] [cursor=pointer]:
+                      - /url: /problems/count-number-of-pairs-with-absolute-difference-k/
+                    - generic [ref=e423]: Easy
+                  - generic [ref=e424]:
+                    - link "Number of Pairs of Strings With Concatenation Equal to Target" [ref=e428] [cursor=pointer]:
+                      - /url: /problems/number-of-pairs-of-strings-with-concatenation-equal-to-target/
+                    - generic [ref=e430]: Medium
+                  - generic [ref=e431]:
+                    - link "Find All K-Distant Indices in an Array" [ref=e435] [cursor=pointer]:
+                      - /url: /problems/find-all-k-distant-indices-in-an-array/
+                    - generic [ref=e437]: Easy
+                  - generic [ref=e438]:
+                    - link "First Letter to Appear Twice" [ref=e442] [cursor=pointer]:
+                      - /url: /problems/first-letter-to-appear-twice/
+                    - generic [ref=e444]: Easy
+                  - generic [ref=e445]:
+                    - link "Number of Excellent Pairs" [ref=e449] [cursor=pointer]:
+                      - /url: /problems/number-of-excellent-pairs/
+                    - generic [ref=e451]: Hard
+                  - generic [ref=e452]:
+                    - link "Number of Arithmetic Triplets" [ref=e456] [cursor=pointer]:
+                      - /url: /problems/number-of-arithmetic-triplets/
+                    - generic [ref=e458]: Easy
+                  - generic [ref=e459]:
+                    - link "Node With Highest Edge Score" [ref=e463] [cursor=pointer]:
+                      - /url: /problems/node-with-highest-edge-score/
+                    - generic [ref=e465]: Medium
+                  - generic [ref=e466]:
+                    - link "Check Distances Between Same Letters" [ref=e470] [cursor=pointer]:
+                      - /url: /problems/check-distances-between-same-letters/
+                    - generic [ref=e472]: Easy
+                  - generic [ref=e473]:
+                    - link "Find Subarrays With Equal Sum" [ref=e477] [cursor=pointer]:
+                      - /url: /problems/find-subarrays-with-equal-sum/
+                    - generic [ref=e479]: Easy
+                  - generic [ref=e480]:
+                    - link "Largest Positive Integer That Exists With Its Negative" [ref=e484] [cursor=pointer]:
+                      - /url: /problems/largest-positive-integer-that-exists-with-its-negative/
+                    - generic [ref=e486]: Easy
+                  - generic [ref=e487]:
+                    - link "Number of Distinct Averages" [ref=e491] [cursor=pointer]:
+                      - /url: /problems/number-of-distinct-averages/
+                    - generic [ref=e493]: Easy
+                  - generic [ref=e494]:
+                    - link "Count Pairs Whose Sum is Less than Target" [ref=e498] [cursor=pointer]:
+                      - /url: /problems/count-pairs-whose-sum-is-less-than-target/
+                    - generic [ref=e500]: Easy
+              - separator [ref=e501]
+              - generic [ref=e503]:
+                - generic [ref=e504] [cursor=pointer]:
+                  - generic [ref=e506]:
+                    - img [ref=e508]
+                    - generic [ref=e510]: Discussion (1.9K)
+                  - img [ref=e512]
+                - generic [ref=e515]:
+                  - generic [ref=e519]:
+                    - textbox "Type comment here..." [ref=e520]
+                    - generic [ref=e521]:
+                      - generic [ref=e522]:
+                        - button "Choose a type" [ref=e526] [cursor=pointer]:
+                          - generic [ref=e527]: Choose a type
+                          - generic:
+                            - generic:
+                              - img
+                        - generic [ref=e528]:
+                          - img [ref=e530] [cursor=pointer]
+                          - img [ref=e533] [cursor=pointer]
+                          - img [ref=e536] [cursor=pointer]
+                          - img [ref=e539] [cursor=pointer]
+                      - button "Comment" [disabled] [ref=e542] [cursor=pointer]
+                  - generic [ref=e543]:
+                    - generic [ref=e545]:
+                      - generic [ref=e546]:
+                        - generic [ref=e547]: 💡 Discussion Rules
+                        - img [ref=e549] [cursor=pointer]
+                      - generic [ref=e551]:
+                        - paragraph [ref=e552]: 1. Please don't post any solutions in this discussion.
+                        - paragraph [ref=e553]: 2. The problem discussion is for asking questions about the problem or for sharing tips - anything except for solutions.
+                        - paragraph [ref=e554]: 3. If you'd like to share your solution for feedback and ideas, please head to the solutions tab and post it there.
+                    - button "Sort by:Best" [ref=e558] [cursor=pointer]:
+                      - generic [ref=e559]:
+                        - generic [ref=e560]: "Sort by:"
+                        - text: Best
+                      - generic:
+                        - img
+                  - generic [ref=e562]: No comments yet.
+                  - navigation [ref=e564]:
+                    - button "prev" [disabled]:
+                      - img
+                    - button "1"
+                    - button "2" [ref=e565] [cursor=pointer]
+                    - button "3" [ref=e566] [cursor=pointer]
+                    - button "4" [ref=e567] [cursor=pointer]
+                    - button "5" [ref=e568] [cursor=pointer]
+                    - button "6" [ref=e569] [cursor=pointer]
+                    - button "gap" [disabled]:
+                      - img
+                    - button "194" [ref=e570] [cursor=pointer]
+                    - button "next" [ref=e571] [cursor=pointer]:
+                      - img [ref=e572]
+            - generic [ref=e575]: Copyright © 2026 LeetCode. All rights reserved.
+          - generic [ref=e577]:
+            - generic [ref=e578]:
+              - generic [ref=e579]:
+                - generic [ref=e580]:
+                  - button "68.6K" [ref=e581] [cursor=pointer]:
+                    - img [ref=e583]
+                    - generic [ref=e585]: 68.6K
+                  - button [ref=e587] [cursor=pointer]:
+                    - img [ref=e589]
+                - button "1.9K" [ref=e591] [cursor=pointer]:
+                  - img [ref=e593]
+                  - generic [ref=e595]: 1.9K
+              - generic [ref=e597]:
+                - img [ref=e600] [cursor=pointer]
+                - button [ref=e602] [cursor=pointer]:
+                  - img [ref=e604]
+                - button [ref=e606] [cursor=pointer]:
+                  - img [ref=e608]
+            - generic [ref=e612]: 0 Online
+        - generic [ref=e614]:
+          - generic [ref=e628]: Ln 1, Col 1
+          - generic [ref=e630]:
+            - text: You need to
+            - link "log in / sign up" [ref=e631] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Ftwo-sum%2Fdescription%2F
+            - text: to run or submit
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e633]:
+                - generic [ref=e635]:
+                  - button "Case 1" [ref=e636] [cursor=pointer]
+                  - button "Case 2" [ref=e637] [cursor=pointer]
+                  - button "Case 3" [ref=e638] [cursor=pointer]
+                  - button [ref=e639] [cursor=pointer]:
+                    - img [ref=e640]
+                - generic [ref=e642]:
+                  - generic [ref=e644]:
+                    - generic [ref=e645]: nums =
+                    - generic [ref=e647]: "[2,7,11,15]"
+                  - generic [ref=e649]:
+                    - generic [ref=e650]: target =
+                    - generic [ref=e652]: "9"
+              - generic [ref=e653]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic [ref=e655]:
+                            - generic [ref=e656]: "1"
+                            - generic [ref=e657]: "2"
+                            - generic [ref=e658]: "3"
+                            - generic [ref=e659]: "4"
+                            - generic [ref=e660]: "5"
+                            - generic [ref=e661]: "6"
+                          - textbox [ref=e664]:
+                            - generic [ref=e665]: "[2,7,11,15]"
+                            - generic [ref=e666]: "9"
+                            - generic [ref=e667]: "[3,2,4]"
+                            - generic [ref=e668]: "6"
+                            - generic [ref=e669]: "[3,3]"
+                            - generic [ref=e670]: "6"
+            - generic [ref=e672]:
+              - generic [ref=e674] [cursor=pointer]:
+                - img [ref=e676]
+                - generic [ref=e678]: Source
+              - link [ref=e679] [cursor=pointer]:
+                - /url: https://support.leetcode.com/hc/en-us/articles/32442719377939-How-to-create-test-cases-on-LeetCode
+                - img [ref=e681]
+    - region "Notifications (F8)":
+      - list
+  - alert [ref=e685]

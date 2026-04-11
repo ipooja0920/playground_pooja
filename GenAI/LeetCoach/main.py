@@ -23,6 +23,7 @@ _load_secrets()
 from mcp_agent.app import MCPApp
 from agents import setup_agents, run_pipeline, rerun_section, save_feedback
 from patterns import PATTERNS
+from evaluation import run_full_evaluation, load_eval_history
 
 # --------------------------------------------------------------------------- #
 #  Page config
@@ -53,6 +54,10 @@ if "last_url" not in st.session_state:
     st.session_state.last_url = ""
 if "quiz_state" not in st.session_state:
     st.session_state.quiz_state = {}
+if "eval_result" not in st.session_state:
+    st.session_state.eval_result = None
+if "is_evaluating" not in st.session_state:
+    st.session_state.is_evaluating = False
 
 # Feedback state — one per section
 _SECTIONS = ["classifier", "solution", "complexity"]
@@ -171,7 +176,7 @@ def render_feedback(section: str, label: str):
 # --------------------------------------------------------------------------- #
 #  Tabs
 # --------------------------------------------------------------------------- #
-tab1, tab2, tab3 = st.tabs(["🔍 Problem Solver", "📚 Pattern Library", "🪵 Agent Log"])
+tab1, tab2, tab3, tab4 = st.tabs(["🔍 Problem Solver", "📚 Pattern Library", "🪵 Agent Log", "📊 Evaluation"])
 
 
 # =========================================================================== #
@@ -189,6 +194,7 @@ with tab1:
         st.session_state.is_processing = True
         st.session_state.last_url = url_input.strip()
         st.session_state.quiz_state = {}
+        st.session_state.eval_result = None  # reset eval on new problem
         # Reset feedback for all sections
         for s in _SECTIONS:
             st.session_state.fb[s] = {
@@ -439,6 +445,152 @@ with tab3:
                 st.info("No critic lessons yet.")
         else:
             st.info("No critic lessons yet.")
+
+
+# =========================================================================== #
+#  TAB 4 — Evaluation
+# =========================================================================== #
+with tab4:
+    st.markdown("### 📊 Evaluation Dashboard")
+    st.caption("On-demand evaluation — runs RAGAS (Faithfulness + Answer Relevancy), "
+               "multi-dimension LLM-as-Judge (6 criteria), and pattern accuracy check.")
+
+    results_ready = (
+        st.session_state.last_results is not None
+        and st.session_state.last_results.get("solution") is not None
+    )
+
+    if not results_ready:
+        st.info("Analyze a problem first, then come here to evaluate the output quality.")
+    else:
+        def _start_eval():
+            st.session_state.is_evaluating = True
+
+        st.button(
+            "🔬 Evaluate This Run",
+            type="primary",
+            disabled=st.session_state.is_evaluating,
+            on_click=_start_eval,
+        )
+
+        if st.session_state.is_evaluating:
+            with st.spinner("Running RAGAS + LLM Judge + Pattern Accuracy check..."):
+                r = st.session_state.last_results
+                eval_result = st.session_state.loop.run_until_complete(
+                    run_full_evaluation(
+                        url=st.session_state.last_url,
+                        problem_text=r.get("problem_text", ""),
+                        pattern=r.get("pattern", ""),
+                        solution=r.get("solution", ""),
+                        complexity=r.get("complexity", ""),
+                    )
+                )
+            st.session_state.eval_result = eval_result
+            st.session_state.is_evaluating = False
+            st.rerun()
+
+        if st.session_state.eval_result:
+            ev = st.session_state.eval_result
+            st.markdown(f"**Problem:** {ev.get('problem_title', '')}")
+            st.markdown("---")
+
+            # ---- RAGAS scores ----
+            st.markdown("#### RAGAS Metrics")
+            ragas = ev.get("ragas", {})
+            if ragas.get("error"):
+                st.warning(f"RAGAS: {ragas['error']}")
+            else:
+                rc1, rc2 = st.columns(2)
+                faith = ragas.get("faithfulness", 0)
+                relev = ragas.get("answer_relevancy", 0)
+                rc1.metric("Faithfulness", f"{faith:.0%}",
+                           help="Is the explanation grounded in the actual code? No made-up steps?")
+                rc2.metric("Answer Relevancy", f"{relev:.0%}",
+                           help="Does the solution actually address the problem that was asked?")
+                if faith < 0.5 or relev < 0.5:
+                    st.warning("Low RAGAS scores — the explanation may not faithfully match the solution or problem.")
+
+            st.markdown("---")
+
+            # ---- LLM Judge scores ----
+            st.markdown("#### LLM-as-Judge (6 Dimensions)")
+            judge = ev.get("llm_judge", {})
+            if judge.get("error"):
+                st.warning(f"LLM Judge: {judge['error']}")
+            else:
+                DIMENSIONS = {
+                    "beginner_friendliness": "Beginner-Friendly",
+                    "pattern_accuracy":      "Pattern Accuracy",
+                    "solution_correctness":  "Solution Correct",
+                    "explanation_quality":   "Explanation Quality",
+                    "complexity_accuracy":   "Complexity Accuracy",
+                    "quiz_quality":          "Quiz Quality",
+                }
+                cols = st.columns(3)
+                for i, (key, label) in enumerate(DIMENSIONS.items()):
+                    score = judge.get(key)
+                    if score is not None:
+                        color = "🟢" if score >= 4 else ("🟡" if score == 3 else "🔴")
+                        cols[i % 3].metric(label, f"{color} {score}/5")
+
+                overall = judge.get("overall")
+                if overall:
+                    st.markdown(f"**Overall: {'⭐' * overall} ({overall}/5)**")
+                if judge.get("summary"):
+                    st.info(f"💬 Judge says: {judge['summary']}")
+
+            st.markdown("---")
+
+            # ---- Pattern accuracy ----
+            st.markdown("#### Pattern Accuracy (Ground Truth)")
+            pa = ev.get("pattern_accuracy", {})
+            if not pa.get("in_ground_truth"):
+                st.info("This problem isn't in the ground truth dataset yet — pattern accuracy can't be verified automatically.")
+            else:
+                identified = pa.get("identified", "")
+                accepted   = pa.get("accepted_patterns", [])
+                is_correct = pa.get("is_correct", False)
+                if is_correct:
+                    st.success(f"✅ Pattern correct — **{identified}** matches ground truth: {', '.join(accepted)}")
+                else:
+                    st.error(f"❌ Pattern mismatch — identified **{identified}**, expected one of: {', '.join(accepted)}")
+
+        # ---- History ----
+        st.markdown("---")
+        st.markdown("#### 📈 Evaluation History (Last 10 Runs)")
+        history = load_eval_history()
+        if not history:
+            st.info("No evaluation history yet.")
+        else:
+            recent = history[-10:][::-1]  # most recent first
+
+            # Build summary table
+            rows = []
+            for h in recent:
+                judge = h.get("llm_judge", {})
+                ragas = h.get("ragas", {})
+                pa    = h.get("pattern_accuracy", {})
+                rows.append({
+                    "Date":             h.get("timestamp", "")[:10],
+                    "Problem":          h.get("problem_title", "")[:40],
+                    "Overall (Judge)":  f"{judge.get('overall', '—')}/5" if not judge.get("error") else "error",
+                    "Faithfulness":     f"{ragas.get('faithfulness', 0):.0%}" if not ragas.get("error") else "—",
+                    "Ans. Relevancy":   f"{ragas.get('answer_relevancy', 0):.0%}" if not ragas.get("error") else "—",
+                    "Pattern ✓":        "✅" if pa.get("is_correct") else ("❌" if pa.get("in_ground_truth") else "—"),
+                })
+
+            import pandas as pd
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+            # Trend: overall judge score over time
+            overall_scores = [
+                h["llm_judge"].get("overall")
+                for h in history
+                if not h.get("llm_judge", {}).get("error") and h.get("llm_judge", {}).get("overall")
+            ]
+            if len(overall_scores) >= 2:
+                st.markdown("**Overall Quality Trend**")
+                st.line_chart({"Overall Score (1-5)": overall_scores})
 
 
 # --------------------------------------------------------------------------- #

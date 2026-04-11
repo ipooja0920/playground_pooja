@@ -1,6 +1,7 @@
 mcp_agent.secrets.yaml
 corrections.json
 feedback.json
+eval_history.json
 logs/
 __pycache__/
 .env
