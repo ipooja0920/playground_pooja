@@ -295,16 +295,16 @@ def check_pattern_accuracy(identified_pattern: str, problem_url: str) -> dict:
     if not entry:
         entry = GROUND_TRUTH.get(normalized_url.rstrip("/"))
 
-    # Try fuzzy match by URL path
+    # Try fuzzy match by problem slug only (last path segment before trailing slash)
     if not entry:
-        for url, data in GROUND_TRUTH.items():
-            if any(
-                segment in normalized_url
-                for segment in url.rstrip("/").split("/")[-2:]
-                if len(segment) > 3
-            ):
-                entry = data
-                break
+        # Extract slug from input URL e.g. "same-tree" from ".../same-tree/"
+        input_slug = normalized_url.rstrip("/").split("/")[-1]
+        if input_slug and input_slug != "problems":
+            for url, data in GROUND_TRUTH.items():
+                gt_slug = url.rstrip("/").split("/")[-1]
+                if input_slug == gt_slug:
+                    entry = data
+                    break
 
     if not entry:
         return {

@@ -28,7 +28,7 @@ EVAL_HISTORY_FILE = Path(__file__).parent / "eval_history.json"
 # Try importing RAGAS — graceful fallback if not installed
 try:
     from ragas import evaluate as ragas_evaluate, EvaluationDataset, SingleTurnSample
-    from ragas.metrics.collections import Faithfulness, ResponseRelevancy
+    from ragas.metrics.collections import Faithfulness, AnswerRelevancy
     from ragas.llms import LangchainLLMWrapper
     from langchain_openai import ChatOpenAI
     RAGAS_AVAILABLE = True
@@ -63,13 +63,23 @@ def _make_ragas_llm():
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     return LangchainLLMWrapper(llm)
 
+def _make_ragas_embeddings():
+    """Build a RAGAS-compatible embeddings wrapper."""
+    from langchain_openai import OpenAIEmbeddings
+    from ragas.embeddings import LangchainEmbeddingsWrapper
+    return LangchainEmbeddingsWrapper(OpenAIEmbeddings())
+
 
 def _run_single_ragas(user_input: str, response: str, contexts: list, metrics: list) -> dict:
     """Run one RAGAS evaluation synchronously. Returns {metric_name: score, error: None}."""
     try:
         ragas_llm = _make_ragas_llm()
+        ragas_emb = _make_ragas_embeddings()
         for m in metrics:
-            m.llm = ragas_llm
+            if hasattr(m, "llm"):
+                m.llm = ragas_llm
+            if hasattr(m, "embeddings"):
+                m.embeddings = ragas_emb
 
         sample = SingleTurnSample(
             user_input=user_input,
@@ -140,7 +150,7 @@ def run_ragas_evaluations(
         user_input=problem_text[:600],
         response=solution[:1500],
         contexts=[problem_text[:600]],  # problem itself as context
-        metrics=[ResponseRelevancy()],
+        metrics=[AnswerRelevancy()],
     )
 
     return {
