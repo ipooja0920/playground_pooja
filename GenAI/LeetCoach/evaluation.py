@@ -29,8 +29,9 @@ EVAL_HISTORY_FILE = Path(__file__).parent / "eval_history.json"
 try:
     from ragas import evaluate as ragas_evaluate, EvaluationDataset, SingleTurnSample
     from ragas.metrics.collections import Faithfulness, AnswerRelevancy
-    from ragas.llms import LangchainLLMWrapper
-    from langchain_openai import ChatOpenAI
+    from ragas.llms import llm_factory
+    from ragas.embeddings import OpenAIEmbeddings as RagasOpenAIEmbeddings
+    from openai import OpenAI as OpenAIClient
     RAGAS_AVAILABLE = True
 except Exception:
     RAGAS_AVAILABLE = False
@@ -59,15 +60,14 @@ def save_eval_result(result: dict):
 # --------------------------------------------------------------------------- #
 
 def _make_ragas_llm():
-    """Build a RAGAS-compatible LLM wrapper using gpt-4o-mini."""
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    return LangchainLLMWrapper(llm)
+    """Build a RAGAS-compatible LLM using llm_factory (modern ragas 0.4.x API)."""
+    client = OpenAIClient(api_key=os.getenv("OPENAI_API_KEY"))
+    return llm_factory("gpt-4o-mini", client=client)
 
 def _make_ragas_embeddings():
-    """Build a RAGAS-compatible embeddings wrapper."""
-    from langchain_openai import OpenAIEmbeddings
-    from ragas.embeddings import LangchainEmbeddingsWrapper
-    return LangchainEmbeddingsWrapper(OpenAIEmbeddings())
+    """Build a RAGAS-compatible embeddings using modern ragas 0.4.x API."""
+    client = OpenAIClient(api_key=os.getenv("OPENAI_API_KEY"))
+    return RagasOpenAIEmbeddings(model="text-embedding-3-small", client=client)
 
 
 def _run_single_ragas(user_input: str, response: str, contexts: list, metrics: list) -> dict:
