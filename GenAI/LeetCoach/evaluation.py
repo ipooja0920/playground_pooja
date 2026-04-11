@@ -2,11 +2,14 @@
 Evaluation module for LeetCoach.
 
 Phase 1:
-  - RAGAS: Faithfulness + Answer Relevancy on the solution section
+  - RAGAS (3 targeted evaluations):
+      1. Solution Faithfulness  — does the walkthrough match the actual code?
+      2. Complexity Faithfulness — is the Big O explanation grounded in the code?
+      3. Answer Relevancy        — does the solution address the problem asked?
   - LLM-as-Judge: Multi-dimension scoring (6 criteria, 1-5 each)
 
 Phase 2:
-  - Pattern accuracy check against ground_truth.py dataset
+  - Pattern accuracy check against ground_truth.py dataset (57 problems, all 20 patterns)
   - Evaluation history saved to eval_history.json for trend tracking
 """
 
@@ -22,10 +25,12 @@ from ground_truth import check_pattern_accuracy
 
 EVAL_HISTORY_FILE = Path(__file__).parent / "eval_history.json"
 
-# Try importing RAGAS — graceful fallback if unavailable
+# Try importing RAGAS — graceful fallback if not installed
 try:
     from ragas import evaluate as ragas_evaluate, EvaluationDataset, SingleTurnSample
     from ragas.metrics.collections import Faithfulness, ResponseRelevancy
+    from ragas.llms import LangchainLLMWrapper
+    from langchain_openai import ChatOpenAI
     RAGAS_AVAILABLE = True
 except Exception:
     RAGAS_AVAILABLE = False
@@ -44,46 +49,108 @@ def load_eval_history() -> list:
 def save_eval_result(result: dict):
     history = load_eval_history()
     history.append(result)
-    history = history[-50:]  # keep last 50 runs
+    history = history[-50:]
     with open(EVAL_HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=2)
 
 
 # --------------------------------------------------------------------------- #
-#  RAGAS Evaluation
+#  RAGAS Evaluation — 3 targeted evaluations
 # --------------------------------------------------------------------------- #
 
-def run_ragas_evaluation(problem_title: str, solution_text: str, problem_text: str) -> dict:
-    """
-    Run RAGAS faithfulness + answer_relevancy on the solution.
-    - question  = problem title
-    - answer    = solution text (explanation + code)
-    - contexts  = scraped problem text (what the agent had access to)
+def _make_ragas_llm():
+    """Build a RAGAS-compatible LLM wrapper using gpt-4o-mini."""
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    return LangchainLLMWrapper(llm)
 
-    Returns dict with scores or error message.
+
+def _run_single_ragas(user_input: str, response: str, contexts: list, metrics: list) -> dict:
+    """Run one RAGAS evaluation synchronously. Returns {metric_name: score, error: None}."""
+    try:
+        ragas_llm = _make_ragas_llm()
+        for m in metrics:
+            m.llm = ragas_llm
+
+        sample = SingleTurnSample(
+            user_input=user_input,
+            response=response,
+            retrieved_contexts=contexts,
+        )
+        dataset = EvaluationDataset(samples=[sample])
+        result = ragas_evaluate(dataset=dataset, metrics=metrics)
+        scores = result.to_pandas()
+        out = {"error": None}
+        for col in scores.columns:
+            if col not in ("user_input", "response", "retrieved_contexts", "reference"):
+                try:
+                    out[col] = round(float(scores[col].iloc[0]), 3)
+                except Exception:
+                    pass
+        return out
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def run_ragas_evaluations(
+    problem_text: str,
+    solution: str,
+    complexity: str,
+) -> dict:
+    """
+    Run 3 targeted RAGAS evaluations:
+
+    1. solution_faithfulness  — walkthrough grounded in the code?
+       user_input = problem, response = solution explanation, contexts = [solution code]
+
+    2. complexity_faithfulness — Big O explanation grounded in the code?
+       user_input = problem, response = complexity explanation, contexts = [solution code]
+
+    3. answer_relevancy — does solution address the problem?
+       user_input = problem, response = solution explanation, contexts = [] (not needed)
+
+    Returns dict with all 3 scores.
     """
     if not RAGAS_AVAILABLE:
-        return {"error": "RAGAS not installed. Run: pip install ragas"}
-
+        return {"error": "RAGAS not installed. Run: pip install ragas langchain-openai"}
     if not os.getenv("OPENAI_API_KEY"):
         return {"error": "OpenAI API key not set"}
 
-    try:
-        sample = SingleTurnSample(
-            user_input=problem_title,
-            response=solution_text,
-            retrieved_contexts=[problem_text],
-        )
-        dataset = EvaluationDataset(samples=[sample])
-        result = ragas_evaluate(dataset=dataset, metrics=[Faithfulness(), ResponseRelevancy()])
-        scores = result.to_pandas()
-        return {
-            "faithfulness":     round(float(scores["faithfulness"].iloc[0]), 3),
-            "answer_relevancy": round(float(scores["response_relevancy"].iloc[0]), 3),
-            "error": None,
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    # Extract just the code block from solution text to use as context
+    code_match = re.search(r"```python(.+?)```", solution, re.DOTALL)
+    code_context = code_match.group(1).strip() if code_match else solution[:800]
+
+    # 1. Solution Faithfulness
+    sol_faith = _run_single_ragas(
+        user_input=problem_text[:600],
+        response=solution[:1500],
+        contexts=[code_context],
+        metrics=[Faithfulness()],
+    )
+
+    # 2. Complexity Faithfulness
+    comp_faith = _run_single_ragas(
+        user_input=f"Explain the time and space complexity of this problem:\n{problem_text[:400]}",
+        response=complexity[:800],
+        contexts=[code_context],
+        metrics=[Faithfulness()],
+    )
+
+    # 3. Answer Relevancy (no context needed)
+    ans_relev = _run_single_ragas(
+        user_input=problem_text[:600],
+        response=solution[:1500],
+        contexts=[problem_text[:600]],  # problem itself as context
+        metrics=[ResponseRelevancy()],
+    )
+
+    return {
+        "solution_faithfulness":   sol_faith.get("faithfulness"),
+        "complexity_faithfulness": comp_faith.get("faithfulness"),
+        "answer_relevancy":        ans_relev.get("response_relevancy"),
+        "solution_faith_error":    sol_faith.get("error"),
+        "comp_faith_error":        comp_faith.get("error"),
+        "answer_relev_error":      ans_relev.get("error"),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -126,10 +193,6 @@ async def run_llm_judge_evaluation(
     solution: str,
     complexity: str,
 ) -> dict:
-    """
-    Multi-dimension LLM-as-Judge evaluation using direct OpenAI API.
-    Returns dict of dimension scores + summary, or error.
-    """
     if not os.getenv("OPENAI_API_KEY"):
         return {"error": "OpenAI API key not set"}
 
@@ -146,7 +209,6 @@ async def run_llm_judge_evaluation(
 === COMPLEXITY ===
 {complexity}
 """
-
     try:
         client = AsyncOpenAI()
         response = await client.chat.completions.create(
@@ -165,7 +227,6 @@ async def run_llm_judge_evaluation(
             return int(m.group(1)) if m else None
 
         summary_match = re.search(r"SUMMARY:\s*(.+)", raw)
-
         return {
             "beginner_friendliness": _extract("BEGINNER_FRIENDLINESS"),
             "pattern_accuracy":      _extract("PATTERN_ACCURACY"),
@@ -182,7 +243,7 @@ async def run_llm_judge_evaluation(
 
 
 # --------------------------------------------------------------------------- #
-#  Full evaluation runner (called from main.py on demand)
+#  Full evaluation runner
 # --------------------------------------------------------------------------- #
 
 async def run_full_evaluation(
@@ -193,34 +254,26 @@ async def run_full_evaluation(
     complexity: str,
 ) -> dict:
     """
-    Run all Phase 1 + Phase 2 evaluations in parallel where possible.
-    Returns a combined result dict saved to eval_history.json.
+    Run all evaluations. LLM Judge runs async, RAGAS runs in a thread executor.
     """
-    # Extract problem title from first line of scraped text
-    title_line = problem_text.strip().split("\n")[0] if problem_text else "Unknown"
+    title_line  = problem_text.strip().split("\n")[0] if problem_text else "Unknown"
     problem_title = title_line[:120]
 
-    # Extract pattern name (first line after ## 🎯 Pattern)
     pattern_name_match = re.search(r"##\s*🎯\s*Pattern\s*\n(.+)", pattern or "")
     pattern_name = pattern_name_match.group(1).strip() if pattern_name_match else (pattern or "")[:80]
 
-    # Run LLM judge and pattern accuracy check in parallel
+    # LLM Judge (async) and RAGAS (sync in thread) run concurrently
+    loop = asyncio.get_event_loop()
+
     judge_task = run_llm_judge_evaluation(problem_text, pattern, solution, complexity)
-    judge_scores = await judge_task
+    ragas_task = loop.run_in_executor(
+        None,
+        run_ragas_evaluations,
+        problem_text, solution, complexity,
+    ) if RAGAS_AVAILABLE else asyncio.coroutine(lambda: {"error": "RAGAS not installed"})()
 
-    # RAGAS runs synchronously (not async-friendly), run in thread
-    ragas_scores = {}
-    if RAGAS_AVAILABLE:
-        loop = asyncio.get_event_loop()
-        ragas_scores = await loop.run_in_executor(
-            None,
-            run_ragas_evaluation,
-            problem_title, solution, problem_text
-        )
-    else:
-        ragas_scores = {"error": "RAGAS not installed"}
+    judge_scores, ragas_scores = await asyncio.gather(judge_task, ragas_task)
 
-    # Pattern accuracy (sync, instant)
     pattern_accuracy = check_pattern_accuracy(pattern_name, url)
 
     result = {
