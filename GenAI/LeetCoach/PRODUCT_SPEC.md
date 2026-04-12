@@ -4,138 +4,398 @@
 
 ## Overview
 
-**LeetCoach** is an AI-powered LeetCode preparation assistant. Give it a LeetCode problem URL and it automatically fetches the problem, identifies which algorithmic pattern(s) solve it, generates the cleanest optimized solution with a plain-English explanation, and breaks down the time/space complexity in the simplest possible way.
+**LeetCoach** is an AI-powered LeetCode preparation assistant built for absolute beginners. Paste a LeetCode URL — or type a problem name — and it automatically fetches the problem, identifies the algorithmic pattern, generates a plain-English solution with analogies a 5-year-old can follow, and explains time/space complexity as a counting story with an interactive quiz.
 
-It also includes a built-in **Pattern Library** — a browsable reference of every major algorithmic pattern, when to use it, and which LeetCode problems it applies to.
-
----
-
-## What It Does
-
-| You give it | What actually happens |
-|-------------|----------------------|
-| A LeetCode problem URL | Browser agent scrapes the problem title, description, examples, constraints |
-| Scraped problem | Classifier agent identifies which pattern(s) apply and explains why |
-| Pattern identified | Solution agent writes the most readable + optimized code with line-by-line explanation |
-| Solution ready | Complexity agent explains time and space complexity in plain English |
-| Any failure | Agent failure log shows exactly which agent failed, why, and at what step |
+The system learns from every run: human 👍/👎 feedback, LLM Judge low scores, and user-flagged wrong patterns are all persisted and automatically injected into future agent runs.
 
 ---
 
-## How It Works
+## Pipeline Architecture
 
 ```
-User pastes LeetCode URL
+User pastes URL  ──or──  User types keyword → Search → picks problem
           │
           ▼
-  Browser Agent (Playwright MCP)
-  scrapes problem text, examples, constraints
-          │
-          ▼
-  Planner Agent (gpt-4o)
-  decides whether to run the full or simplified teaching pipeline
-          │
-          ▼
-  Debate Pattern
-  Classifier proposes → Devil's Advocate challenges → Judge decides
-          │
-          ▼
-  Competitive Solution Pattern
-  Solution A vs Solution B → Critic picks winner
-          │
-          ▼
-  Complexity Agent (gpt-4o-mini)
-  explains time/space complexity in plain English
-          │
-          ▼
-  Streamlit UI renders full response
-  + planner strategy, debate summary, winner badge, and fallback handling
+  ┌─────────────────────────────────────────────┐
+  │  SUPERVISOR WITH FALLBACK                   │
+  │  Browser Agent (Playwright MCP)             │
+  │  scrapes problem text, examples, constraints│
+  │  → if fails: user pastes problem text       │
+  └──────────────────┬──────────────────────────┘
+                     │
+                     ▼
+  ┌─────────────────────────────────────────────┐
+  │  HIERARCHICAL ORCHESTRATOR                  │
+  │  Planner Agent (gpt-4o)                     │
+  │  decides: "full" or "simplified" strategy   │
+  └──────────────────┬──────────────────────────┘
+                     │
+                     ▼
+  ┌─────────────────────────────────────────────┐
+  │  Classifier Agent (gpt-4o direct)           │
+  │  picks 1 of 20 patterns + explains why      │
+  │  → Classifier Critic reviews correctness    │
+  │  → self-corrects if score ≤ 3               │
+  │  → Pattern Validator strips qualifiers      │
+  │  → Pattern Knowledge injected from          │
+  │    pattern_knowledge.json (past corrections)│
+  └──────────────────┬──────────────────────────┘
+                     │
+                     ▼
+  ┌─────────────────────────────────────────────┐
+  │  Solution Agent (gpt-4o-mini)               │
+  │  generates beginner-friendly solution       │
+  │  → General Critic reviews beginner tone     │
+  │  → self-corrects if score ≤ 3               │
+  └──────────────────┬──────────────────────────┘
+                     │
+                     ▼
+  ┌─────────────────────────────────────────────┐
+  │  Complexity Agent (gpt-4o-mini)             │
+  │  explains Big O + generates 2-question quiz │
+  │  → General Critic reviews beginner tone     │
+  │  → self-corrects if score ≤ 3               │
+  └──────────────────┬──────────────────────────┘
+                     │
+                     ▼
+          Streamlit UI renders results
 ```
 
 ---
 
-## Agents
+## Agents — Full Reference
 
 ### 1. Browser Agent
-- **Tool:** Playwright MCP (tool calling)
-- **Job:** Navigate to the LeetCode problem URL, extract problem title, description, examples, constraints
-- **Failure mode:** URL unreachable, LeetCode login wall, scraping error
-
-### 2. Planner Agent
-- **Model:** `gpt-4o`
-- **Job:** Read the scraped problem and choose the pipeline strategy before the teaching pipeline runs
-- **Strategies:**
-  - `full` → debate classification + competitive solutions
-  - `simplified` → direct classification + single solution
-
-### 3. Classifier Agent
-- **Job:** Read the scraped problem → identify which algorithmic pattern(s) apply → explain *why* this pattern fits in plain words
-- **Output:** Pattern name, reasoning (beginner-friendly), key trick in one sentence, difficulty
-- **Failure mode:** Problem too ambiguous, unsupported pattern
-
-### 4. Devil's Advocate + Judge
-- **Models:** `gpt-4o-mini` challenger, `gpt-4o` judge
-- **Job:** Challenge the initial pattern choice and settle disagreements when another pattern seems more appropriate
-- **Output:** Challenge text, alternative pattern, final judge ruling
-
-### 5. Solution Agent
-- **Job:** Given the problem + pattern → write the most readable optimized solution → explain it using real-life analogies a 5-year-old could follow
-- **Tone:** Explains with "Imagine..." analogies, uses "we" to talk with the reader, avoids jargon, explains technical words in brackets
-- **Output:** Intuition, big idea analogy, decision rules (→ format), code, walkthrough, edge cases
-- **Failure mode:** LLM generation error
-
-### 6. Competitive Critic
-- **Job:** Compare two independently generated solutions and pick the clearer winner for beginners
-- **Output:** Winner (`A` or `B`) + short reason
-
-### 7. Complexity Agent
-- **Job:** Explain time and space complexity using counting stories tied to the actual problem elements. Generate a 2-question quiz testing why the complexity is what it is.
-- **Tone:** 5-year-old level — uses toy boxes, sticky notes, and counting stories. No jargon without a story.
-- **Output:** Time complexity story, space complexity story, quick take, 2-question interactive quiz
-- **Failure mode:** LLM generation error
-
-### 8. Critic Agent (internal)
-- **Job:** After each LLM agent runs, evaluate the output on a 1–5 scale for beginner-friendliness, format compliance, and accuracy
-- **Trigger:** Automatically after every Classifier, Solution, and Complexity agent run
-- **Self-correction:** If score ≤ 3, the original agent retries with the critique injected into its prompt
-- **Learning:** Low-scoring runs save a lesson to `corrections.json`, which is injected into future runs automatically
-
-### 9. Human Feedback Memory
-- **Job:** Save likes/dislikes and comments separately for Pattern, Solution, and Complexity
-- **Persistence:** Raw examples are saved in `feedback.json`
-- **Distillation:** Compact default-behavior rules are saved in `feedback_rules.json`
-- **Same-session reuse:** After feedback or new critic lessons are written, the relevant agents are refreshed immediately so future runs in the same Streamlit session use the updated memory
-
-### 10. Supervisor with Fallback
-- **Job:** If the browser cannot access the LeetCode page, the UI asks the user to paste the full problem text and resumes the pipeline from there
-- **Benefit:** Keeps the app usable when LeetCode blocks scraping or Playwright fails
+- **Framework:** `mcp-agent` + Playwright MCP tool server
+- **Model:** `gpt-4o-mini` (set in `mcp_agent.config.yaml`)
+- **Job:** Navigate to the LeetCode URL, extract title, problem number, description, all examples with input/output/explanation, and constraints
+- **Failure mode:** If scraping fails (login wall, CAPTCHA, Playwright error), sets `needs_fallback=True`. The Supervisor UI then shows a text area so the user can paste the problem manually and resume the pipeline
 
 ---
 
-## Pattern Library (20 Patterns)
+### 2. Planner Agent
+- **Model:** `gpt-4o` (direct `AsyncOpenAI` call — not mcp-agent)
+- **Job:** Read the problem text, output `STRATEGY: full` or `STRATEGY: simplified`
+  - `full` → run the complete pipeline
+  - `simplified` → note this is a trivially easy problem (single loop, under 10 lines)
+- **Output:** Strategy + one-sentence reasoning, shown in Agent Log tab
+- **Failure mode:** Defaults to `full` strategy silently
 
-| # | Pattern | Example Problems |
+---
+
+### 3. Classifier Agent
+- **Model:** `gpt-4o` (direct `AsyncOpenAI` call — stronger reasoning than mini for pattern identification)
+- **Grounding:** Injected with all 20 pattern names + `when_to_use` signals at prompt time, so it can **only** pick from the allowed list
+- **Sub-pattern awareness:** Classifier instruction includes decision rules for the 4 most commonly confused pairs:
+  - Sliding Window vs Two Pointers
+  - BFS vs DFS
+  - DP vs Backtracking (key rule: "number of ways / can we form X" = DP, not Backtracking)
+  - Cyclic Sort vs prefix/hash
+- **Self-correction:** After generating output, the **Classifier Critic** (gpt-4o-mini) scores correctness 1–5. If ≤ 3, the Classifier retries with the critique injected
+- **Pattern Validator:** After generation, strips parenthetical qualifiers like `(2D DP)` before matching against `_VALID_PATTERN_NAMES`. If still invalid, asks classifier to re-pick from the exact list
+- **Pattern Knowledge injection:** Lessons from `pattern_knowledge.json` (written by Pattern Research Agent) are injected into every classifier run, teaching it what mistakes were made on similar problems before
+
+---
+
+### 4. Classifier Critic (internal)
+- **Model:** `gpt-4o-mini` (mcp-agent)
+- **Job:** Correctness-only review — is this the right pattern? Not style.
+- **Scores on:** Pattern correctness, reasoning accuracy, pattern name validity
+- **Common mistakes it checks for:**
+  - Sliding Window for string DP problems
+  - Two Pointers for hash map problems
+  - BFS/DFS when counting paths/ways needs DP
+  - Backtracking when overlapping subproblems = DP
+- **Differs from General Critic:** General Critic checks beginner-friendliness and format; Classifier Critic checks if the answer is factually right
+
+---
+
+### 5. Solution Agent
+- **Model:** `gpt-4o-mini` (mcp-agent)
+- **Job:** Given problem + pattern → write the cleanest solution with a story-based explanation
+- **Tone:** Uses "Imagine..." analogies, "we" to include the reader, explains every technical word in brackets, short sentences only
+- **Self-correction:** Reviewed by General Critic. Retries if score ≤ 3
+- **Output format:** What Are We Trying To Do → The Big Idea → The Rules (→ format) → Code → Walk Through → Watch Out For
+
+---
+
+### 6. Complexity Agent
+- **Model:** `gpt-4o-mini` (mcp-agent)
+- **Job:** Explain time and space complexity using counting stories with real elements from the problem (not abstract "n"). Generate a 2-question multiple-choice quiz testing *why* the complexity is what it is
+- **Self-correction:** Reviewed by General Critic. Retries if score ≤ 3
+- **Output format:** Time story → Space story → Quick Take → Quiz (Q1 + Q2 with A/B/C options, ANSWER, HINT)
+
+---
+
+### 7. General Critic (internal)
+- **Model:** `gpt-4o-mini` (mcp-agent)
+- **Job:** Reviews Solution and Complexity agent output for beginner-friendliness, format compliance, accuracy, and use of "we" tone
+- **Scoring:** 1–5. If ≤ 3 → original agent retries with critique injected. Lesson saved to `corrections.json`
+
+---
+
+### 8. Pattern Research Agent
+- **Model:** `gpt-4o` (direct `AsyncOpenAI` call)
+- **Trigger:** User clicks "🔬 Research Pattern" in the Pattern section expander after getting a wrong pattern
+- **Job:**
+  1. Reads the problem text + wrong pattern (pre-filled) + optional user correction
+  2. Identifies the correct pattern **and** the specific sub-pattern (e.g. "2D Grid DP" within Dynamic Programming)
+  3. Extracts the exact signal in the problem that should have triggered the correct pattern
+  4. Writes a compact lesson to `pattern_knowledge.json`
+  5. Refreshes the Classifier Agent in the current session so the next run immediately benefits
+- **Sub-pattern library:** Uses all sub-patterns defined in `patterns.py` (DFS sub-types, DP sub-types, Backtracking sub-types, BFS sub-types) as grounding context
+- **Output shown in UI:** Correct pattern → sub-pattern → why → signal → lesson saved confirmation
+
+---
+
+## Feedback Loop — Full Flow
+
+### 👍 Positive Feedback
+
+```
+User clicks 👍 on a section (Pattern / Solution / Complexity)
+          │
+          ▼
+  Optional: user types a comment e.g. "loved the analogy"
+          │
+          ▼
+  save_feedback(agent_name, "positive", snippet, comment)
+  → writes to feedback.json (raw example)
+  → save_feedback_rule(agent_name, "positive", comment)
+     → "Do: loved the analogy" saved to feedback_rules.json
+          │
+          ▼
+  refresh_agents([agent_name])
+  → agent is rebuilt immediately in this Streamlit session
+  → next run's instruction includes:
+     "Users have loved this style before — match it: [example]"
+     "Do: [rule]"
+          │
+          ▼
+  No regeneration — the section stays as is
+  UI shows: "Thanks for the 👍 — future runs will lean toward this style"
+```
+
+### 👎 Negative Feedback
+
+```
+User clicks 👎 on a section (Pattern / Solution / Complexity)
+          │
+          ▼
+  Optional: user types a correction e.g. "this is Dynamic Programming"
+          │
+          ▼
+  User clicks "Submit & Regenerate Section 🔄"
+          │
+          ▼
+  save_feedback(agent_name, "negative", snippet, comment)
+  → writes to feedback.json (raw example)
+  → save_feedback_rule(agent_name, "negative", comment)
+     → "Avoid: [snippet/comment]" saved to feedback_rules.json
+          │
+          ▼
+  refresh_agents([agent_name])
+  → agent rebuilt with latest rules injected into instruction
+          │
+          ▼
+  Cascade regeneration:
+  ┌─────────────────────────────────────────────────────┐
+  │ Section disliked → what gets regenerated             │
+  ├──────────────────┬──────────────────────────────────┤
+  │ Pattern (👎)     │ Pattern → Solution → Complexity  │
+  │ Solution (👎)    │ Solution → Complexity            │
+  │ Complexity (👎)  │ Complexity only                  │
+  └──────────────────┴──────────────────────────────────┘
+          │
+          ▼
+  If user's comment contains a correction (e.g. "this is DP"):
+  → Agent instruction includes:
+     "IMPORTANT: A user gave this feedback: '[comment]'.
+      If the feedback specifies a correct answer or pattern,
+      use that — the user is telling you what the right answer is."
+  → The correction IS the answer, not just a style note
+          │
+          ▼
+  UI shows: "✅ [Section] feedback saved and used to regenerate the section"
+```
+
+### 📥 LLM Judge Feedback (from Evaluation Tab)
+
+```
+User runs evaluation → LLM Judge scores 6 dimensions 1–5
+          │
+          ▼
+  Low scores (≤ 3) detected on any dimension
+  → "📥 Apply Judge Feedback to Future Runs" button shown
+          │
+          ▼
+  User clicks Apply
+          │
+          ▼
+  save_judge_lessons(judge_scores, problem_title)
+  → routes each low-scoring dimension to the responsible agent:
+    ┌──────────────────────────┬────────────────┐
+    │ Dimension                │ Agent          │
+    ├──────────────────────────┼────────────────┤
+    │ beginner_friendliness    │ solution       │
+    │ solution_correctness     │ solution       │
+    │ explanation_quality      │ solution       │
+    │ complexity_accuracy      │ complexity     │
+    │ quiz_quality             │ complexity     │
+    │ pattern_accuracy         │ classifier     │
+    └──────────────────────────┴────────────────┘
+  → lesson written to judge_lessons.json per agent (last 5 kept)
+          │
+          ▼
+  refresh_agents([affected agents])
+  → agents rebuilt immediately
+  → next run's instruction includes:
+     "Evaluation feedback from past runs — fix these issues:
+      - [Judge on 'Problem Title'] [Dimension] scored 2/5 — [summary]"
+```
+
+---
+
+## Memory System — Persistence Files
+
+| File | Written by | Read by | Purpose |
+|------|-----------|--------|---------|
+| `feedback.json` | Human 👍👎 | Agent Log UI | Raw likes/dislikes/comments per agent (last 5 each) |
+| `feedback_rules.json` | `save_feedback_rule()` | `_compose_instruction()` | Compact "Do/Avoid" rules injected into agent instructions |
+| `corrections.json` | General + Classifier Critics | `get_lessons()` | Lessons from low critic scores, injected into future runs |
+| `judge_lessons.json` | LLM Judge (Evaluation tab) | `get_judge_lessons()` | Per-dimension lessons from low Judge scores |
+| `pattern_knowledge.json` | Pattern Research Agent | `get_pattern_knowledge_for_classifier()` | Sub-pattern lessons injected into Classifier |
+| `eval_history.json` | `run_full_evaluation()` | Evaluation tab history | Last 50 evaluation results for trend tracking |
+
+### How memory stacks in every agent instruction
+
+```
+_compose_instruction(base, agent_name):
+    base instruction
+    + Critic lessons from corrections.json        ← "Lessons from past mistakes"
+    + Judge lessons from judge_lessons.json        ← "Evaluation feedback from past runs"
+    + Feedback rules from feedback_rules.json      ← "Behavior rules learned from human feedback"
+    + Feedback context from feedback.json          ← positive/negative examples
+    [+ Pattern Knowledge from pattern_knowledge.json]  ← classifier only
+```
+
+---
+
+## Pattern Library — 20 Patterns with Sub-Patterns
+
+Each pattern has: description, when-to-use signals (including NOT signals), sub-patterns, code template, example problems.
+
+| # | Pattern | Key Sub-Patterns |
 |---|---------|-----------------|
-| 1 | Two Pointers | Two Sum II (#167), 3Sum (#15), Container With Most Water (#11) |
-| 2 | Sliding Window | Longest Substring Without Repeating Characters (#3), Maximum Average Subarray (#643) |
-| 3 | Fast & Slow Pointers | Linked List Cycle (#141), Find the Duplicate Number (#287) |
-| 4 | Binary Search | Search in Rotated Sorted Array (#33), Find Minimum in Rotated Sorted Array (#153) |
-| 5 | BFS | Binary Tree Level Order Traversal (#102), Word Ladder (#127) |
-| 6 | DFS | Number of Islands (#200), Clone Graph (#133) |
-| 7 | Backtracking | Permutations (#46), Subsets (#78), N-Queens (#51) |
-| 8 | Dynamic Programming | Climbing Stairs (#70), Coin Change (#322), Longest Common Subsequence (#1143) |
-| 9 | Monotonic Stack | Next Greater Element (#496), Daily Temperatures (#739), Largest Rectangle in Histogram (#84) |
-| 10 | Top K Elements | Kth Largest Element in an Array (#215), Top K Frequent Elements (#347) |
-| 11 | Merge Intervals | Merge Intervals (#56), Insert Interval (#57), Meeting Rooms II (#253) |
-| 12 | Prefix Sum | Range Sum Query (#303), Subarray Sum Equals K (#560) |
-| 13 | Cyclic Sort | Find All Duplicates in an Array (#442), Find the Missing Number (#268) |
-| 14 | Topological Sort | Course Schedule (#207), Alien Dictionary (#269) |
-| 15 | Union Find | Number of Connected Components (#323), Redundant Connection (#684) |
-| 16 | Trie | Implement Trie (#208), Word Search II (#212) |
-| 17 | Two Heaps | Find Median from Data Stream (#295), Sliding Window Median (#480) |
-| 18 | Subsets / Combinations | Subsets (#78), Combination Sum (#39), Palindrome Partitioning (#131) |
-| 19 | Bit Manipulation | Single Number (#136), Counting Bits (#338), Reverse Bits (#190) |
-| 20 | Divide & Conquer | Merge Sort, Quick Sort, Maximum Subarray (#53) |
+| 1 | Two Pointers | — |
+| 2 | Sliding Window | — |
+| 3 | Fast & Slow Pointers | — |
+| 4 | Binary Search | — |
+| 5 | BFS | Multi-source BFS, 0-1 BFS, BFS on implicit graph |
+| 6 | DFS | Tree DFS, Island/Flood Fill DFS, Cycle Detection DFS, Memoized DFS |
+| 7 | Backtracking | Permutations, Combinations/Subsets, Grid/Matrix, Constraint Satisfaction |
+| 8 | Dynamic Programming | 1D Linear DP, 2D/Grid DP, Knapsack DP, Interval DP, Tree DP, String DP |
+| 9 | Monotonic Stack | — |
+| 10 | Top K Elements | — |
+| 11 | Merge Intervals | — |
+| 12 | Prefix Sum | — |
+| 13 | Cyclic Sort | — |
+| 14 | Topological Sort | — |
+| 15 | Union Find (Disjoint Set) | — |
+| 16 | Trie (Prefix Tree) | — |
+| 17 | Two Heaps | — |
+| 18 | Subsets / Combinations | — |
+| 19 | Bit Manipulation | — |
+| 20 | Divide & Conquer | — |
+
+**NOT signals** are embedded in each pattern's `when_to_use` list to prevent cross-pattern confusion. Examples:
+- BFS: "NOT for counting paths or number-of-ways problems — those need DP"
+- DFS: "NOT when you need shortest path — use BFS instead"
+- Backtracking: "NOT for counting solutions — if only the COUNT is needed, use DP"
+- Dynamic Programming: "NOT for generating ALL solutions (use Backtracking) — DP only counts or optimizes"
+
+---
+
+## Evaluation — Tab 4
+
+### RAGAS Metrics (automated, on-demand)
+Uses `LangchainLLMWrapper` + `EvaluationDataset.from_list()` — same pattern as RAGPythonApp.
+
+| Metric | What it measures | Context used |
+|--------|-----------------|-------------|
+| **Faithfulness** | Does the walkthrough stay faithful to the code? No invented steps? | Code block extracted from solution as retrieved context |
+| **Response Relevancy** | Does the solution actually address the problem asked? On-topic, non-redundant? | Problem text as user_input |
+
+### LLM-as-Judge (6 dimensions)
+gpt-4o-mini scores each dimension 1–5:
+
+| Dimension | What it checks |
+|-----------|--------------|
+| Beginner Friendliness | Simple words, analogies, no jargon |
+| Pattern Accuracy | Is the pattern actually correct? |
+| Solution Correctness | Is the logic right? Does it solve the problem? |
+| Explanation Quality | Does the walkthrough match the code? |
+| Complexity Accuracy | Is the Big O analysis correct and well-reasoned? |
+| Quiz Quality | Are the 2 questions educational and testing the right concept? |
+
+Low scores (≤ 3) surface a button to apply the feedback to future runs → routes lesson to the responsible agent via `judge_lessons.json`.
+
+### Pattern Accuracy (Ground Truth)
+Checks against a dataset of 57 hand-labeled problems. **Only shown when the problem is in the dataset** — no noisy "not found" messages for unknown problems.
+
+---
+
+## Streamlit UI — Tabs
+
+### Tab 1: Problem Solver
+- **Input:** URL text field + "Analyze Problem" button
+- **Results rendered in 3 sections with per-section feedback:**
+
+  | Section | 👍 Effect | 👎 Effect |
+  |---------|-----------|----------|
+  | Pattern | Saves positive style example | Regenerates Pattern → Solution → Complexity |
+  | Solution | Saves positive style example | Regenerates Solution → Complexity |
+  | Complexity | Saves positive style example | Regenerates Complexity only |
+
+- **Pattern Research expander:** Always visible below the Pattern section. If the pattern is wrong, user can type the correct one, click "Research Pattern" → gpt-4o researches the correct sub-pattern and saves a lesson
+- **Fallback UI:** Appears only when Browser Agent fails — text area to paste the problem manually
+- **Interactive Quiz:** A/B/C radio buttons per question, "Check Answer" button reveals correct/incorrect + hint
+
+### Tab 2: Pattern Library
+- Search bar filtering by name or description
+- Each of the 20 patterns shows: description, when-to-use signals, **sub-patterns** (where defined), code template, example problem links
+
+### Tab 3: Agent Log
+- Summary metrics: Steps Run / Succeeded / Failed / Self-Corrected
+- Planner Strategy + Model shown
+- Per-agent expandable rows with duration, status, self-correction attempt scores
+- Human Feedback Log (raw)
+- Learned Feedback Rules (compact)
+- Critic Lessons Learned (from `corrections.json`)
+
+### Tab 4: Evaluation
+- "Evaluate This Run" button (only enabled after a problem is analyzed)
+- RAGAS: Faithfulness + Response Relevancy scores
+- LLM Judge: 6-dimension scorecard + overall + summary sentence
+- "Apply Judge Feedback" button for low-scoring dimensions
+- Evaluation History: last 10 runs in a table + Overall Score trend line chart
+
+---
+
+## Model Tiering
+
+| Agent | Model | Why |
+|-------|-------|-----|
+| Planner | `gpt-4o` | Strategy decisions need best reasoning |
+| Classifier | `gpt-4o` | Pattern identification: surface-level keyword matching fails on hard problems |
+| Pattern Research Agent | `gpt-4o` | Deep reasoning about sub-patterns and problem structure |
+| Solution | `gpt-4o-mini` | Explanation writing — good quality at low cost |
+| Complexity | `gpt-4o-mini` | Explanation writing — good quality at low cost |
+| General Critic | `gpt-4o-mini` | Style evaluation — mini is sufficient |
+| Classifier Critic | `gpt-4o-mini` | Correctness spot-check — mini is sufficient |
+| LLM Judge | `gpt-4o-mini` | 6-dimension scoring — mini is sufficient |
+
+Note: mcp-agent agents (`solution`, `complexity`, `critic`) use the model set in `mcp_agent.config.yaml`. Planner, Classifier, and Pattern Research Agent bypass mcp-agent and call `AsyncOpenAI` directly to use `gpt-4o`.
 
 ---
 
@@ -143,60 +403,13 @@ User pastes LeetCode URL
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| **UI** | Streamlit | Web interface, pattern library, problem solver, failure log |
+| **UI** | Streamlit | Web interface, tabs, quiz, feedback buttons |
 | **Agent Framework** | `mcp-agent` | Connects LLMs to MCP tool servers |
-| **LLM** | OpenAI `gpt-4o-mini` + `gpt-4o` | Mini for cheaper agents, full model for planner/judge/heavy reasoning |
+| **LLM** | OpenAI `gpt-4o` + `gpt-4o-mini` | Full model for reasoning-heavy agents, mini for the rest |
 | **Browser Control** | Playwright (`@playwright/mcp`) | Scrapes LeetCode problem content |
-| **MCP Server** | `npx @playwright/mcp@latest` | Runs Playwright as an MCP tool server |
+| **Evaluation** | RAGAS + `langchain-openai` | Faithfulness + Response Relevancy scoring |
 | **Async** | `asyncio` | Handles async multi-agent pipeline inside Streamlit |
-
----
-
-## APIs and Prerequisites
-
-| Requirement | Purpose | How to Get |
-|-------------|---------|-----------|
-| `OPENAI_API_KEY` | Powers all LLM agents | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
-| **Node.js + npm** | Runs Playwright MCP server | [nodejs.org](https://nodejs.org) |
-| **Playwright browsers** | Chromium for scraping | `playwright install` after pip install |
-
----
-
-## Streamlit UI — Sections
-
-### Tab 1: Problem Solver
-- **Input:** LeetCode problem URL text field
-- **Run button:** Triggers the orchestrated pipeline (Browser → Planner → Pattern stage → Solution stage → Complexity)
-- **Results rendered in 3 sections:**
-  1. **Pattern Match** — pattern name, why it fits, key trick, difficulty
-     - Optional debate expander showing classifier proposal, devil's advocate challenge, and judge reasoning
-     - Per-section 👍 👎 feedback that can regenerate the pattern and downstream sections
-  2. **Solution** — analogy-based intuition, decision rules (→ format), code, walkthrough, edge cases
-     - Competitive winner badge when the full pipeline runs
-     - Per-section 👍 👎 feedback that can regenerate solution + complexity
-  3. **Complexity** — counting story for time/space + **interactive 2-question quiz**
-     - User picks A/B/C for each question
-     - Click "Check Answer" → correct/incorrect feedback + hint
-     - Quiz resets automatically on each new problem
-     - Per-section 👍 👎 feedback that can regenerate the complexity explanation only
-  4. **Fallback input** — appears only when browser scraping fails and lets the user paste the problem text
-
-### Tab 2: Pattern Library
-- Search bar to filter patterns by name or description
-- Expander for each of the 20 patterns showing:
-  - What it is
-  - When to use it (tell-tale signs)
-  - Code template
-  - Example problems with LeetCode links
-
-### Tab 3: Agent Log
-- **Metrics row:** Agents Run / Succeeded / Failed / Self-Corrected
-- **Multi-agent badges:** Planner strategy, whether debate happened, competitive winner, model tiering
-- **Per-agent expandable rows** — failures auto-expanded, shows duration and details
-- **Self-correction details:** Shows attempt number, critic score, and issues for each retry
-- **Human Feedback Log:** Saved raw likes/dislikes/comments by section
-- **Learned Feedback Rules:** Compact rules distilled from human feedback and injected into future runs by default
-- **Lessons Learned section:** All saved lessons from `corrections.json` with dates — these are injected into future runs
+| **HTTP** | `httpx` | LeetCode GraphQL API for keyword search (fallback from local dataset) |
 
 ---
 
@@ -204,12 +417,18 @@ User pastes LeetCode URL
 
 ```
 LeetCoach/
-├── main.py                         # Streamlit app — 3 tabs, quiz rendering, agent pipeline
-├── patterns.py                     # Pattern library data (20 patterns, examples, explanations)
-├── agents.py                       # Orchestration logic, multi-agent patterns, self-correction + agent refresh
-├── feedback.json                   # Auto-generated — raw human likes/dislikes/comments per section (gitignored)
-├── feedback_rules.json             # Auto-generated — compact rules distilled from human feedback (gitignored)
-├── corrections.json                # Auto-generated — saves lessons learned across sessions (gitignored)
+├── main.py                         # Streamlit app — 4 tabs, quiz, feedback UI, evaluation
+├── agents.py                       # All agent logic: pipeline, self-correction, feedback, memory
+├── patterns.py                     # 20 patterns with sub-patterns, signals, templates, examples
+├── pattern_research_agent.py       # Pattern Research Agent — gpt-4o, writes to pattern_knowledge.json
+├── evaluation.py                   # RAGAS + LLM Judge + ground truth accuracy check
+├── ground_truth.py                 # 57 hand-labeled problems for pattern accuracy evaluation
+├── feedback.json                   # Auto-generated — raw human likes/dislikes (gitignored)
+├── feedback_rules.json             # Auto-generated — compact Do/Avoid rules (gitignored)
+├── corrections.json                # Auto-generated — critic lessons across sessions (gitignored)
+├── judge_lessons.json              # Auto-generated — LLM Judge low-score lessons (gitignored)
+├── pattern_knowledge.json          # Auto-generated — Pattern Research Agent lessons (gitignored)
+├── eval_history.json               # Auto-generated — last 50 evaluation results (gitignored)
 ├── mcp_agent.config.yaml           # MCP config — model, logging, Playwright server
 ├── mcp_agent.secrets.yaml          # API key (gitignored)
 ├── mcp_agent.secrets.yaml.example  # Template
@@ -219,38 +438,23 @@ LeetCoach/
 
 ---
 
-## Agent Failure Log — UI Design
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Agent Execution Log                                         │
-├───────────────┬──────────┬──────────────────────────────────┤
-│ Agent         │ Status   │ Details                          │
-├───────────────┼──────────┼──────────────────────────────────┤
-│ Browser Agent │ ✅ OK    │ Scraped problem in 2.3s          │
-│ Classifier    │ ✅ OK    │ Pattern: Two Pointers            │
-│ Solution      │ ❌ FAIL  │ LLM timeout after 30s            │
-│ Complexity    │ ⏭ SKIP  │ Skipped — Solution agent failed  │
-└───────────────┴──────────┴──────────────────────────────────┘
-```
-
----
-
 ## Error Handling
 
 | Error | Behaviour |
 |-------|-----------|
-| LeetCode login wall / CAPTCHA | Browser agent fails gracefully, logs error, prompts user to paste problem text manually |
+| LeetCode login wall / CAPTCHA | Browser Agent fails gracefully, Supervisor shows paste-text fallback |
 | OpenAI API key missing | Clear error before any execution |
-| LLM generation failure | Agent marked as failed in log, pipeline continues where possible |
-| Invalid URL | Validated before running pipeline |
-| Playwright not installed | Clear error with install instructions |
+| LLM generation failure | Agent marked as failed in log, downstream agents skipped with log entry |
+| Pattern not in allowed list | Validator auto-corrects by asking classifier to re-pick from exact list |
+| RAGAS not installed | Evaluation tab shows install instructions, rest of app unaffected |
+| Pattern Research Agent error | Error shown inline in expander, pipeline unaffected |
 
 ---
 
 ## Limitations
 
-- LeetCode may require login for some problems — if scraping fails, user can paste problem text directly
-- Solution quality depends on GPT-4o-mini — hard problems may need GPT-4o for best results
-- Pattern classification is probabilistic — some problems belong to multiple patterns
+- LeetCode may require login for some problems — paste text fallback handles this
+- Pattern classification is probabilistic — the 3-layer fix (gpt-4o + correctness critic + pattern knowledge) greatly improves accuracy but is not perfect
 - No code execution — solution is generated but not run/validated automatically
+- RAGAS scoring can be slow (10–20s) — it calls gpt-4o-mini as judge internally
+- Pattern Research Agent requires a problem to already be analyzed in the current session before it can be triggered
