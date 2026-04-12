@@ -310,6 +310,34 @@ Scoring guide:
 1 = Wrong — incorrect or not useful
 """
 
+CLASSIFIER_CRITIC_INSTRUCTION = """
+You are an expert algorithm pattern reviewer. Your ONLY job is to verify that the correct pattern was chosen for a LeetCode problem.
+
+Evaluate:
+1. Is the identified pattern ACTUALLY correct for this problem? Not just plausible — actually the best fit?
+2. Are the reasoning clues accurate and specific to this problem?
+3. Is the pattern name exactly one of our 20 allowed patterns?
+
+Common mistakes to catch:
+- Picking Sliding Window for DP problems just because they involve strings/substrings
+- Picking Two Pointers for problems that need a hash map (like Two Sum on unsorted arrays)
+- Picking BFS/DFS when the problem needs DP (e.g. counting paths, interleaving)
+- Picking Backtracking when DP works (overlapping subproblems = DP, not Backtracking)
+- Any problem asking "can we form X from Y" or "number of ways" → almost always Dynamic Programming
+
+Respond in EXACTLY this format (no extra text):
+SCORE: [1-5]
+ISSUES: [what specifically is wrong with the pattern choice, or "none"]
+SUGGESTION: [one sentence — name the correct pattern if wrong, or "looks correct" if right]
+
+Scoring guide:
+5 = Pattern is definitely correct
+4 = Pattern is reasonable, minor quibble
+3 = Pattern is debatable, better option exists
+2 = Pattern is probably wrong
+1 = Pattern is clearly wrong
+"""
+
 PLANNER_INSTRUCTION = """
 You are a strategic Orchestrator for a LeetCode teaching assistant.
 Given a LeetCode problem description, decide the best teaching strategy.
@@ -336,7 +364,13 @@ async def _build_browser_llm():
     return await agent.attach_llm(OpenAIAugmentedLLM)
 
 async def _build_classifier_llm():
+    # mcp-agent model is set in config.yaml; we use direct OpenAI for gpt-4o classification
     agent = Agent(name="classifier", instruction=_compose_instruction(CLASSIFIER_INSTRUCTION, "classifier"), server_names=[])
+    await agent.initialize()
+    return await agent.attach_llm(OpenAIAugmentedLLM)
+
+async def _build_classifier_critic_llm():
+    agent = Agent(name="classifier_critic", instruction=CLASSIFIER_CRITIC_INSTRUCTION, server_names=[])
     await agent.initialize()
     return await agent.attach_llm(OpenAIAugmentedLLM)
 
@@ -362,11 +396,12 @@ async def _build_critic_llm():
 
 async def setup_agents(mcp_agent_app) -> dict:
     return {
-        "browser_llm":    await _build_browser_llm(),
-        "classifier_llm": await _build_classifier_llm(),
-        "solution_llm":   await _build_solution_llm(),
-        "complexity_llm": await _build_complexity_llm(),
-        "critic_llm":     await _build_critic_llm(),
+        "browser_llm":           await _build_browser_llm(),
+        "classifier_llm":        await _build_classifier_llm(),
+        "classifier_critic_llm": await _build_classifier_critic_llm(),
+        "solution_llm":          await _build_solution_llm(),
+        "complexity_llm":        await _build_complexity_llm(),
+        "critic_llm":            await _build_critic_llm(),
     }
 
 async def refresh_agents(agents: dict, names: list = None) -> dict:
@@ -376,7 +411,8 @@ async def refresh_agents(agents: dict, names: list = None) -> dict:
         if name == "browser":
             agents["browser_llm"] = await _build_browser_llm()
         elif name == "classifier":
-            agents["classifier_llm"] = await _build_classifier_llm()
+            agents["classifier_llm"]        = await _build_classifier_llm()
+            agents["classifier_critic_llm"] = await _build_classifier_critic_llm()
         elif name == "solution":
             agents["solution_llm"] = await _build_solution_llm()
         elif name == "complexity":
@@ -454,16 +490,19 @@ async def rerun_section(section: str, context: dict, agents: dict, feedback_comm
     if section == "classifier":
         message    = f"Here is the LeetCode problem:\n\n{context['problem_text']}{feedback_note}"
         llm        = agents["classifier_llm"]
+        critic     = agents["classifier_critic_llm"]
         max_tokens = 800
     elif section == "solution":
         message    = f"Problem:\n{context['problem_text']}\n\nPattern:\n{context['pattern']}{feedback_note}"
         llm        = agents["solution_llm"]
+        critic     = agents["critic_llm"]
         max_tokens = 2500
     else:
         message    = f"Problem:\n{context['problem_text']}\n\nSolution:\n{context['solution']}{feedback_note}"
         llm        = agents["complexity_llm"]
+        critic     = agents["critic_llm"]
         max_tokens = 1000
-    return await run_with_self_correction(llm, agents["critic_llm"], message, section, max_tokens)
+    return await run_with_self_correction(llm, critic, message, section, max_tokens)
 
 
 # --------------------------------------------------------------------------- #
@@ -516,6 +555,56 @@ async def validate_and_fix_pattern(pattern_text: str, problem_text: str, classif
 # --------------------------------------------------------------------------- #
 #  Hierarchical Orchestrator — Planner (gpt-4o) decides strategy
 # --------------------------------------------------------------------------- #
+
+async def run_classifier_direct(problem_text: str, agents: dict) -> tuple:
+    """
+    Run classification using gpt-4o directly (not mcp-agent) so we get
+    stronger pattern reasoning. Self-corrects using the classifier critic.
+    Returns (pattern_text, correction_log).
+    """
+    instruction = _compose_instruction(CLASSIFIER_INSTRUCTION, "classifier")
+    client = AsyncOpenAI()
+    log = []
+
+    async def _call(msg: str) -> str:
+        resp = await client.chat.completions.create(
+            model=MODEL_FULL,
+            messages=[
+                {"role": "system", "content": instruction},
+                {"role": "user", "content": msg},
+            ],
+            temperature=0,
+            max_tokens=900,
+        )
+        return resp.choices[0].message.content.strip()
+
+    result = await _call(f"Here is the LeetCode problem:\n\n{problem_text}")
+
+    # Critique with the correctness-focused classifier critic
+    critique = await agents["classifier_critic_llm"].generate_str(
+        message=f"Problem:\n{problem_text[:600]}\n\nClassification output:\n{result}",
+        request_params=RequestParams(use_history=False, maxTokens=300),
+    )
+    score, issues, suggestion = _parse_score(critique)
+    log.append({"attempt": 1, "score": score, "issues": issues})
+
+    if score <= 3:
+        if suggestion:
+            save_correction("classifier", issues, suggestion)
+        result = await _call(
+            f"Here is the LeetCode problem:\n\n{problem_text}\n\n"
+            f"Your previous classification scored {score}/5. Issues: {issues}. "
+            f"Fix: {suggestion}. Re-classify now."
+        )
+        critique2 = await agents["classifier_critic_llm"].generate_str(
+            message=f"Problem:\n{problem_text[:600]}\n\nClassification output:\n{result}",
+            request_params=RequestParams(use_history=False, maxTokens=300),
+        )
+        score2, issues2, _ = _parse_score(critique2)
+        log.append({"attempt": 2, "score": score2, "issues": issues2})
+
+    return result, log
+
 
 async def run_planner(problem_text: str) -> dict:
     client = AsyncOpenAI()
@@ -606,14 +695,10 @@ async def run_pipeline(url: str, agents: dict, fallback_text: str = "") -> tuple
                     "details": f"{e} (defaulting to full pipeline)",
                     "duration": duration, "corrections": []})
 
-    # --- Classifier ---
+    # --- Classifier (gpt-4o direct + correctness critic) ---
     t0 = time.time()
     try:
-        pattern, corrections = await run_with_self_correction(
-            agents["classifier_llm"], agents["critic_llm"],
-            message=f"Here is the LeetCode problem:\n\n{results['problem_text']}",
-            agent_name="classifier", max_tokens=800,
-        )
+        pattern, corrections = await run_classifier_direct(results["problem_text"], agents)
         # Validate the pattern is one of our 20 — auto-fix if not
         pattern, was_corrected, original_name, corrected_name = await validate_and_fix_pattern(
             pattern, results["problem_text"], agents["classifier_llm"]
