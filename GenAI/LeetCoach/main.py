@@ -427,6 +427,8 @@ with tab1:
                 else:
                     st.success(f"**Correct Pattern:** {res.get('correct_pattern', '—')}" +
                                (f" › {res['sub_pattern']}" if res.get('sub_pattern') and res['sub_pattern'] != 'N/A' else ""))
+                    if res.get("pattern_discovered"):
+                        st.info(f"🆕 {res.get('pattern_discovery_note', '')}")
                     st.markdown(f"**Why:** {res.get('why', '')}")
                     st.markdown(f"**Signal:** _{res.get('signal', '')}_")
                     st.markdown(f"**Lesson saved:** {res.get('classifier_lesson', '')}")

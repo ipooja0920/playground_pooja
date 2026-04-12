@@ -105,18 +105,64 @@ class TestRunPatternResearch:
         assert result["correct_pattern"] == "Dynamic Programming"  # canonicalized
 
     @pytest.mark.asyncio
-    async def test_completely_unknown_pattern_returns_error(self, tmp_path):
+    async def test_unknown_pattern_triggers_discovery(self, tmp_path):
+        """Unknown patterns auto-trigger discovery — not an error."""
+        import patterns as patterns_module
         from pattern_research_agent import run_pattern_research
         mock_client = AsyncMock()
-        mock_client.chat.completions.create.return_value = make_openai_response(
-            _research_response(correct_pattern="Quantum Sort Algorithm")
-        )
-        with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"):
-            result = await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
+        # Call 1: research returns unknown pattern name
+        # Call 2: _discover_and_save_new_pattern generates full definition
+        mock_client.chat.completions.create.side_effect = [
+            make_openai_response(_research_response(correct_pattern="Quantum Sort Algorithm")),
+            make_openai_response(json.dumps({
+                "name": "Quantum Sort Algorithm",
+                "description": "A fictional pattern for testing.",
+                "when_to_use": ["signal 1", "NOT something else"],
+                "template": "pass",
+                "examples": [
+                    {"name": "Two Sum (#1)", "url": "https://leetcode.com/problems/two-sum/"},
+                    {"name": "Reverse String (#344)", "url": "https://leetcode.com/problems/reverse-string/"},
+                ],
+            })),
+        ]
+        original_patterns = list(patterns_module.PATTERNS)
+        try:
+            with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
+                 patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"), \
+                 patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
+                result = await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
+        finally:
+            # Restore PATTERNS so test-added entries don't pollute other tests
+            patterns_module.PATTERNS[:] = original_patterns
+
+        assert result.get("error") is None
+        assert result.get("pattern_discovered") is True
+        assert result["correct_pattern"] == "Quantum Sort Algorithm"
+        assert (tmp_path / "custom.json").exists()
+
+    @pytest.mark.asyncio
+    async def test_unknown_pattern_discovery_failure_returns_error(self, tmp_path):
+        """If both research and discovery fail, return an error."""
+        import patterns as patterns_module
+        from pattern_research_agent import run_pattern_research
+        mock_client = AsyncMock()
+        # Call 1: research returns unknown pattern
+        # Call 2: discovery API fails
+        mock_client.chat.completions.create.side_effect = [
+            make_openai_response(_research_response(correct_pattern="Quantum Sort Algorithm")),
+            Exception("API down"),
+        ]
+        original_patterns = list(patterns_module.PATTERNS)
+        try:
+            with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
+                 patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"), \
+                 patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
+                result = await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
+        finally:
+            patterns_module.PATTERNS[:] = original_patterns
 
         assert result.get("error") is not None
-        assert result["lesson_saved"] is False
+        assert result.get("lesson_saved") is False
 
     @pytest.mark.asyncio
     async def test_api_failure_returns_error(self, tmp_path):

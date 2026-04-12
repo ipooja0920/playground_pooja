@@ -23,14 +23,14 @@ pattern_knowledge.json structure:
 """
 
 import json
-import re
 from pathlib import Path
 from datetime import datetime
 from openai import AsyncOpenAI
 
 from patterns import PATTERNS
 
-PATTERN_KNOWLEDGE_FILE = Path(__file__).parent / "pattern_knowledge.json"
+PATTERN_KNOWLEDGE_FILE  = Path(__file__).parent / "pattern_knowledge.json"
+CUSTOM_PATTERNS_FILE    = Path(__file__).parent / "custom_patterns.json"
 MODEL_FULL = "gpt-4o"
 
 # Build sub-pattern context from patterns.py for the research agent
@@ -57,18 +57,90 @@ Your job: given a LeetCode problem (and optionally the wrong pattern that was pi
 identify the correct pattern AND the specific sub-pattern, then explain exactly what
 signal in the problem should trigger that pattern.
 
-Here are the 20 patterns and their sub-patterns:
+Here are the known patterns and their sub-patterns:
 {_SUB_PATTERN_CONTEXT}
+
+If the correct pattern is NOT in the list above, still return it by name — the system will automatically
+generate a full definition and add it to the library for all future runs.
 
 Respond in EXACTLY this JSON format (no extra text, valid JSON only):
 {{
-  "correct_pattern": "<exact pattern name from the 20 above>",
+  "correct_pattern": "<exact pattern name — from the list above, or a new one if not listed>",
   "sub_pattern": "<specific sub-pattern name, or 'N/A' if no sub-pattern applies>",
   "why": "<1-2 sentences: what in this problem indicates this pattern>",
   "signal": "<the key phrase/clue in the problem that should trigger this pattern — be very specific>",
   "classifier_lesson": "<one sentence telling the classifier what mistake to avoid on similar problems>"
 }}
 """
+
+
+_DISCOVER_PATTERN_PROMPT = """
+You are an algorithm pattern expert. A new algorithm pattern has been identified
+that is not yet in the pattern library. Generate a complete pattern definition for it.
+
+Respond in EXACTLY this JSON format (valid JSON only, no extra text):
+{
+  "name": "<canonical pattern name>",
+  "description": "<one sentence: what this pattern does and when it shines>",
+  "when_to_use": ["<signal 1>", "<signal 2>", "<signal 3>", "<NOT signal: when NOT to use>"],
+  "template": "<short Python code template showing the skeleton of this pattern>",
+  "examples": [
+    {"name": "<Problem Name (#number)>", "url": "https://leetcode.com/problems/<slug>/"},
+    {"name": "<Problem Name (#number)>", "url": "https://leetcode.com/problems/<slug>/"}
+  ]
+}
+"""
+
+
+async def _discover_and_save_new_pattern(pattern_name: str, example_problem: str = "") -> dict:
+    """
+    When the research agent returns a pattern not in our library,
+    use gpt-4o to generate a full definition and persist it to custom_patterns.json
+    so it's available on every future run.
+
+    Returns the generated pattern dict, or {} on failure.
+    """
+    client = AsyncOpenAI()
+    try:
+        response = await client.chat.completions.create(
+            model=MODEL_FULL,
+            messages=[
+                {"role": "system", "content": _DISCOVER_PATTERN_PROMPT},
+                {"role": "user", "content": (
+                    f"Generate a pattern definition for: **{pattern_name}**\n"
+                    + (f"Example problem that uses it: {example_problem}" if example_problem else "")
+                )},
+            ],
+            temperature=0,
+            max_tokens=800,
+            response_format={"type": "json_object"},
+        )
+        new_pattern = json.loads(response.choices[0].message.content.strip())
+        new_pattern["name"] = pattern_name  # ensure exact name is preserved
+
+        # Give it the next ID
+        from patterns import PATTERNS as _current_patterns
+        new_pattern["id"] = max(p["id"] for p in _current_patterns) + 1
+
+        # Load existing custom patterns and append (deduplicate by name)
+        existing = []
+        if CUSTOM_PATTERNS_FILE.exists():
+            try:
+                existing = json.loads(CUSTOM_PATTERNS_FILE.read_text())
+            except Exception:
+                existing = []
+        existing = [p for p in existing if p.get("name") != pattern_name]
+        existing.append(new_pattern)
+        CUSTOM_PATTERNS_FILE.write_text(json.dumps(existing, indent=2))
+
+        # Also add to the live PATTERNS list so this session benefits immediately
+        from patterns import PATTERNS as _live_patterns
+        if not any(p["name"] == pattern_name for p in _live_patterns):
+            _live_patterns.append(new_pattern)
+
+        return new_pattern
+    except Exception as e:
+        return {"error": str(e)}
 
 
 def load_pattern_knowledge() -> dict:
@@ -165,19 +237,33 @@ async def run_pattern_research(
     except Exception as e:
         return {"error": str(e), "lesson_saved": False}
 
-    # Validate the pattern name against our list
-    valid_names = {p["name"] for p in PATTERNS}
+    # Validate the pattern name against our list (re-read PATTERNS in case custom ones were loaded)
+    from patterns import PATTERNS as _live_patterns
     correct_pattern = data.get("correct_pattern", "")
-    if correct_pattern not in valid_names:
+
+    # Try exact match
+    match = next((p["name"] for p in _live_patterns if p["name"] == correct_pattern), None)
+    if not match:
         # Try case-insensitive match
-        match = next((p["name"] for p in PATTERNS if p["name"].lower() == correct_pattern.lower()), None)
-        if match:
-            correct_pattern = match
-            data["correct_pattern"] = correct_pattern
-        else:
-            data["error"] = f"Research agent returned unknown pattern: '{correct_pattern}'"
+        match = next((p["name"] for p in _live_patterns if p["name"].lower() == correct_pattern.lower()), None)
+
+    if match:
+        correct_pattern = match
+        data["correct_pattern"] = correct_pattern
+    else:
+        # Unknown pattern — auto-discover and add it to the library
+        example_problem = problem_title or problem_text.strip().split("\n")[0][:80]
+        new_pattern = await _discover_and_save_new_pattern(correct_pattern, example_problem)
+        if new_pattern.get("error"):
+            data["error"] = f"Unknown pattern '{correct_pattern}' and discovery also failed: {new_pattern['error']}"
             data["lesson_saved"] = False
             return data
+        # Pattern is now in the library — continue saving the lesson
+        data["pattern_discovered"] = True
+        data["pattern_discovery_note"] = (
+            f"'{correct_pattern}' was not in the library — it has been automatically added "
+            f"and will be available for all future runs."
+        )
 
     # Build the knowledge entry
     title = problem_title or problem_text.strip().split("\n")[0][:80]

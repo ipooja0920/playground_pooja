@@ -776,3 +776,30 @@ return sum(candies)""",
         ],
     },
 ]
+
+# --------------------------------------------------------------------------- #
+#  Dynamically discovered patterns — loaded from custom_patterns.json
+#  Written by the Pattern Research Agent when it encounters an unknown pattern.
+# --------------------------------------------------------------------------- #
+import json as _json
+from pathlib import Path as _Path
+
+_CUSTOM_PATTERNS_FILE = _Path(__file__).parent / "custom_patterns.json"
+
+_REQUIRED_PATTERN_FIELDS = {"name", "description", "when_to_use", "template", "examples"}
+
+def _load_custom_patterns():
+    if not _CUSTOM_PATTERNS_FILE.exists():
+        return
+    try:
+        custom = _json.loads(_CUSTOM_PATTERNS_FILE.read_text())
+        existing_names = {p["name"] for p in PATTERNS}
+        for p in custom:
+            # Only load fully-formed pattern definitions
+            if p.get("name") and p["name"] not in existing_names and _REQUIRED_PATTERN_FIELDS.issubset(p.keys()):
+                PATTERNS.append(p)
+                existing_names.add(p["name"])
+    except Exception:
+        pass
+
+_load_custom_patterns()
