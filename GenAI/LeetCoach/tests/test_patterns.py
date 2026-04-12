@@ -15,8 +15,8 @@ REQUIRED_SUB_PATTERN_FIELDS = {"name", "signal", "example"}
 
 class TestPatternLibraryStructure:
 
-    def test_exactly_20_patterns(self):
-        assert len(PATTERNS) == 20
+    def test_exactly_21_patterns(self):
+        assert len(PATTERNS) == 21
 
     def test_all_required_fields_present(self):
         for p in PATTERNS:
@@ -31,9 +31,9 @@ class TestPatternLibraryStructure:
         names = [p["name"] for p in PATTERNS]
         assert len(names) == len(set(names)), "Duplicate pattern names found"
 
-    def test_ids_are_sequential_1_to_20(self):
+    def test_ids_are_sequential_1_to_21(self):
         ids = sorted(p["id"] for p in PATTERNS)
-        assert ids == list(range(1, 21))
+        assert ids == list(range(1, 22))
 
     def test_all_names_are_non_empty_strings(self):
         for p in PATTERNS:
@@ -104,6 +104,14 @@ class TestSubPatterns:
             "Dynamic Programming missing 2D/Grid DP sub-pattern"
         )
 
+    def test_greedy_has_two_pass_sub_pattern(self):
+        """Greedy must have a Two-Pass sub-pattern (the Candy fix)."""
+        greedy = next(p for p in PATTERNS if p["name"] == "Greedy")
+        sub_names = [sp["name"] for sp in greedy.get("sub_patterns", [])]
+        assert any("Two-Pass" in n or "Two Pass" in n for n in sub_names), (
+            "Greedy missing Two-Pass sub-pattern"
+        )
+
 
 class TestNotSignals:
 
@@ -127,11 +135,23 @@ class TestNotSignals:
         signals = " ".join(dp["when_to_use"]).lower()
         assert "not" in signals
 
+    def test_dp_has_not_signal_for_greedy(self):
+        """DP must warn against using DP when Greedy suffices."""
+        dp = next(p for p in PATTERNS if p["name"] == "Dynamic Programming")
+        signals = " ".join(dp["when_to_use"]).lower()
+        assert "greedy" in signals
+
+    def test_greedy_has_not_signal_for_dp(self):
+        """Greedy must warn against using Greedy when overlapping subproblems need DP."""
+        greedy = next(p for p in PATTERNS if p["name"] == "Greedy")
+        signals = " ".join(greedy["when_to_use"]).lower()
+        assert "not" in signals and "dp" in signals
+
 
 class TestValidPatternNames:
 
-    def test_valid_names_set_has_20_entries(self):
-        assert len(_VALID_PATTERN_NAMES) == 20
+    def test_valid_names_set_has_21_entries(self):
+        assert len(_VALID_PATTERN_NAMES) == 21
 
     def test_all_pattern_names_in_valid_set(self):
         for p in PATTERNS:
@@ -150,6 +170,8 @@ class TestValidPatternNames:
     def test_known_valid_pattern_accepted(self):
         assert "dynamic programming" in _VALID_PATTERN_NAMES
 
+    def test_greedy_is_valid_pattern(self):
+        assert "greedy" in _VALID_PATTERN_NAMES
+
     def test_made_up_pattern_not_in_valid_set(self):
         assert "quantum sort" not in _VALID_PATTERN_NAMES
-        assert "greedy" not in _VALID_PATTERN_NAMES

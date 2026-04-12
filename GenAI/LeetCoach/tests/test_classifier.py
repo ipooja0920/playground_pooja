@@ -22,7 +22,7 @@ def _async_response(content: str):
 
 class TestClassifierInstruction:
 
-    def test_instruction_contains_all_20_pattern_names(self):
+    def test_instruction_contains_all_pattern_names(self):
         from agents import CLASSIFIER_INSTRUCTION
         from patterns import PATTERNS
         for p in PATTERNS:
@@ -55,6 +55,16 @@ class TestClassifierInstruction:
         from agents import CLASSIFIER_CRITIC_INSTRUCTION
         lower = CLASSIFIER_CRITIC_INSTRUCTION.lower()
         assert "number of ways" in lower or "can we form" in lower
+
+    def test_instruction_contains_greedy_vs_dp_rule(self):
+        from agents import CLASSIFIER_INSTRUCTION
+        lower = CLASSIFIER_INSTRUCTION.lower()
+        assert "greedy" in lower and ("dp" in lower or "dynamic programming" in lower)
+
+    def test_classifier_critic_instruction_catches_dp_for_greedy(self):
+        from agents import CLASSIFIER_CRITIC_INSTRUCTION
+        lower = CLASSIFIER_CRITIC_INSTRUCTION.lower()
+        assert "greedy" in lower and ("dp" in lower or "dynamic programming" in lower)
 
 
 # --------------------------------------------------------------------------- #

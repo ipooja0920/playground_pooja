@@ -284,6 +284,7 @@ return result""",
             "Classic signals: 'number of ways', 'minimum cost', 'longest subsequence', 'can we form X', 'how many ways'",
             "Two strings involved and you need matching/alignment — almost always 2D DP",
             "NOT for generating ALL solutions (use Backtracking) — DP only counts or optimizes",
+            "NOT when a greedy single/double pass works — if you can decide locally without reconsidering, use Greedy",
         ],
         "sub_patterns": [
             {
@@ -712,6 +713,66 @@ def divide_and_conquer(arr, left, right):
             {"name": "Sort an Array (#912)", "url": "https://leetcode.com/problems/sort-an-array/"},
             {"name": "Median of Two Sorted Arrays (#4)", "url": "https://leetcode.com/problems/median-of-two-sorted-arrays/"},
             {"name": "The Skyline Problem (#218)", "url": "https://leetcode.com/problems/the-skyline-problem/"},
+        ],
+    },
+    {
+        "id": 21,
+        "name": "Greedy",
+        "description": "Make the locally optimal choice at each step with the hope of finding a global optimum. Works when local decisions don't need to be revisited — no overlapping subproblems.",
+        "when_to_use": [
+            "Problem asks for minimum/maximum and a local greedy choice always leads to the global answer",
+            "Assigning values based on neighbor comparisons (e.g., give more than neighbor if rating is higher)",
+            "Interval scheduling: pick the earliest-ending interval first",
+            "Jump Game style: can you reach the end greedily?",
+            "1 or 2 linear passes over the array are sufficient to build the answer",
+            "Sorting + scanning: sort by one key, then scan left-to-right making local decisions",
+            "Classic signals: 'minimum total', 'distribute X', 'at least 1 per person', 'assign based on neighbors'",
+            "NOT when you need overlapping subproblems or look-back — use DP instead",
+            "NOT when you need to try all possibilities — use Backtracking instead",
+        ],
+        "sub_patterns": [
+            {
+                "name": "Two-Pass Greedy",
+                "signal": "Constraints depend on both left and right neighbors — solve left-to-right first, then right-to-left",
+                "example": "Candy (#135) — left pass: give +1 if higher than left neighbor; right pass: take max with right neighbor constraint",
+            },
+            {
+                "name": "Interval Greedy",
+                "signal": "Sort intervals by end time, always pick the one that ends earliest",
+                "example": "Non-overlapping Intervals (#435), Meeting Rooms II (#253)",
+            },
+            {
+                "name": "Jump Greedy",
+                "signal": "Track the farthest reachable index, update on every step",
+                "example": "Jump Game (#55), Jump Game II (#45)",
+            },
+            {
+                "name": "Sort + Scan Greedy",
+                "signal": "Sort by a key, then make one greedy pass",
+                "example": "Assign Cookies (#455), Task Scheduler (#621)",
+            },
+        ],
+        "template": """\
+# Two-pass greedy (e.g., Candy)
+n = len(ratings)
+candies = [1] * n
+
+# Left pass: if rating[i] > rating[i-1], give one more than left neighbor
+for i in range(1, n):
+    if ratings[i] > ratings[i - 1]:
+        candies[i] = candies[i - 1] + 1
+
+# Right pass: if rating[i] > rating[i+1], give max of current and right neighbor + 1
+for i in range(n - 2, -1, -1):
+    if ratings[i] > ratings[i + 1]:
+        candies[i] = max(candies[i], candies[i + 1] + 1)
+
+return sum(candies)""",
+        "examples": [
+            {"name": "Candy (#135)", "url": "https://leetcode.com/problems/candy/"},
+            {"name": "Jump Game (#55)", "url": "https://leetcode.com/problems/jump-game/"},
+            {"name": "Non-overlapping Intervals (#435)", "url": "https://leetcode.com/problems/non-overlapping-intervals/"},
+            {"name": "Task Scheduler (#621)", "url": "https://leetcode.com/problems/task-scheduler/"},
         ],
     },
 ]

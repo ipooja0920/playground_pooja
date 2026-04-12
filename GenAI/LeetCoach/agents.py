@@ -198,11 +198,12 @@ Decision rules for commonly confused patterns:
 - BFS vs DFS: if you need shortest path or level-by-level → BFS. If you need to explore all paths or detect cycles → DFS.
 - DP vs Backtracking: if there are overlapping subproblems with optimal substructure → DP. If you're building all combinations/permutations explicitly → Backtracking.
 - Cyclic Sort vs prefix/hash: if the problem has numbers in range [1, n] and asks for missing/duplicate → Cyclic Sort.
+- Greedy vs DP: if the problem can be solved by 1 or 2 linear passes where each local decision is final (no need to revisit) → Greedy. If you need to consider all subproblems or look back at previous states → DP. Key Greedy signals: "distribute items to neighbors", "assign candies based on ratings", "minimum total cost by scanning left then right", "can you reach the end?".
 
 Use this EXACT format:
 
 ## 🎯 Pattern
-[Pattern name — must be one of the 20 above, copied exactly]
+[Pattern name — must be one of the 21 above, copied exactly]
 
 ## Why This Pattern?
 [2-3 short sentences. Pretend you're explaining to a curious 10-year-old.
@@ -328,6 +329,8 @@ Common mistakes to catch:
 - Picking BFS/DFS when the problem needs DP (e.g. counting paths, interleaving)
 - Picking Backtracking when DP works (overlapping subproblems = DP, not Backtracking)
 - Any problem asking "can we form X from Y" or "number of ways" → almost always Dynamic Programming
+- Picking Dynamic Programming for problems solvable with 1–2 greedy passes — if local decisions are final and no subproblems overlap, it is Greedy (e.g. Candy, Jump Game, Task Scheduler)
+- Key Greedy signal: "distribute/assign to neighbors based on a comparison" = Greedy, NOT DP
 
 Respond in EXACTLY this format (no extra text):
 SCORE: [1-5]

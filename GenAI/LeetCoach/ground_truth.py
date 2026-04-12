@@ -260,6 +260,28 @@ GROUND_TRUTH = {
         "accepted_patterns": ["Bit Manipulation"], "difficulty": "Easy",
     },
 
+    # Greedy
+    "https://leetcode.com/problems/candy/": {
+        "title": "Candy", "number": 135,
+        "accepted_patterns": ["Greedy"], "difficulty": "Hard",
+    },
+    "https://leetcode.com/problems/jump-game/": {
+        "title": "Jump Game", "number": 55,
+        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/jump-game-ii/": {
+        "title": "Jump Game II", "number": 45,
+        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/non-overlapping-intervals/": {
+        "title": "Non-overlapping Intervals", "number": 435,
+        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/task-scheduler/": {
+        "title": "Task Scheduler", "number": 621,
+        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+    },
+
     # Divide & Conquer
     "https://leetcode.com/problems/maximum-subarray/": {
         "title": "Maximum Subarray", "number": 53,
