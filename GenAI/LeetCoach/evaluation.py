@@ -23,7 +23,18 @@ from openai import AsyncOpenAI
 
 from ground_truth import check_pattern_accuracy
 
-EVAL_HISTORY_FILE = Path(__file__).parent / "eval_history.json"
+EVAL_HISTORY_FILE  = Path(__file__).parent / "eval_history.json"
+JUDGE_LESSONS_FILE = Path(__file__).parent / "judge_lessons.json"
+
+# Which Judge dimensions map to which agent
+_DIMENSION_TO_AGENT = {
+    "beginner_friendliness": "solution",
+    "solution_correctness":  "solution",
+    "explanation_quality":   "solution",
+    "complexity_accuracy":   "complexity",
+    "quiz_quality":          "complexity",
+    "pattern_accuracy":      "classifier",
+}
 
 # Try importing RAGAS — graceful fallback if not installed
 try:
@@ -53,6 +64,66 @@ def save_eval_result(result: dict):
     history = history[-50:]
     with open(EVAL_HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=2)
+
+
+# --------------------------------------------------------------------------- #
+#  Judge lessons store — routes low-score feedback to the right agent
+# --------------------------------------------------------------------------- #
+
+def load_judge_lessons() -> dict:
+    if JUDGE_LESSONS_FILE.exists():
+        with open(JUDGE_LESSONS_FILE) as f:
+            return json.load(f)
+    return {"classifier": [], "solution": [], "complexity": []}
+
+def save_judge_lessons(judge_scores: dict, problem_title: str = "") -> dict:
+    """
+    For each Judge dimension that scored ≤ 3, save a lesson to the relevant agent.
+    Also always save the summary sentence to whichever agent(s) had the worst scores.
+
+    Returns a dict of {agent_name: [lessons_added]} for display in UI.
+    """
+    if judge_scores.get("error"):
+        return {}
+
+    lessons = load_judge_lessons()
+    summary = judge_scores.get("summary", "")
+    added = {}
+
+    # Route low-scoring dimensions to the relevant agent
+    for dimension, agent_name in _DIMENSION_TO_AGENT.items():
+        score = judge_scores.get(dimension)
+        if score is not None and score <= 3:
+            dim_label = dimension.replace("_", " ").title()
+            lesson = f"[Judge on '{problem_title}'] {dim_label} scored {score}/5 — {summary}" if summary else f"[Judge] {dim_label} scored {score}/5 — improve this dimension."
+            lesson = lesson[:250]
+
+            if agent_name not in lessons:
+                lessons[agent_name] = []
+
+            # Deduplicate: remove older lesson for same dimension if present
+            lessons[agent_name] = [l for l in lessons[agent_name] if dim_label not in l]
+            lessons[agent_name].append(lesson)
+            lessons[agent_name] = lessons[agent_name][-5:]  # keep last 5 per agent
+
+            if agent_name not in added:
+                added[agent_name] = []
+            added[agent_name].append(lesson)
+
+    with open(JUDGE_LESSONS_FILE, "w") as f:
+        json.dump(lessons, f, indent=2)
+
+    return added
+
+
+def get_judge_lessons_for_agent(agent_name: str) -> str:
+    """Return formatted lesson block for injection into agent instructions."""
+    lessons = load_judge_lessons()
+    agent_lessons = lessons.get(agent_name, [])[-3:]
+    if not agent_lessons:
+        return ""
+    lines = "\n".join(f"- {l}" for l in agent_lessons)
+    return f"\n\n**Evaluation feedback from past runs — fix these issues:**\n{lines}"
 
 
 # --------------------------------------------------------------------------- #

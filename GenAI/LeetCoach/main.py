@@ -23,7 +23,7 @@ _load_secrets()
 from mcp_agent.app import MCPApp
 from agents import setup_agents, run_pipeline, rerun_section, save_feedback, refresh_agents
 from patterns import PATTERNS
-from evaluation import run_full_evaluation, load_eval_history
+from evaluation import run_full_evaluation, load_eval_history, save_judge_lessons
 
 SECTION_RESULT_KEY = {
     "classifier": "pattern",
@@ -725,6 +725,23 @@ with tab4:
                     st.markdown(f"**Overall: {'⭐' * overall} ({overall}/5)**")
                 if judge.get("summary"):
                     st.info(f"💬 Judge says: {judge['summary']}")
+
+                # ---- Apply Judge feedback to future runs ----
+                low_dims = [label for key, label in DIMENSIONS.items() if (judge.get(key) or 5) <= 3]
+                if low_dims:
+                    st.warning(f"Low scores detected: **{', '.join(low_dims)}**")
+                    if st.button("📥 Apply Judge Feedback to Future Runs", key="apply_judge"):
+                        added = save_judge_lessons(judge, ev.get("problem_title", ""))
+                        if st.session_state.agents:
+                            st.session_state.loop.run_until_complete(
+                                refresh_agents(st.session_state.agents, list(added.keys()))
+                            )
+                        if added:
+                            for agent_name, lessons in added.items():
+                                for lesson in lessons:
+                                    st.success(f"✅ Saved to **{agent_name}** agent: _{lesson[:120]}_")
+                        else:
+                            st.info("No new lessons to save.")
 
             st.markdown("---")
 

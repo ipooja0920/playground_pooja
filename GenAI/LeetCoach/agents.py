@@ -11,6 +11,7 @@ from mcp_agent.workflows.llm.augmented_llm import RequestParams
 CORRECTIONS_FILE    = Path(__file__).parent / "corrections.json"
 FEEDBACK_FILE       = Path(__file__).parent / "feedback.json"
 FEEDBACK_RULES_FILE = Path(__file__).parent / "feedback_rules.json"
+JUDGE_LESSONS_FILE  = Path(__file__).parent / "judge_lessons.json"
 
 # Model tiering — Planner uses gpt-4o, everything else gpt-4o-mini
 MODEL_MINI = "gpt-4o-mini"
@@ -131,8 +132,26 @@ def get_feedback_context(agent_name: str) -> str:
             lines.append(f'- Bad example: "{fb["snippet"][:150]}..."{comment}')
     return "\n" + "\n".join(lines)
 
+def get_judge_lessons(agent_name: str) -> str:
+    """Inject LLM Judge low-score feedback from past evaluation runs."""
+    if not JUDGE_LESSONS_FILE.exists():
+        return ""
+    with open(JUDGE_LESSONS_FILE) as f:
+        lessons = json.load(f)
+    agent_lessons = lessons.get(agent_name, [])[-3:]
+    if not agent_lessons:
+        return ""
+    lines = "\n".join(f"- {l}" for l in agent_lessons)
+    return f"\n\n**Evaluation feedback from past runs — fix these issues:**\n{lines}"
+
 def _compose_instruction(base: str, agent_name: str) -> str:
-    return base + get_lessons(agent_name) + get_feedback_rules(agent_name) + get_feedback_context(agent_name)
+    return (
+        base
+        + get_lessons(agent_name)
+        + get_judge_lessons(agent_name)
+        + get_feedback_rules(agent_name)
+        + get_feedback_context(agent_name)
+    )
 
 
 # --------------------------------------------------------------------------- #
