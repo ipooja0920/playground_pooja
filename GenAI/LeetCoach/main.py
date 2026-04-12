@@ -25,81 +25,6 @@ from agents import setup_agents, run_pipeline, rerun_section, save_feedback, ref
 from patterns import PATTERNS
 from evaluation import run_full_evaluation, load_eval_history, save_judge_lessons
 from pattern_research_agent import run_pattern_research
-from ground_truth import GROUND_TRUTH
-
-
-# --------------------------------------------------------------------------- #
-#  Problem search helpers
-# --------------------------------------------------------------------------- #
-
-def _is_url(text: str) -> bool:
-    t = text.strip()
-    return t.startswith("http://") or t.startswith("https://")
-
-
-def _local_problem_search(query: str) -> list:
-    """Search the ground-truth dataset first — instant, no network."""
-    q = query.lower()
-    results = []
-    for url, data in GROUND_TRUTH.items():
-        if q in data["title"].lower():
-            results.append({
-                "number": str(data["number"]),
-                "title": data["title"],
-                "difficulty": data.get("difficulty", ""),
-                "url": url,
-            })
-    return results[:8]
-
-
-def search_leetcode_problems(query: str, limit: int = 8) -> list:
-    """
-    Search LeetCode by keyword.
-    1. Checks local ground-truth dataset (instant).
-    2. Falls back to LeetCode's public GraphQL API.
-    Returns list of {number, title, difficulty, url}.
-    """
-    local = _local_problem_search(query)
-    if local:
-        return local
-
-    try:
-        import httpx
-        resp = httpx.post(
-            "https://leetcode.com/graphql/",
-            json={
-                "query": """
-                    query ($filters: QuestionListFilterInput, $limit: Int) {
-                        problemsetQuestionList: questionList(
-                            categorySlug: "" limit: $limit skip: 0 filters: $filters
-                        ) {
-                            questions: data {
-                                questionFrontendId
-                                title
-                                titleSlug
-                                difficulty
-                            }
-                        }
-                    }
-                """,
-                "variables": {"limit": limit, "filters": {"searchKeywords": query}},
-            },
-            headers={"Content-Type": "application/json", "Referer": "https://leetcode.com/"},
-            timeout=6,
-        )
-        data = resp.json()
-        questions = data["data"]["problemsetQuestionList"]["questions"]
-        return [
-            {
-                "number": q["questionFrontendId"],
-                "title": q["title"],
-                "difficulty": q["difficulty"],
-                "url": f"https://leetcode.com/problems/{q['titleSlug']}/",
-            }
-            for q in questions
-        ]
-    except Exception:
-        return []
 
 SECTION_RESULT_KEY = {
     "classifier": "pattern",
@@ -162,10 +87,6 @@ if "research_result" not in st.session_state:
     st.session_state.research_result = None
 if "is_researching" not in st.session_state:
     st.session_state.is_researching = False
-if "search_results" not in st.session_state:
-    st.session_state.search_results = []
-if "selected_url" not in st.session_state:
-    st.session_state.selected_url = ""
 
 # Fallback mode: shown when browser agent fails
 if "fallback_mode" not in st.session_state:
@@ -351,70 +272,28 @@ tab1, tab2, tab3, tab4 = st.tabs(["🔍 Problem Solver", "📚 Pattern Library",
 #  TAB 1 — Problem Solver
 # =========================================================================== #
 with tab1:
-    st.markdown("### Search or paste a LeetCode problem")
-    query_input = st.text_input(
-        "Problem",
-        placeholder="e.g.  edit distance   or   https://leetcode.com/problems/edit-distance/",
+    st.markdown("### Paste a LeetCode Problem URL")
+    url_input = st.text_input(
+        "LeetCode URL",
+        placeholder="https://leetcode.com/problems/two-sum/",
         label_visibility="collapsed",
-        key="query_input",
     )
 
-    query = query_input.strip()
-    is_url = _is_url(query)
+    def start_run():
+        st.session_state.is_processing = True
+        st.session_state.last_url = url_input.strip()
+        st.session_state.quiz_state = {}
+        st.session_state.eval_result = None
+        st.session_state.fallback_mode = False
+        st.session_state.feedback_state = _default_feedback_state()
 
-    if is_url:
-        # URL given — show Analyze button directly, no search step needed
-        st.session_state.search_results = []
-        st.session_state.selected_url = query
-
-        def start_run():
-            st.session_state.is_processing = True
-            st.session_state.last_url = query
-            st.session_state.quiz_state = {}
-            st.session_state.eval_result = None
-            st.session_state.fallback_mode = False
-            st.session_state.feedback_state = _default_feedback_state()
-            st.session_state.search_results = []
-
-        st.button(
-            "🚀 Analyze Problem",
-            type="primary",
-            use_container_width=True,
-            disabled=st.session_state.is_processing,
-            on_click=start_run,
-        )
-
-    elif query:
-        # Keyword — search and let user pick
-        col_search, _ = st.columns([2, 8])
-        with col_search:
-            if st.button("🔎 Search", key="btn_search"):
-                with st.spinner("Searching LeetCode..."):
-                    st.session_state.search_results = search_leetcode_problems(query)
-                    st.session_state.selected_url = ""
-                    st.session_state._last_search_query = query
-
-        if st.session_state.search_results:
-            DIFF_COLOR = {"Easy": "🟢", "Medium": "🟡", "Hard": "🔴"}
-            st.markdown("**Pick a problem:**")
-            for prob in st.session_state.search_results:
-                icon = DIFF_COLOR.get(prob["difficulty"], "⚪")
-                label = f"{icon} #{prob['number']} — {prob['title']} ({prob['difficulty']})"
-
-                def _select(url=prob["url"]):
-                    st.session_state.selected_url = url
-                    st.session_state.search_results = []
-                    st.session_state.is_processing = True
-                    st.session_state.last_url = url
-                    st.session_state.quiz_state = {}
-                    st.session_state.eval_result = None
-                    st.session_state.fallback_mode = False
-                    st.session_state.feedback_state = _default_feedback_state()
-
-                st.button(label, key=f"pick_{prob['url']}", on_click=_select)
-
-        elif st.session_state.get("_last_search_query") == query and not st.session_state.search_results:
-            st.info("No problems found — try different keywords.")
+    st.button(
+        "🚀 Analyze Problem",
+        type="primary",
+        use_container_width=True,
+        disabled=st.session_state.is_processing or not url_input.strip(),
+        on_click=start_run,
+    )
 
     # ---- Run pipeline ----
     if st.session_state.is_processing:
@@ -854,32 +733,23 @@ with tab4:
 
             # ---- RAGAS scores ----
             st.markdown("#### RAGAS Metrics")
+            st.caption("Faithfulness: does the walkthrough match the code? · Response Relevancy: does the solution address the problem asked?")
             ragas = ev.get("ragas", {})
-            ragas_errors = [v for k, v in ragas.items() if k.endswith("_error") and v]
             if ragas.get("error"):
                 st.warning(f"RAGAS: {ragas['error']}")
             else:
-                rc1, rc2, rc3 = st.columns(3)
-                sol_faith  = ragas.get("solution_faithfulness")
-                comp_faith = ragas.get("complexity_faithfulness")
-                ans_relev  = ragas.get("answer_relevancy")
-
-                rc1.metric("Solution Faithfulness",
+                sol_faith = ragas.get("solution_faithfulness")
+                ans_relev = ragas.get("answer_relevancy")
+                rc1, rc2 = st.columns(2)
+                rc1.metric("Faithfulness",
                            f"{sol_faith:.0%}" if sol_faith is not None else "—",
                            help="Is the walkthrough grounded in the actual code? No made-up steps?")
-                rc2.metric("Complexity Faithfulness",
-                           f"{comp_faith:.0%}" if comp_faith is not None else "—",
-                           help="Is the Big O explanation grounded in the code?")
-                rc3.metric("Answer Relevancy",
+                rc2.metric("Response Relevancy",
                            f"{ans_relev:.0%}" if ans_relev is not None else "—",
                            help="Does the solution actually address the problem that was asked?")
-
-                low = [s for s in [sol_faith, comp_faith, ans_relev] if s is not None and s < 0.5]
+                low = [s for s in [sol_faith, ans_relev] if s is not None and s < 0.5]
                 if low:
                     st.warning("One or more RAGAS scores are low — the explanation may not faithfully match the solution or problem.")
-                if ragas_errors:
-                    for err in ragas_errors:
-                        st.caption(f"⚠️ Partial error: {err}")
 
             st.markdown("---")
 
@@ -929,12 +799,10 @@ with tab4:
 
             st.markdown("---")
 
-            # ---- Pattern accuracy ----
-            st.markdown("#### Pattern Accuracy (Ground Truth)")
+            # ---- Pattern accuracy (only show when we have ground truth) ----
             pa = ev.get("pattern_accuracy", {})
-            if not pa.get("in_ground_truth"):
-                st.info("This problem isn't in the ground truth dataset yet — pattern accuracy can't be verified automatically.")
-            else:
+            if pa.get("in_ground_truth"):
+                st.markdown("#### Pattern Accuracy (Ground Truth)")
                 identified = pa.get("identified", "")
                 accepted   = pa.get("accepted_patterns", [])
                 is_correct = pa.get("is_correct", False)

@@ -38,11 +38,10 @@ _DIMENSION_TO_AGENT = {
 
 # Try importing RAGAS — graceful fallback if not installed
 try:
-    from ragas import evaluate as ragas_evaluate, EvaluationDataset, SingleTurnSample
-    from ragas.metrics.collections import Faithfulness, AnswerRelevancy
-    from ragas.llms import llm_factory
-    from ragas.embeddings import OpenAIEmbeddings as RagasOpenAIEmbeddings
-    from openai import OpenAI as OpenAIClient
+    from ragas import evaluate as ragas_evaluate, EvaluationDataset
+    from ragas.metrics import Faithfulness, ResponseRelevancy
+    from ragas.llms import LangchainLLMWrapper
+    from langchain_openai import ChatOpenAI
     RAGAS_AVAILABLE = True
 except Exception:
     RAGAS_AVAILABLE = False
@@ -127,114 +126,75 @@ def get_judge_lessons_for_agent(agent_name: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
-#  RAGAS Evaluation — 3 targeted evaluations
+#  RAGAS Evaluation — 2 meaningful metrics for LeetCoach
 # --------------------------------------------------------------------------- #
-
-def _make_ragas_llm():
-    """Build a RAGAS-compatible LLM using llm_factory (modern ragas 0.4.x API)."""
-    client = OpenAIClient(api_key=os.getenv("OPENAI_API_KEY"))
-    return llm_factory("gpt-4o-mini", client=client)
-
-def _make_ragas_embeddings():
-    """Build a RAGAS-compatible embeddings using modern ragas 0.4.x API."""
-    client = OpenAIClient(api_key=os.getenv("OPENAI_API_KEY"))
-    return RagasOpenAIEmbeddings(model="text-embedding-3-small", client=client)
-
-
-def _run_single_ragas(user_input: str, response: str, contexts: list, metrics: list) -> dict:
-    """Run one RAGAS evaluation synchronously. Returns {metric_name: score, error: None}."""
-    try:
-        ragas_llm = _make_ragas_llm()
-        ragas_emb = _make_ragas_embeddings()
-        for m in metrics:
-            if hasattr(m, "llm"):
-                m.llm = ragas_llm
-            if hasattr(m, "embeddings"):
-                m.embeddings = ragas_emb
-
-        sample = SingleTurnSample(
-            user_input=user_input,
-            response=response,
-            retrieved_contexts=contexts,
-        )
-        dataset = EvaluationDataset(samples=[sample])
-        result = ragas_evaluate(dataset=dataset, metrics=metrics)
-        scores = result.to_pandas()
-        out = {"error": None}
-        for col in scores.columns:
-            if col not in ("user_input", "response", "retrieved_contexts", "reference"):
-                try:
-                    out[col] = round(float(scores[col].iloc[0]), 3)
-                except Exception:
-                    pass
-        return out
-    except Exception as e:
-        return {"error": str(e)}
-
+#
+#  LeetCoach is NOT a RAG pipeline, but RAGAS metrics still apply:
+#
+#  1. Faithfulness — does the solution walkthrough stay faithful to the code?
+#     user_input = problem, response = full solution text, contexts = [code block]
+#     (measures: did the explanation invent steps not in the code?)
+#
+#  2. Response Relevancy — does the solution actually address the problem asked?
+#     user_input = problem, response = solution text, no contexts needed
+#     (measures: is the answer on-topic and non-redundant?)
+#
+#  We intentionally skip Complexity Faithfulness — it requires a separate
+#  sample and the complexity text is too short for reliable scoring.
+# --------------------------------------------------------------------------- #
 
 def run_ragas_evaluations(
     problem_text: str,
     solution: str,
-    complexity: str,
 ) -> dict:
-    """
-    Run 3 targeted RAGAS evaluations:
-
-    1. solution_faithfulness  — walkthrough grounded in the code?
-       user_input = problem, response = solution explanation, contexts = [solution code]
-
-    2. complexity_faithfulness — Big O explanation grounded in the code?
-       user_input = problem, response = complexity explanation, contexts = [solution code]
-
-    3. answer_relevancy — does solution address the problem?
-       user_input = problem, response = solution explanation, contexts = [] (not needed)
-
-    Returns dict with all 3 scores.
-    """
     if not RAGAS_AVAILABLE:
         return {"error": "RAGAS not installed. Run: pip install ragas langchain-openai"}
     if not os.getenv("OPENAI_API_KEY"):
         return {"error": "OpenAI API key not set"}
 
-    # Extract just the code block from solution text to use as context
+    # Extract just the code block to use as the "retrieved context"
     code_match = re.search(r"```python(.+?)```", solution, re.DOTALL)
     code_context = code_match.group(1).strip() if code_match else solution[:800]
 
-    ragas_llm = _make_ragas_llm()
-    ragas_emb = _make_ragas_embeddings()
+    try:
+        evaluator_llm = LangchainLLMWrapper(
+            ChatOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"))
+        )
 
-    # 1. Solution Faithfulness
-    sol_faith = _run_single_ragas(
-        user_input=problem_text[:600],
-        response=solution[:1500],
-        contexts=[code_context],
-        metrics=[Faithfulness(llm=ragas_llm)],
-    )
+        samples = [
+            {
+                "user_input":          problem_text[:800],
+                "response":            solution[:2000],
+                "retrieved_contexts":  [code_context],
+            }
+        ]
+        dataset = EvaluationDataset.from_list(samples)
 
-    # 2. Complexity Faithfulness
-    comp_faith = _run_single_ragas(
-        user_input=f"Explain the time and space complexity of this problem:\n{problem_text[:400]}",
-        response=complexity[:800],
-        contexts=[code_context],
-        metrics=[Faithfulness(llm=ragas_llm)],
-    )
+        result = ragas_evaluate(
+            dataset=dataset,
+            metrics=[Faithfulness(), ResponseRelevancy()],
+            llm=evaluator_llm,
+        )
 
-    # 3. Answer Relevancy
-    ans_relev = _run_single_ragas(
-        user_input=problem_text[:600],
-        response=solution[:1500],
-        contexts=[problem_text[:600]],
-        metrics=[AnswerRelevancy(llm=ragas_llm, embeddings=ragas_emb)],
-    )
+        scores = result.to_pandas()
 
-    return {
-        "solution_faithfulness":   sol_faith.get("faithfulness"),
-        "complexity_faithfulness": comp_faith.get("faithfulness"),
-        "answer_relevancy":        ans_relev.get("response_relevancy"),
-        "solution_faith_error":    sol_faith.get("error"),
-        "comp_faith_error":        comp_faith.get("error"),
-        "answer_relev_error":      ans_relev.get("error"),
-    }
+        def _get(col):
+            if col in scores.columns:
+                val = scores[col].iloc[0]
+                try:
+                    return round(float(val), 3) if val is not None else None
+                except Exception:
+                    return None
+            return None
+
+        return {
+            "solution_faithfulness": _get("faithfulness"),
+            "answer_relevancy":      _get("response_relevancy") or _get("answer_relevancy"),
+            "error": None,
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # --------------------------------------------------------------------------- #
@@ -357,7 +317,7 @@ async def run_full_evaluation(
     ragas_task = loop.run_in_executor(
         None,
         run_ragas_evaluations,
-        problem_text, solution, complexity,
+        problem_text, solution,
     ) if RAGAS_AVAILABLE else _no_ragas()
 
     judge_scores, ragas_scores = await asyncio.gather(judge_task, ragas_task)
