@@ -127,6 +127,24 @@ return -1""",
             "Level-order traversal of a tree",
             "Finding the minimum number of steps/moves",
             "Spreading problems (infection, fire, water)",
+            "NOT for counting paths or number-of-ways problems — those need DP",
+        ],
+        "sub_patterns": [
+            {
+                "name": "Multi-source BFS",
+                "signal": "Multiple starting points simultaneously (e.g. Rotting Oranges — all rotten cells start at step 0)",
+                "example": "Rotting Oranges (#994)",
+            },
+            {
+                "name": "0-1 BFS",
+                "signal": "Edge weights are only 0 or 1 — use deque, prepend for 0-weight edges",
+                "example": "Minimum Cost to Make Array Equal (#2448)",
+            },
+            {
+                "name": "BFS on implicit graph",
+                "signal": "No explicit graph given — nodes are states (strings, tuples), edges are transformations",
+                "example": "Word Ladder (#127), Open the Lock (#752)",
+            },
         ],
         "template": """\
 from collections import deque
@@ -158,6 +176,30 @@ while queue:
             "Checking connectivity in a graph",
             "Tree traversals (preorder, inorder, postorder)",
             "Detecting cycles in a directed graph",
+            "NOT when you need shortest path — use BFS instead",
+            "NOT for counting paths or number-of-ways — those need DP",
+        ],
+        "sub_patterns": [
+            {
+                "name": "Tree DFS",
+                "signal": "Traversing a binary/n-ary tree recursively — preorder, inorder, postorder, or path-sum checks",
+                "example": "Path Sum (#112), Binary Tree Maximum Path Sum (#124)",
+            },
+            {
+                "name": "Island / Flood Fill DFS",
+                "signal": "Grid problem — visit connected cells (4-directional or 8-directional), mark visited by modifying in-place or using a visited set",
+                "example": "Number of Islands (#200), Surrounded Regions (#130)",
+            },
+            {
+                "name": "Cycle Detection DFS",
+                "signal": "Directed graph — 3-color marking: white (unvisited), gray (in current path), black (fully processed)",
+                "example": "Course Schedule (#207), Find Eventual Safe States (#802)",
+            },
+            {
+                "name": "Memoized DFS (DFS + DP)",
+                "signal": "DFS with overlapping subproblems — same (node, state) pair visited multiple times; add a cache",
+                "example": "Longest Increasing Path in a Matrix (#329), Word Break II (#140)",
+            },
         ],
         "template": """\
 def dfs(node, visited):
@@ -186,6 +228,30 @@ dfs(start, visited)""",
             "Constraint satisfaction problems (N-Queens, Sudoku)",
             "Finding all valid paths",
             "Word search on a grid",
+            "NOT for counting the number of solutions — if only the COUNT is needed, use DP",
+            "NOT when the search space can be shrunk with memoization — use DFS + memo instead",
+        ],
+        "sub_patterns": [
+            {
+                "name": "Permutations Backtracking",
+                "signal": "All orderings of a set — use a 'used' boolean array or swap-based approach; order matters",
+                "example": "Permutations (#46), Permutations II (#47)",
+            },
+            {
+                "name": "Combinations / Subsets Backtracking",
+                "signal": "Choose-or-skip at each index; pass a start index to avoid revisiting; order does NOT matter",
+                "example": "Subsets (#78), Combination Sum (#39), Subsets II (#90)",
+            },
+            {
+                "name": "Grid / Matrix Backtracking",
+                "signal": "Explore a 2D grid, mark cells as visited in-place, restore on backtrack",
+                "example": "Word Search (#79), Word Search II (#212)",
+            },
+            {
+                "name": "Constraint Satisfaction Backtracking",
+                "signal": "Fill positions subject to hard constraints; prune early when constraint is violated",
+                "example": "N-Queens (#51), Sudoku Solver (#37)",
+            },
         ],
         "template": """\
 def backtrack(start, current):
@@ -215,7 +281,41 @@ return result""",
             "Problem asks for maximum/minimum/count of something",
             "Overlapping subproblems (same subproblem solved multiple times)",
             "Optimal substructure (optimal solution built from optimal sub-solutions)",
-            "Classic signals: 'number of ways', 'minimum cost', 'longest subsequence'",
+            "Classic signals: 'number of ways', 'minimum cost', 'longest subsequence', 'can we form X', 'how many ways'",
+            "Two strings involved and you need matching/alignment — almost always 2D DP",
+            "NOT for generating ALL solutions (use Backtracking) — DP only counts or optimizes",
+        ],
+        "sub_patterns": [
+            {
+                "name": "1D Linear DP",
+                "signal": "Single array/sequence; dp[i] depends on dp[i-1] or dp[i-2]; Fibonacci-style recurrence",
+                "example": "Climbing Stairs (#70), House Robber (#198), Jump Game (#55)",
+            },
+            {
+                "name": "2D / Grid DP",
+                "signal": "Two sequences being compared OR a 2D grid; dp[i][j] depends on dp[i-1][j], dp[i][j-1], or dp[i-1][j-1]; TWO STRING inputs are a strong signal for 2D DP",
+                "example": "Interleaving String (#97), Unique Paths (#62), Longest Common Subsequence (#1143), Edit Distance (#72)",
+            },
+            {
+                "name": "Knapsack DP",
+                "signal": "Pick items with weights/values subject to a capacity; 'can we reach exactly sum X'; 0/1 means each item used once; unbounded means items reusable",
+                "example": "Coin Change (#322), 0/1 Knapsack, Partition Equal Subset Sum (#416), Target Sum (#494)",
+            },
+            {
+                "name": "Interval DP",
+                "signal": "dp[i][j] = best answer for the sub-array from i to j; split at every pivot k between i and j",
+                "example": "Burst Balloons (#312), Matrix Chain Multiplication, Palindrome Partitioning II (#132)",
+            },
+            {
+                "name": "Tree DP",
+                "signal": "DP on a tree; each node's answer depends on its children's answers; return multiple values from DFS",
+                "example": "House Robber III (#337), Binary Tree Maximum Path Sum (#124), Diameter of Binary Tree (#543)",
+            },
+            {
+                "name": "String DP",
+                "signal": "Single string — palindrome checks, longest palindromic subsequence, min cuts for palindrome partition",
+                "example": "Longest Palindromic Substring (#5), Longest Palindromic Subsequence (#516), Word Break (#139)",
+            },
         ],
         "template": """\
 # Bottom-up tabulation

@@ -24,6 +24,7 @@ from mcp_agent.app import MCPApp
 from agents import setup_agents, run_pipeline, rerun_section, save_feedback, refresh_agents
 from patterns import PATTERNS
 from evaluation import run_full_evaluation, load_eval_history, save_judge_lessons
+from pattern_research_agent import run_pattern_research
 
 SECTION_RESULT_KEY = {
     "classifier": "pattern",
@@ -82,6 +83,10 @@ if "eval_result" not in st.session_state:
     st.session_state.eval_result = None
 if "is_evaluating" not in st.session_state:
     st.session_state.is_evaluating = False
+if "research_result" not in st.session_state:
+    st.session_state.research_result = None
+if "is_researching" not in st.session_state:
+    st.session_state.is_researching = False
 
 # Fallback mode: shown when browser agent fails
 if "fallback_mode" not in st.session_state:
@@ -375,6 +380,59 @@ with tab1:
         st.markdown(results["pattern"])
         render_feedback("classifier", results["pattern"])
 
+        # ---- Pattern Research Agent trigger ----
+        with st.expander("🔍 Pattern wrong? Research the correct one", expanded=False):
+            st.caption("Runs a gpt-4o research agent to identify the correct pattern + sub-pattern and saves a lesson for future runs.")
+            user_correction = st.text_input(
+                "What's the correct pattern? (optional)",
+                placeholder="e.g. Dynamic Programming — 2D DP",
+                key="research_correction_input",
+            )
+
+            def _start_research():
+                st.session_state.is_researching = True
+                st.session_state.research_result = None
+                st.session_state._research_correction = st.session_state.get("research_correction_input", "")
+
+            st.button("🔬 Research Pattern", key="btn_research_pattern", on_click=_start_research)
+
+            if st.session_state.is_researching:
+                with st.spinner("Pattern Research Agent thinking..."):
+                    _r = st.session_state.last_results or {}
+                    # Extract wrong pattern name from pattern text
+                    _pat_match = re.search(r"##\s*🎯\s*Pattern\s*\n(.+)", _r.get("pattern", ""))
+                    _wrong = _pat_match.group(1).strip() if _pat_match else ""
+                    _title = (_r.get("problem_text", "").strip().split("\n")[0])[:80]
+                    research = st.session_state.loop.run_until_complete(
+                        run_pattern_research(
+                            problem_text=_r.get("problem_text", ""),
+                            problem_title=_title,
+                            wrong_pattern=_wrong,
+                            user_correction=st.session_state.get("_research_correction", ""),
+                        )
+                    )
+                st.session_state.research_result = research
+                st.session_state.is_researching = False
+                # Refresh classifier agent with new knowledge
+                if not research.get("error") and st.session_state.agents:
+                    st.session_state.loop.run_until_complete(
+                        refresh_agents(st.session_state.agents, ["classifier"])
+                    )
+                st.rerun()
+
+            if st.session_state.research_result:
+                res = st.session_state.research_result
+                if res.get("error"):
+                    st.error(f"Research failed: {res['error']}")
+                else:
+                    st.success(f"**Correct Pattern:** {res.get('correct_pattern', '—')}" +
+                               (f" › {res['sub_pattern']}" if res.get('sub_pattern') and res['sub_pattern'] != 'N/A' else ""))
+                    st.markdown(f"**Why:** {res.get('why', '')}")
+                    st.markdown(f"**Signal:** _{res.get('signal', '')}_")
+                    st.markdown(f"**Lesson saved:** {res.get('classifier_lesson', '')}")
+                    if res.get("lesson_saved"):
+                        st.caption("✅ Lesson written to pattern_knowledge.json — classifier will use this on future runs.")
+
         # ---- Solution ----
         if results.get("solution"):
             st.markdown("---")
@@ -479,6 +537,11 @@ with tab2:
             st.markdown("**When to use it:**")
             for signal in pattern["when_to_use"]:
                 st.markdown(f"- {signal}")
+            sub_patterns = pattern.get("sub_patterns", [])
+            if sub_patterns:
+                st.markdown("**Sub-patterns:**")
+                for sp in sub_patterns:
+                    st.markdown(f"- **{sp['name']}** — {sp['signal']}  \n  *e.g. {sp['example']}*")
             st.markdown("**Code template:**")
             st.code(pattern["template"], language="python")
             st.markdown("**Example problems:**")

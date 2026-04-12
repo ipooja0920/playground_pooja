@@ -8,6 +8,7 @@ from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 from mcp_agent.workflows.llm.augmented_llm import RequestParams
 from patterns import PATTERNS
+from pattern_research_agent import get_pattern_knowledge_for_classifier
 
 CORRECTIONS_FILE    = Path(__file__).parent / "corrections.json"
 FEEDBACK_FILE       = Path(__file__).parent / "feedback.json"
@@ -146,13 +147,15 @@ def get_judge_lessons(agent_name: str) -> str:
     return f"\n\n**Evaluation feedback from past runs — fix these issues:**\n{lines}"
 
 def _compose_instruction(base: str, agent_name: str) -> str:
-    return (
-        base
-        + get_lessons(agent_name)
+    extra = (
+        get_lessons(agent_name)
         + get_judge_lessons(agent_name)
         + get_feedback_rules(agent_name)
         + get_feedback_context(agent_name)
     )
+    if agent_name == "classifier":
+        extra += get_pattern_knowledge_for_classifier()
+    return base + extra
 
 
 # --------------------------------------------------------------------------- #
