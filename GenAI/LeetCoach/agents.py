@@ -7,6 +7,7 @@ from openai import AsyncOpenAI
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 from mcp_agent.workflows.llm.augmented_llm import RequestParams
+from patterns import PATTERNS
 
 CORRECTIONS_FILE    = Path(__file__).parent / "corrections.json"
 FEEDBACK_FILE       = Path(__file__).parent / "feedback.json"
@@ -168,13 +169,36 @@ You are a web scraping agent. Go to the given LeetCode problem URL and extract:
 Return only the raw problem content. Do not solve it.
 """
 
-CLASSIFIER_INSTRUCTION = """
+def _build_pattern_menu() -> str:
+    """Build a grounded pattern reference from our 20 patterns for the classifier."""
+    lines = []
+    for p in PATTERNS:
+        signals = "; ".join(p["when_to_use"])
+        lines.append(f"{p['id']:02d}. {p['name']} — use when: {signals}")
+    return "\n".join(lines)
+
+_PATTERN_MENU = _build_pattern_menu()
+
+# Pattern names as a set for fast validation
+_VALID_PATTERN_NAMES = {p["name"].lower() for p in PATTERNS}
+
+CLASSIFIER_INSTRUCTION = f"""
 You are an algorithm pattern expert. Given a LeetCode problem, identify which pattern solves it.
+
+You MUST pick EXACTLY ONE pattern from this list — no other patterns allowed:
+
+{_PATTERN_MENU}
+
+Decision rules for commonly confused patterns:
+- Sliding Window vs Two Pointers: if the problem is about a contiguous subarray/substring → Sliding Window. If it's about pairs from both ends of a sorted array → Two Pointers.
+- BFS vs DFS: if you need shortest path or level-by-level → BFS. If you need to explore all paths or detect cycles → DFS.
+- DP vs Backtracking: if there are overlapping subproblems with optimal substructure → DP. If you're building all combinations/permutations explicitly → Backtracking.
+- Cyclic Sort vs prefix/hash: if the problem has numbers in range [1, n] and asks for missing/duplicate → Cyclic Sort.
 
 Use this EXACT format:
 
 ## 🎯 Pattern
-[Pattern name]
+[Pattern name — must be one of the 20 above, copied exactly]
 
 ## Why This Pattern?
 [2-3 short sentences. Pretend you're explaining to a curious 10-year-old.
@@ -435,6 +459,46 @@ async def rerun_section(section: str, context: dict, agents: dict, feedback_comm
 
 
 # --------------------------------------------------------------------------- #
+#  Pattern validator — checks classifier output is one of our 20 patterns
+# --------------------------------------------------------------------------- #
+
+async def validate_and_fix_pattern(pattern_text: str, problem_text: str, classifier_llm) -> tuple:
+    """
+    Checks if the classifier picked a valid pattern from our list.
+    If not, asks gpt-4o-mini to re-map it to the closest valid pattern and regenerate.
+    Returns (final_pattern_text, was_corrected, original_name, corrected_name)
+    """
+    name_match = re.search(r"##\s*🎯\s*Pattern\s*\n(.+)", pattern_text)
+    identified = name_match.group(1).strip() if name_match else ""
+
+    # Check if it's in our valid list (case-insensitive, partial match)
+    is_valid = any(
+        identified.lower() in valid or valid in identified.lower()
+        for valid in _VALID_PATTERN_NAMES
+    )
+
+    if is_valid:
+        return pattern_text, False, identified, identified
+
+    # Not valid — ask the classifier to re-pick from the exact list
+    valid_names = "\n".join(f"- {p['name']}" for p in PATTERNS)
+    reclassify_msg = (
+        f"The pattern you identified ('{identified}') is not in our allowed list.\n\n"
+        f"Allowed patterns:\n{valid_names}\n\n"
+        f"Re-classify this problem using ONLY one of the allowed patterns above.\n\n"
+        f"Problem:\n{problem_text[:800]}"
+    )
+    fixed = await classifier_llm.generate_str(
+        message=reclassify_msg,
+        request_params=RequestParams(use_history=False, maxTokens=800),
+    )
+    fixed_match = re.search(r"##\s*🎯\s*Pattern\s*\n(.+)", fixed)
+    corrected_name = fixed_match.group(1).strip() if fixed_match else identified
+
+    return fixed, True, identified, corrected_name
+
+
+# --------------------------------------------------------------------------- #
 #  Hierarchical Orchestrator — Planner (gpt-4o) decides strategy
 # --------------------------------------------------------------------------- #
 
@@ -535,11 +599,20 @@ async def run_pipeline(url: str, agents: dict, fallback_text: str = "") -> tuple
             message=f"Here is the LeetCode problem:\n\n{results['problem_text']}",
             agent_name="classifier", max_tokens=800,
         )
+        # Validate the pattern is one of our 20 — auto-fix if not
+        pattern, was_corrected, original_name, corrected_name = await validate_and_fix_pattern(
+            pattern, results["problem_text"], agents["classifier_llm"]
+        )
         duration = round(time.time() - t0, 1)
         results["pattern"] = pattern
         retried = len(corrections) > 1
+        correction_note = ""
+        if was_corrected:
+            correction_note = f" ⚠️ auto-corrected '{original_name}' → '{corrected_name}'"
+        elif retried:
+            correction_note = " (self-corrected)"
         log.append({"agent": "Classifier Agent", "status": "success",
-                    "details": f"Pattern identified in {duration}s" + (" (self-corrected)" if retried else ""),
+                    "details": f"Pattern identified in {duration}s{correction_note}",
                     "duration": duration, "corrections": corrections})
     except Exception as e:
         duration = round(time.time() - t0, 1)
