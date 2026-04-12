@@ -438,11 +438,19 @@ async def run_with_self_correction(agent_llm, critic_llm, message: str, agent_na
 # --------------------------------------------------------------------------- #
 
 async def rerun_section(section: str, context: dict, agents: dict, feedback_comment: str = "") -> tuple:
-    feedback_note = (
-        f"\n\nIMPORTANT: A user was unhappy with the previous response."
-        f" Their feedback: \"{feedback_comment or 'no specific comment'}\"."
-        " Please rewrite it — make it noticeably simpler, friendlier, and more beginner-focused."
-    )
+    # Build feedback note — if comment mentions a specific pattern/answer, treat it as a correction
+    if feedback_comment:
+        feedback_note = (
+            f"\n\nIMPORTANT: A user gave this feedback on the previous response: \"{feedback_comment}\"."
+            " If the feedback specifies a correct answer or pattern, use that — the user is telling you"
+            " what the right answer is. Otherwise rewrite to be simpler and more beginner-focused."
+        )
+    else:
+        feedback_note = (
+            "\n\nIMPORTANT: A user was unhappy with the previous response."
+            " Please rewrite it — make it noticeably simpler, friendlier, and more beginner-focused."
+        )
+
     if section == "classifier":
         message    = f"Here is the LeetCode problem:\n\n{context['problem_text']}{feedback_note}"
         llm        = agents["classifier_llm"]
@@ -471,13 +479,20 @@ async def validate_and_fix_pattern(pattern_text: str, problem_text: str, classif
     name_match = re.search(r"##\s*🎯\s*Pattern\s*\n(.+)", pattern_text)
     identified = name_match.group(1).strip() if name_match else ""
 
-    # Check if it's in our valid list (case-insensitive, partial match)
-    is_valid = any(
-        identified.lower() in valid or valid in identified.lower()
-        for valid in _VALID_PATTERN_NAMES
-    )
+    # Strict exact match — strip parenthetical qualifiers like "(2D DP)", "(Top-Down)"
+    # before comparing so "Dynamic Programming (2D DP)" → "Dynamic Programming"
+    normalized = re.sub(r'\s*\(.*?\)', '', identified).strip().lower()
+    is_valid = normalized in _VALID_PATTERN_NAMES
 
     if is_valid:
+        # If the name had a qualifier, clean it up in the output
+        if normalized != identified.lower():
+            canonical = next(p["name"] for p in PATTERNS if p["name"].lower() == normalized)
+            pattern_text = re.sub(
+                r'(##\s*🎯\s*Pattern\s*\n).+',
+                lambda m: m.group(1) + canonical,
+                pattern_text,
+            )
         return pattern_text, False, identified, identified
 
     # Not valid — ask the classifier to re-pick from the exact list
