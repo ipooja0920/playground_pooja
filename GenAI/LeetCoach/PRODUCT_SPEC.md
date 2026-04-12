@@ -10,55 +10,108 @@ The system learns from every run: human 👍/👎 feedback, LLM Judge low scores
 
 ---
 
+## Agent Count
+
+LeetCoach uses **8 agents** across the pipeline:
+
+| # | Agent | Type | Model |
+|---|-------|------|-------|
+| 1 | Browser Agent | Tool-calling (Playwright MCP) | `gpt-4o-mini` |
+| 2 | Planner Agent | Orchestrator | `gpt-4o` |
+| 3 | Classifier Agent | Specialist | `gpt-4o` |
+| 4 | Classifier Critic | Internal reviewer | `gpt-4o-mini` |
+| 5 | Solution Agent | Specialist | `gpt-4o-mini` |
+| 6 | General Critic | Internal reviewer | `gpt-4o-mini` |
+| 7 | Complexity Agent | Specialist | `gpt-4o-mini` |
+| 8 | Pattern Research Agent | On-demand researcher | `gpt-4o` |
+
+---
+
 ## Pipeline Architecture
 
 ```
 User pastes URL  ──or──  User types keyword → Search → picks problem
           │
           ▼
-  ┌─────────────────────────────────────────────┐
-  │  SUPERVISOR WITH FALLBACK                   │
-  │  Browser Agent (Playwright MCP)             │
-  │  scrapes problem text, examples, constraints│
-  │  → if fails: user pastes problem text       │
-  └──────────────────┬──────────────────────────┘
-                     │
-                     ▼
-  ┌─────────────────────────────────────────────┐
-  │  HIERARCHICAL ORCHESTRATOR                  │
-  │  Planner Agent (gpt-4o)                     │
-  │  decides: "full" or "simplified" strategy   │
-  └──────────────────┬──────────────────────────┘
-                     │
-                     ▼
-  ┌─────────────────────────────────────────────┐
-  │  Classifier Agent (gpt-4o direct)           │
-  │  picks 1 of 20 patterns + explains why      │
-  │  → Classifier Critic reviews correctness    │
-  │  → self-corrects if score ≤ 3               │
-  │  → Pattern Validator strips qualifiers      │
-  │  → Pattern Knowledge injected from          │
-  │    pattern_knowledge.json (past corrections)│
-  └──────────────────┬──────────────────────────┘
-                     │
-                     ▼
-  ┌─────────────────────────────────────────────┐
-  │  Solution Agent (gpt-4o-mini)               │
-  │  generates beginner-friendly solution       │
-  │  → General Critic reviews beginner tone     │
-  │  → self-corrects if score ≤ 3               │
-  └──────────────────┬──────────────────────────┘
-                     │
-                     ▼
-  ┌─────────────────────────────────────────────┐
-  │  Complexity Agent (gpt-4o-mini)             │
-  │  explains Big O + generates 2-question quiz │
-  │  → General Critic reviews beginner tone     │
-  │  → self-corrects if score ≤ 3               │
-  └──────────────────┬──────────────────────────┘
-                     │
-                     ▼
-          Streamlit UI renders results
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 1 — Browser Agent                   ║
+  ║  Framework: mcp-agent + Playwright MCP      ║
+  ║  Scrapes: title, description, examples,     ║
+  ║           constraints from LeetCode URL     ║
+  ║  Failure → Supervisor shows paste-text UI   ║
+  ╚══════════════════════╤══════════════════════╝
+                         │ problem_text
+                         ▼
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 2 — Planner Agent                   ║
+  ║  Model: gpt-4o (direct AsyncOpenAI)         ║
+  ║  Reads problem → outputs strategy:          ║
+  ║    "full"       → complete pipeline         ║
+  ║    "simplified" → easy problem, noted       ║
+  ╚══════════════════════╤══════════════════════╝
+                         │ strategy + problem_text
+                         ▼
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 3 — Classifier Agent                ║
+  ║  Model: gpt-4o (direct AsyncOpenAI)         ║
+  ║  Picks 1 of 20 patterns, explains why       ║
+  ║  Grounded: full pattern menu injected       ║
+  ║  Memory: pattern_knowledge.json injected    ║
+  ╚══════════════════════╤══════════════════════╝
+                         │ pattern output
+                         ▼
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 4 — Classifier Critic               ║
+  ║  Model: gpt-4o-mini (mcp-agent)             ║
+  ║  Reviews: is the pattern factually correct? ║
+  ║  Score ≥ 4 → pass                           ║
+  ║  Score ≤ 3 → Classifier retries with fix    ║
+  ╚══════════════════════╤══════════════════════╝
+                         │ validated pattern
+                         ▼
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 5 — Solution Agent                  ║
+  ║  Model: gpt-4o-mini (mcp-agent)             ║
+  ║  Writes beginner solution with analogies    ║
+  ║  Input: problem_text + pattern              ║
+  ╚══════════════════════╤══════════════════════╝
+                         │ solution output
+                         ▼
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 6 — General Critic                  ║
+  ║  Model: gpt-4o-mini (mcp-agent)             ║
+  ║  Reviews: beginner tone, format, accuracy   ║
+  ║  Score ≥ 4 → pass                           ║
+  ║  Score ≤ 3 → Solution Agent retries         ║
+  ╚══════════════════════╤══════════════════════╝
+                         │ validated solution
+                         ▼
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 7 — Complexity Agent                ║
+  ║  Model: gpt-4o-mini (mcp-agent)             ║
+  ║  Explains Big O + generates 2-Q quiz        ║
+  ║  Input: problem_text + solution             ║
+  ║  Also reviewed by Agent 6 (General Critic)  ║
+  ╚══════════════════════╤══════════════════════╝
+                         │ complexity + quiz
+                         ▼
+               Streamlit UI renders results
+
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+  ON-DEMAND (triggered by user after seeing results)
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+  User clicks "🔬 Research Pattern" (pattern wrong)
+                         │
+                         ▼
+  ╔═════════════════════════════════════════════╗
+  ║  AGENT 8 — Pattern Research Agent          ║
+  ║  Model: gpt-4o (direct AsyncOpenAI)         ║
+  ║  Identifies correct pattern + sub-pattern   ║
+  ║  Extracts the key signal that was missed     ║
+  ║  Writes lesson → pattern_knowledge.json     ║
+  ║  Refreshes Classifier Agent (Agent 3)       ║
+  ╚═════════════════════════════════════════════╝
 ```
 
 ---
