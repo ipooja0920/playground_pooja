@@ -111,6 +111,9 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
   ║  Identifies correct pattern + sub-pattern   ║
   ║  Extracts the key signal that was missed     ║
   ║  Writes lesson → pattern_knowledge.json     ║
+  ║  NEW PATTERN? Auto-generates full definition ║
+  ║  → saved to custom_patterns.json            ║
+  ║  → added to live PATTERNS list immediately  ║
   ║  Refreshes Classifier Agent (Agent 3)       ║
   ╚═════════════════════════════════════════════╝
 ```
@@ -140,14 +143,15 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
 
 ### 3. Classifier Agent
 - **Model:** `gpt-4o` (direct `AsyncOpenAI` call — stronger reasoning than mini for pattern identification)
-- **Grounding:** Injected with all 20 pattern names + `when_to_use` signals at prompt time, so it can **only** pick from the allowed list
-- **Sub-pattern awareness:** Classifier instruction includes decision rules for the 4 most commonly confused pairs:
+- **Grounding:** Injected with all patterns (built-in + any discovered via Pattern Research Agent) + `when_to_use` signals at prompt time
+- **Sub-pattern awareness:** Classifier instruction includes decision rules for the 5 most commonly confused pairs:
   - Sliding Window vs Two Pointers
   - BFS vs DFS
   - DP vs Backtracking (key rule: "number of ways / can we form X" = DP, not Backtracking)
   - Cyclic Sort vs prefix/hash
+  - **Greedy vs DP** (key rule: "distribute/assign to neighbors by comparison with 1–2 passes" = Greedy, not DP)
 - **Self-correction:** After generating output, the **Classifier Critic** (gpt-4o-mini) scores correctness 1–5. If ≤ 3, the Classifier retries with the critique injected
-- **Pattern Validator:** After generation, strips parenthetical qualifiers like `(2D DP)` before matching against `_VALID_PATTERN_NAMES`. If still invalid, asks classifier to re-pick from the exact list
+- **Pattern Validator:** Checks exact match first (handles canonical names like "BFS (Breadth-First Search)"), then strips user-added qualifiers like `(2D DP)`. If still invalid, asks classifier to re-pick from the exact list
 - **Pattern Knowledge injection:** Lessons from `pattern_knowledge.json` (written by Pattern Research Agent) are injected into every classifier run, teaching it what mistakes were made on similar problems before
 
 ---
@@ -161,6 +165,7 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
   - Two Pointers for hash map problems
   - BFS/DFS when counting paths/ways needs DP
   - Backtracking when overlapping subproblems = DP
+  - **DP for problems solvable with 1–2 greedy passes** (e.g. Candy, Jump Game, Task Scheduler)
 - **Differs from General Critic:** General Critic checks beginner-friendliness and format; Classifier Critic checks if the answer is factually right
 
 ---
@@ -194,12 +199,17 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
 - **Trigger:** User clicks "🔬 Research Pattern" in the Pattern section expander after getting a wrong pattern
 - **Job:**
   1. Reads the problem text + wrong pattern (pre-filled) + optional user correction
-  2. Identifies the correct pattern **and** the specific sub-pattern (e.g. "2D Grid DP" within Dynamic Programming)
+  2. Identifies the correct pattern **and** the specific sub-pattern (e.g. "Two-Pass Greedy" within Greedy)
   3. Extracts the exact signal in the problem that should have triggered the correct pattern
   4. Writes a compact lesson to `pattern_knowledge.json`
-  5. Refreshes the Classifier Agent in the current session so the next run immediately benefits
-- **Sub-pattern library:** Uses all sub-patterns defined in `patterns.py` (DFS sub-types, DP sub-types, Backtracking sub-types, BFS sub-types) as grounding context
-- **Output shown in UI:** Correct pattern → sub-pattern → why → signal → lesson saved confirmation
+  5. **If the correct pattern is not yet in the library** → auto-discovers it:
+     - Calls gpt-4o to generate a full pattern definition (description, when_to_use signals, NOT signals, Python template, 2+ examples)
+     - Saves it to `custom_patterns.json` — loaded on every future app startup
+     - Adds it to the live `PATTERNS` list immediately so this session can classify it
+     - UI shows a `🆕` banner confirming the new pattern was added
+  6. Refreshes the Classifier Agent in the current session so the next run immediately benefits
+- **Sub-pattern library:** Uses all sub-patterns defined in `patterns.py` + any custom patterns as grounding context
+- **Output shown in UI:** Correct pattern → sub-pattern → why → signal → lesson saved confirmation; `🆕` banner if pattern was newly discovered
 
 ---
 
@@ -426,6 +436,7 @@ User runs evaluation → LLM Judge scores 6 dimensions 1–5
 | `corrections.json` | General + Classifier Critics | `get_lessons()` | Lessons from low critic scores, injected into future runs |
 | `judge_lessons.json` | LLM Judge (Evaluation tab) | `get_judge_lessons()` | Per-dimension lessons from low Judge scores |
 | `pattern_knowledge.json` | Pattern Research Agent | `get_pattern_knowledge_for_classifier()` | Sub-pattern lessons injected into Classifier |
+| `custom_patterns.json` | Pattern Research Agent (auto-discovery) | `patterns.py` at startup | Full pattern definitions for patterns discovered at runtime |
 | `eval_history.json` | `run_full_evaluation()` | Evaluation tab history | Last 50 evaluation results for trend tracking |
 
 ### How memory stacks in every agent instruction
@@ -442,7 +453,7 @@ _compose_instruction(base, agent_name):
 
 ---
 
-## Pattern Library — 20 Patterns with Sub-Patterns
+## Pattern Library — 21 Built-in Patterns + Extensible
 
 Each pattern has: description, when-to-use signals (including NOT signals), sub-patterns, code template, example problems.
 
@@ -452,8 +463,8 @@ Each pattern has: description, when-to-use signals (including NOT signals), sub-
 | 2 | Sliding Window | — |
 | 3 | Fast & Slow Pointers | — |
 | 4 | Binary Search | — |
-| 5 | BFS | Multi-source BFS, 0-1 BFS, BFS on implicit graph |
-| 6 | DFS | Tree DFS, Island/Flood Fill DFS, Cycle Detection DFS, Memoized DFS |
+| 5 | BFS (Breadth-First Search) | Multi-source BFS, 0-1 BFS, BFS on implicit graph |
+| 6 | DFS (Depth-First Search) | Tree DFS, Island/Flood Fill DFS, Cycle Detection DFS, Memoized DFS |
 | 7 | Backtracking | Permutations, Combinations/Subsets, Grid/Matrix, Constraint Satisfaction |
 | 8 | Dynamic Programming | 1D Linear DP, 2D/Grid DP, Knapsack DP, Interval DP, Tree DP, String DP |
 | 9 | Monotonic Stack | — |
@@ -468,12 +479,17 @@ Each pattern has: description, when-to-use signals (including NOT signals), sub-
 | 18 | Subsets / Combinations | — |
 | 19 | Bit Manipulation | — |
 | 20 | Divide & Conquer | — |
+| 21 | **Greedy** *(added after Candy misclassification)* | Two-Pass Greedy, Interval Greedy, Jump Greedy, Sort+Scan Greedy |
+| + | *Custom patterns* — auto-discovered by Pattern Research Agent | Written to `custom_patterns.json`, loaded on startup |
 
 **NOT signals** are embedded in each pattern's `when_to_use` list to prevent cross-pattern confusion. Examples:
 - BFS: "NOT for counting paths or number-of-ways problems — those need DP"
 - DFS: "NOT when you need shortest path — use BFS instead"
 - Backtracking: "NOT for counting solutions — if only the COUNT is needed, use DP"
-- Dynamic Programming: "NOT for generating ALL solutions (use Backtracking) — DP only counts or optimizes"
+- Dynamic Programming: "NOT for generating ALL solutions (use Backtracking) — DP only counts or optimizes"; "NOT when a greedy single/double pass works — use Greedy"
+- Greedy: "NOT when overlapping subproblems require look-back — use DP instead"
+
+**Extensibility:** When Pattern Research Agent encounters an unknown pattern, it generates a full definition and saves it to `custom_patterns.json`. This file is loaded at startup, so discovered patterns persist permanently and appear in the classifier menu, pattern library tab, and ground truth checks.
 
 ---
 
@@ -502,7 +518,7 @@ gpt-4o-mini scores each dimension 1–5:
 Low scores (≤ 3) surface a button to apply the feedback to future runs → routes lesson to the responsible agent via `judge_lessons.json`.
 
 ### Pattern Accuracy (Ground Truth)
-Checks against a dataset of 57 hand-labeled problems. **Only shown when the problem is in the dataset** — no noisy "not found" messages for unknown problems.
+Checks against a hand-labeled dataset (62 problems across all 21 built-in patterns, including 5 Greedy problems added after the Candy fix). **Only shown when the problem is in the dataset** — no noisy "not found" messages for unknown problems.
 
 ---
 
@@ -518,13 +534,13 @@ Checks against a dataset of 57 hand-labeled problems. **Only shown when the prob
   | Solution | Saves positive style example | Regenerates Solution → Complexity |
   | Complexity | Saves positive style example | Regenerates Complexity only |
 
-- **Pattern Research expander:** Always visible below the Pattern section. If the pattern is wrong, user can type the correct one, click "Research Pattern" → gpt-4o researches the correct sub-pattern and saves a lesson
+- **Pattern Research expander:** Always visible below the Pattern section. If the pattern is wrong, user can type the correct one, click "Research Pattern" → gpt-4o researches the correct sub-pattern and saves a lesson; if the pattern is new to the library, a `🆕` banner appears confirming it was auto-discovered and added
 - **Fallback UI:** Appears only when Browser Agent fails — text area to paste the problem manually
 - **Interactive Quiz:** A/B/C radio buttons per question, "Check Answer" button reveals correct/incorrect + hint
 
 ### Tab 2: Pattern Library
 - Search bar filtering by name or description
-- Each of the 20 patterns shows: description, when-to-use signals, **sub-patterns** (where defined), code template, example problem links
+- All 21 built-in patterns + any auto-discovered custom patterns show: description, when-to-use signals, **sub-patterns** (where defined), code template, example problem links
 
 ### Tab 3: Agent Log
 - Summary metrics: Steps Run / Succeeded / Failed / Self-Corrected
@@ -562,7 +578,7 @@ Note: mcp-agent agents (`solution`, `complexity`, `critic`) use the model set in
 
 ## Test Suite
 
-**130 tests, 0 failures.** All tests mock external APIs — no real LLM calls, no API credits used.
+**137 tests, 0 failures.** All tests mock external APIs — no real LLM calls, no API credits used.
 
 Run with: `python -m pytest tests/ -v`
 
@@ -570,15 +586,15 @@ Run with: `python -m pytest tests/ -v`
 
 | File | Tests | What it covers |
 |------|-------|---------------|
-| `tests/test_patterns.py` | 27 | Pattern library structure and content |
+| `tests/test_patterns.py` | 32 | Pattern library structure, Greedy pattern, custom pattern loading, NOT signals |
 | `tests/test_ground_truth.py` | 12 | Ground truth dataset and URL matching |
 | `tests/test_feedback.py` | 20 | Feedback store, rules, judge lessons, `_compose_instruction()` |
-| `tests/test_classifier.py` | 15 | Classifier instruction, pattern validator, self-correction wiring |
+| `tests/test_classifier.py` | 17 | Classifier instruction, Greedy vs DP rule, pattern validator, self-correction |
 | `tests/test_pipeline.py` | 10 | Full pipeline: happy path, failures, agent log |
 | `tests/test_regeneration.py` | 9 | `rerun_section()` cascade — all three sections |
 | `tests/test_evaluation.py` | 13 | LLM Judge parsing, lesson routing, eval history |
-| `tests/test_pattern_research_agent.py` | 13 | Pattern Research Agent — research, save, deduplication |
-| **Total** | **130** | **All 130 passed** |
+| `tests/test_pattern_research_agent.py` | 15 | Research, save, deduplication, auto-discovery of unknown patterns |
+| **Total** | **137** | **All 137 passed** |
 
 ### Test Infrastructure
 
@@ -590,16 +606,19 @@ Run with: `python -m pytest tests/ -v`
 
 ### What Each Module Tests
 
-**`test_patterns.py` (27 tests)**
-- Exactly 20 patterns exist with sequential IDs 1–20
+**`test_patterns.py` (32 tests)**
+- Exactly 21 built-in patterns with sequential IDs 1–21
 - All patterns have required fields: name, description, when_to_use, template, examples
 - No duplicate names or IDs
-- All example URLs are LeetCode URLs with title and difficulty
+- All example URLs are LeetCode URLs
 - Sub-pattern fields (name, signal, example) are complete where present
-- BFS, DFS, Backtracking, DP all have sub-patterns defined
+- BFS, DFS, Backtracking, DP, **Greedy** all have sub-patterns defined
 - DP has the "2D/Grid DP" sub-pattern (fixes Interleaving String misclassification)
-- NOT signals present on BFS, DFS, Backtracking, DP to prevent cross-pattern confusion
-- `_VALID_PATTERN_NAMES` contains all 20 pattern names; `_build_pattern_menu()` includes all signals
+- Greedy has the "Two-Pass Greedy" sub-pattern (fixes Candy misclassification)
+- NOT signals present on BFS, DFS, Backtracking, DP, Greedy
+- DP has NOT signal pointing to Greedy; Greedy has NOT signal pointing to DP
+- `_VALID_PATTERN_NAMES` contains all 21 pattern names; `_build_pattern_menu()` includes all signals
+- `custom_patterns.json` only loaded if entries have all required fields (guards against corrupt data)
 
 **`test_ground_truth.py` (12 tests)**
 - Dataset is non-empty, all entries have url/accepted_patterns/difficulty fields
@@ -622,13 +641,15 @@ Run with: `python -m pytest tests/ -v`
 - `get_judge_lessons_for_agent()`: formatted block, max 3, empty when file missing
 - `_compose_instruction()`: includes base, critic lessons, judge lessons, feedback rules; classifier-only includes pattern knowledge; non-classifier excludes pattern knowledge
 
-**`test_classifier.py` (15 tests)**
-- `CLASSIFIER_INSTRUCTION` contains all 20 pattern names
+**`test_classifier.py` (17 tests)**
+- `CLASSIFIER_INSTRUCTION` contains all pattern names (including Greedy)
 - Contains Sliding Window vs Two Pointers disambiguation rule
 - Contains DP vs Backtracking rule
 - Contains BFS vs DFS rule
+- **Contains Greedy vs DP disambiguation rule**
 - `CLASSIFIER_CRITIC_INSTRUCTION` catches Sliding Window for DP problems, mentions "number of ways"
-- `validate_and_fix_pattern()`: valid pattern passes unchanged; qualifier stripped and canonicalized; invalid pattern triggers reclassification; all 20 canonical patterns pass without triggering reclassification (includes "BFS (Breadth-First Search)", "Union Find (Disjoint Set)", "Trie (Prefix Tree)")
+- **`CLASSIFIER_CRITIC_INSTRUCTION` catches DP used for Greedy problems**
+- `validate_and_fix_pattern()`: valid pattern passes unchanged; qualifier stripped and canonicalized; invalid pattern triggers reclassification; all canonical patterns pass without triggering reclassification (includes "BFS (Breadth-First Search)", "Union Find (Disjoint Set)", "Trie (Prefix Tree)")
 - `run_classifier_direct()`: uses `gpt-4o` model; uses `temperature=0`; no retry when critic scores ≥ 4; retries when critic scores ≤ 3 (2 LLM calls); correction saved to `corrections.json` when critic scores low
 
 **`test_pipeline.py` (10 tests)**
@@ -661,27 +682,33 @@ Run with: `python -m pytest tests/ -v`
 - `save_eval_result()`: creates file, appends entries, history capped at 50
 - `load_eval_history()`: returns empty list when file missing
 
-**`test_pattern_research_agent.py` (13 tests)**
+**`test_pattern_research_agent.py` (15 tests)**
 - `run_pattern_research()`: returns valid canonical pattern name; returns sub-pattern field; lesson saved to `pattern_knowledge.json`
 - Deduplication: second research on same problem title overwrites the first entry (no duplicates)
 - Invalid pattern in LLM response fixed by case-insensitive canonical lookup
-- Completely unknown pattern (not in canonical list) returns error dict
+- **Unknown pattern triggers auto-discovery**: second gpt-4o call generates full definition, saved to `custom_patterns.json`, added to live `PATTERNS`, result includes `pattern_discovered=True`
+- **Discovery failure returns error dict** (not exception) — tested separately from research failure
+- PATTERNS list restored after discovery tests to prevent cross-test pollution
 - API failure returns error dict (not exception)
 - Result dict includes all required fields: `correct_pattern`, `sub_pattern`, `why`, `signal`, `classifier_lesson`
 - Knowledge file capped at 10 entries per pattern
 - `get_pattern_knowledge_for_classifier()`: returns empty string when file missing; returns formatted lesson block when knowledge exists; caps output at 6 pattern entries
 
-### Known Bugs Found by Tests
+### Bugs Found and Fixed by Tests
 
-One real production bug was discovered and fixed during test development:
-
-**`validate_and_fix_pattern()` regex bug** (`agents.py`): The original code used `re.sub(r'\s*\(.*?\)', '', identified)` on all pattern names before validation. This incorrectly stripped parenthetical content from canonical pattern names:
+**Bug 1 — `validate_and_fix_pattern()` regex** (`agents.py`): The original code used `re.sub(r'\s*\(.*?\)', '', identified)` on all pattern names before validation. This incorrectly stripped parenthetical content from canonical names:
 - `"BFS (Breadth-First Search)"` → `"bfs"` (not in `_VALID_PATTERN_NAMES` → flagged as invalid)
-- `"DFS (Depth-First Search)"` → `"dfs"` (same)
-- `"Union Find (Disjoint Set)"` → `"union find"` (same)
-- `"Trie (Prefix Tree)"` → `"trie"` (same)
+- `"DFS (Depth-First Search)"`, `"Union Find (Disjoint Set)"`, `"Trie (Prefix Tree)"` — same problem
 
-**Fix:** Check exact match against `_VALID_PATTERN_NAMES` first. Only strip parenthetical qualifiers if exact match fails. This correctly handles both canonical names with parentheses AND user-added qualifiers like `"Dynamic Programming (2D DP)"`.
+**Fix:** Check exact match first. Only strip qualifiers if exact match fails.
+
+**Bug 2 — Candy misclassified as Dynamic Programming**: Greedy was not in the 21 patterns. Classifier was forced to pick the closest match from the existing list.
+
+**Fix:** Added Greedy as pattern 21 with 4 sub-patterns, explicit NOT signals in both DP and Greedy, and Greedy vs DP disambiguation rules in both the classifier and critic instructions.
+
+**Bug 3 — Pattern Research Agent errored on unknown patterns**: When a user typed a pattern name not in the library, research returned an error instead of helping.
+
+**Fix:** Unknown patterns now trigger `_discover_and_save_new_pattern()` — gpt-4o generates a full definition, saves to `custom_patterns.json`, and adds it to the live pattern list.
 
 ---
 
@@ -705,8 +732,8 @@ One real production bug was discovered and fixed during test development:
 LeetCoach/
 ├── main.py                         # Streamlit app — 4 tabs, quiz, feedback UI, evaluation
 ├── agents.py                       # All agent logic: pipeline, self-correction, feedback, memory
-├── patterns.py                     # 20 patterns with sub-patterns, signals, templates, examples
-├── pattern_research_agent.py       # Pattern Research Agent — gpt-4o, writes to pattern_knowledge.json
+├── patterns.py                     # 21 built-in patterns + loads custom_patterns.json at startup
+├── pattern_research_agent.py       # Pattern Research Agent — research, discovery, writes knowledge files
 ├── evaluation.py                   # RAGAS + LLM Judge + ground truth accuracy check
 ├── ground_truth.py                 # 57 hand-labeled problems for pattern accuracy evaluation
 ├── pytest.ini                      # asyncio_mode = auto for async test support
@@ -726,6 +753,7 @@ LeetCoach/
 ├── corrections.json                # Auto-generated — critic lessons across sessions (gitignored)
 ├── judge_lessons.json              # Auto-generated — LLM Judge low-score lessons (gitignored)
 ├── pattern_knowledge.json          # Auto-generated — Pattern Research Agent lessons (gitignored)
+├── custom_patterns.json            # Auto-generated — full definitions for auto-discovered patterns (gitignored)
 ├── eval_history.json               # Auto-generated — last 50 evaluation results (gitignored)
 ├── mcp_agent.config.yaml           # MCP config — model, logging, Playwright server
 ├── mcp_agent.secrets.yaml          # API key (gitignored)
@@ -744,8 +772,9 @@ LeetCoach/
 | OpenAI API key missing | Clear error before any execution |
 | LLM generation failure | Agent marked as failed in log, downstream agents skipped with log entry |
 | Pattern not in allowed list | Validator auto-corrects by asking classifier to re-pick from exact list |
+| Pattern Research returns unknown pattern | Auto-discovers full definition via gpt-4o, saves to `custom_patterns.json`, continues normally |
+| Pattern discovery also fails | Error shown inline in expander, pipeline unaffected |
 | RAGAS not installed | Evaluation tab shows install instructions, rest of app unaffected |
-| Pattern Research Agent error | Error shown inline in expander, pipeline unaffected |
 
 ---
 
