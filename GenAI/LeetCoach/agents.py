@@ -1,6 +1,7 @@
 import time
 import json
 import re
+import asyncio
 from pathlib import Path
 from datetime import datetime
 from openai import AsyncOpenAI
@@ -666,22 +667,33 @@ async def run_pipeline(url: str, agents: dict, fallback_text: str = "") -> tuple
                     "duration": 0, "corrections": []})
     else:
         t0 = time.time()
-        try:
-            problem_text = await agents["browser_llm"].generate_str(
-                message=(
-                    f"Go to this LeetCode problem URL: {url}\n"
-                    "Extract the full problem: title, number, description, all examples, and constraints."
-                ),
-                request_params=RequestParams(use_history=False, maxTokens=3000),
-            )
-            duration = round(time.time() - t0, 1)
+        last_error = None
+        problem_text = None
+        for attempt in range(1, 4):  # up to 3 attempts
+            try:
+                problem_text = await agents["browser_llm"].generate_str(
+                    message=(
+                        f"Go to this LeetCode problem URL: {url}\n"
+                        "Extract the full problem: title, number, description, all examples, and constraints."
+                    ),
+                    request_params=RequestParams(use_history=False, maxTokens=3000),
+                )
+                last_error = None
+                break  # success — stop retrying
+            except Exception as e:
+                last_error = str(e)
+                if attempt < 3:
+                    await asyncio.sleep(1)  # brief pause before retry
+
+        duration = round(time.time() - t0, 1)
+        if problem_text:
             results["problem_text"] = problem_text
             log.append({"agent": "Browser Agent", "status": "success",
                         "details": f"Scraped problem in {duration}s", "duration": duration, "corrections": []})
-        except Exception as e:
-            duration = round(time.time() - t0, 1)
+        else:
             log.append({"agent": "Browser Agent", "status": "failed",
-                        "details": str(e), "duration": duration, "corrections": []})
+                        "details": f"Failed after 3 attempts. Last error: {last_error}",
+                        "duration": duration, "corrections": []})
             results["needs_fallback"] = True
             for name in ["Planner Agent", "Classifier Agent", "Solution Agent", "Complexity Agent"]:
                 log.append({"agent": name, "status": "skipped",

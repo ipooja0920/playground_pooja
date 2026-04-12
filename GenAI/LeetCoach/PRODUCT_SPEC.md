@@ -38,7 +38,8 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
   ║  Framework: mcp-agent + Playwright MCP      ║
   ║  Scrapes: title, description, examples,     ║
   ║           constraints from LeetCode URL     ║
-  ║  Failure → Supervisor shows paste-text UI   ║
+  ║  Retries up to 3× on failure (1s pause)     ║
+  ║  All 3 fail → Supervisor shows paste-text   ║
   ╚══════════════════════╤══════════════════════╝
                          │ problem_text
                          ▼
@@ -122,7 +123,8 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
 - **Framework:** `mcp-agent` + Playwright MCP tool server
 - **Model:** `gpt-4o-mini` (set in `mcp_agent.config.yaml`)
 - **Job:** Navigate to the LeetCode URL, extract title, problem number, description, all examples with input/output/explanation, and constraints
-- **Failure mode:** If scraping fails (login wall, CAPTCHA, Playwright error), sets `needs_fallback=True`. The Supervisor UI then shows a text area so the user can paste the problem manually and resume the pipeline
+- **Retry logic:** On any failure (login wall, CAPTCHA, Playwright error, network timeout), automatically retries up to **3 times** with a 1-second pause between attempts
+- **Failure mode:** If all 3 attempts fail, sets `needs_fallback=True`. The log entry shows "Failed after 3 attempts" with the last error. The Supervisor UI then shows a text area so the user can paste the problem manually and resume the pipeline
 
 ---
 
@@ -738,7 +740,7 @@ LeetCoach/
 
 | Error | Behaviour |
 |-------|-----------|
-| LeetCode login wall / CAPTCHA | Browser Agent fails gracefully, Supervisor shows paste-text fallback |
+| LeetCode login wall / CAPTCHA / network error | Browser Agent retries up to 3× (1s pause); if all fail, Supervisor shows paste-text fallback |
 | OpenAI API key missing | Clear error before any execution |
 | LLM generation failure | Agent marked as failed in log, downstream agents skipped with log entry |
 | Pattern not in allowed list | Validator auto-corrects by asking classifier to re-pick from exact list |
