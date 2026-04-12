@@ -324,6 +324,8 @@ with tab1:
         )
 
         def start_fallback():
+            # Save pasted text to session state before fallback_mode is cleared
+            st.session_state._fallback_text = st.session_state.get("fallback_paste", "")
             st.session_state.is_fallback_processing = True
             st.session_state.fallback_mode = False
             st.session_state.last_results = None
@@ -335,19 +337,21 @@ with tab1:
             on_click=start_fallback,
         )
 
-        if st.session_state.is_fallback_processing:
-            with st.spinner("Running agents on pasted problem: Planner → Pattern → Solution → Complexity..."):
-                results, log = st.session_state.loop.run_until_complete(
-                    run(st.session_state.last_url, fallback_text=pasted.strip())
-                )
-            st.session_state.last_results = results
-            st.session_state.last_log = log
-            if st.session_state.agents:
-                st.session_state.loop.run_until_complete(
-                    refresh_agents(st.session_state.agents, ["classifier", "solution", "complexity"])
-                )
-            st.session_state.is_fallback_processing = False
-            st.rerun()
+    # Processing block is OUTSIDE the fallback_mode guard so it runs after the flag flip
+    if st.session_state.is_fallback_processing:
+        _fallback_text = st.session_state.get("_fallback_text", "")
+        with st.spinner("Running agents on pasted problem: Planner → Pattern → Solution → Complexity..."):
+            results, log = st.session_state.loop.run_until_complete(
+                run(st.session_state.last_url, fallback_text=_fallback_text)
+            )
+        st.session_state.last_results = results
+        st.session_state.last_log = log
+        if st.session_state.agents:
+            st.session_state.loop.run_until_complete(
+                refresh_agents(st.session_state.agents, ["classifier", "solution", "complexity"])
+            )
+        st.session_state.is_fallback_processing = False
+        st.rerun()
 
     # ---- Results ----
     if st.session_state.last_results and st.session_state.last_results.get("pattern"):
