@@ -201,6 +201,112 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
 
 ---
 
+## Feedback — Which Section Affects Which Agents
+
+This table answers: "if the user gives feedback on X, which agents learn from it and how?"
+
+### Section → Agent Routing
+
+| Section user gives feedback on | Agents that receive the feedback | Agents that are rebuilt immediately |
+|-------------------------------|----------------------------------|-------------------------------------|
+| **Pattern** (👍 or 👎) | Agent 3 — Classifier | Agent 3 + Agent 4 (Classifier Critic rebuilt too) |
+| **Solution** (👍 or 👎) | Agent 5 — Solution | Agent 5 |
+| **Complexity** (👍 or 👎) | Agent 7 — Complexity | Agent 7 |
+
+> Agents 4, 6 (the Critics) and Agent 2 (Planner) never receive direct human feedback — they are internal reviewers only.
+> Agent 8 (Pattern Research) is triggered separately and writes to `pattern_knowledge.json`, which feeds Agent 3.
+
+---
+
+### How Feedback Enters Each Agent's Instruction
+
+Every agent's instruction is assembled by `_compose_instruction(base, agent_name)` at rebuild time. The feedback layers stack in this order:
+
+```
+Agent Instruction =
+  [1] Base instruction (role, format, tone rules)
+    +
+  [2] Critic lessons from corrections.json
+      "Lessons from past mistakes — always follow these:"
+      e.g. "- Use an analogy in The Big Idea section"
+    +
+  [3] Judge lessons from judge_lessons.json
+      "Evaluation feedback from past runs — fix these issues:"
+      e.g. "- [Judge on 'Interleaving String'] Explanation Quality scored 2/5"
+    +
+  [4] Feedback rules from feedback_rules.json
+      "Behavior rules learned from human feedback — follow these by default:"
+      e.g. "- Do: use toy box analogies"
+           "- Avoid: one-word explanations with no story"
+    +
+  [5] Feedback context from feedback.json
+      "Users have loved this style before — match it:"
+      e.g. - Example: "Imagine you have a row of toy boxes..."
+      "Users have disliked this style before — avoid it:"
+      e.g. - Bad example: "Use two pointers, one at each end..."
+
+  [6] Pattern Knowledge (Classifier only) from pattern_knowledge.json
+      "Pattern research lessons — apply these to avoid past mistakes:"
+      e.g. "- Dynamic Programming [2D Grid DP]: Two string inputs + interleaving = 2D DP, NOT Sliding Window"
+```
+
+### Concrete Example — Pattern Feedback
+
+```
+User gives 👎 on Pattern with comment: "This should be Dynamic Programming, not Sliding Window"
+                    │
+    ┌───────────────┼──────────────────────────────┐
+    │               │                              │
+    ▼               ▼                              ▼
+feedback.json   feedback_rules.json         [same session]
+writes:         writes:                    Agent 3 (Classifier) rebuilt
+{               "Avoid: This should        Agent 4 (Classifier Critic) rebuilt
+  classifier:   be Dynamic Programming,    with updated instructions
+  negative: [   not Sliding Window"
+   snippet,                                Next run: Classifier instruction
+   comment                                 includes layers [2]–[5] above
+  ]
+}
+                                           During THIS regeneration:
+                                           Classifier prompt also includes:
+                                           "IMPORTANT: A user gave this feedback:
+                                            'This should be Dynamic Programming,
+                                             not Sliding Window.'
+                                            Use that — the user is telling you
+                                            the right answer."
+                    │
+                    ▼
+        Cascade regeneration triggered:
+        Pattern (Agent 3+4) → Solution (Agent 5+6) → Complexity (Agent 7+6)
+        All three sections regenerated with the corrected pattern
+```
+
+### Concrete Example — Solution Feedback
+
+```
+User gives 👍 on Solution with comment: "loved the toy box analogy"
+                    │
+    ┌───────────────┼──────────────────────────────┐
+    │               │                              │
+    ▼               ▼                              ▼
+feedback.json   feedback_rules.json         [same session]
+writes:         writes:                    Agent 5 (Solution) rebuilt
+{               "Do: loved the toy         with updated instructions
+  solution:     box analogy"
+  positive: [                              Next run: Solution instruction
+   snippet,                                includes layer [4]:
+   comment                                "Do: loved the toy box analogy"
+  ]                                        and layer [5]:
+}                                          "Users have loved this style:
+                                            [snippet of the good output]"
+                    │
+                    ▼
+        No regeneration — section stays as is
+        Agent 5 only — Solution does NOT cascade to Complexity on positive feedback
+```
+
+---
+
 ## Feedback Loop — Full Flow
 
 ### 👍 Positive Feedback
