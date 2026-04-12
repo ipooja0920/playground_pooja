@@ -558,6 +558,131 @@ Note: mcp-agent agents (`solution`, `complexity`, `critic`) use the model set in
 
 ---
 
+## Test Suite
+
+**130 tests, 0 failures.** All tests mock external APIs — no real LLM calls, no API credits used.
+
+Run with: `python -m pytest tests/ -v`
+
+### Test Modules
+
+| File | Tests | What it covers |
+|------|-------|---------------|
+| `tests/test_patterns.py` | 27 | Pattern library structure and content |
+| `tests/test_ground_truth.py` | 12 | Ground truth dataset and URL matching |
+| `tests/test_feedback.py` | 20 | Feedback store, rules, judge lessons, `_compose_instruction()` |
+| `tests/test_classifier.py` | 15 | Classifier instruction, pattern validator, self-correction wiring |
+| `tests/test_pipeline.py` | 10 | Full pipeline: happy path, failures, agent log |
+| `tests/test_regeneration.py` | 9 | `rerun_section()` cascade — all three sections |
+| `tests/test_evaluation.py` | 13 | LLM Judge parsing, lesson routing, eval history |
+| `tests/test_pattern_research_agent.py` | 13 | Pattern Research Agent — research, save, deduplication |
+| **Total** | **130** | **All 130 passed** |
+
+### Test Infrastructure
+
+- `tests/conftest.py` — shared fixtures (`sample_problem_text`, `sample_pattern_text`, `sample_solution_text`, `sample_complexity_text`), sets dummy `OPENAI_API_KEY`, inserts LeetCoach root and `tests/` into `sys.path`
+- `tests/helpers.py` — mock factory functions: `make_openai_response()`, `make_critic_response()`, `make_classifier_response()`
+- `pytest.ini` — `asyncio_mode = auto` for async test support (pytest-asyncio)
+- All file I/O patched via `tmp_path` fixtures — tests never read/write real project files
+- All LLM calls use `AsyncMock` — no real API calls made
+
+### What Each Module Tests
+
+**`test_patterns.py` (27 tests)**
+- Exactly 20 patterns exist with sequential IDs 1–20
+- All patterns have required fields: name, description, when_to_use, template, examples
+- No duplicate names or IDs
+- All example URLs are LeetCode URLs with title and difficulty
+- Sub-pattern fields (name, signal, example) are complete where present
+- BFS, DFS, Backtracking, DP all have sub-patterns defined
+- DP has the "2D/Grid DP" sub-pattern (fixes Interleaving String misclassification)
+- NOT signals present on BFS, DFS, Backtracking, DP to prevent cross-pattern confusion
+- `_VALID_PATTERN_NAMES` contains all 20 pattern names; `_build_pattern_menu()` includes all signals
+
+**`test_ground_truth.py` (12 tests)**
+- Dataset is non-empty, all entries have url/accepted_patterns/difficulty fields
+- All URLs are LeetCode URLs; accepted_patterns are lists
+- Dataset covers at least 10 different patterns
+- `check_pattern_accuracy()`: exact URL match, wrong pattern detection, unknown URL returns `not_in_ground_truth`
+- URL normalization: trailing slashes stripped, query params stripped
+- Fuzzy slug match (URL with/without trailing `/`)
+- Case-insensitive pattern matching; partial pattern matching
+- Multi-accepted-pattern problems: either is accepted as correct
+- Result dict includes `identified_pattern` and `accepted_patterns`
+
+**`test_feedback.py` (20 tests)**
+- `save_correction()` / `get_lessons()`: creates file, appends, caps at 5, returns formatted block (max 3)
+- Corrections include timestamp
+- `save_feedback()`: positive/negative saved separately, capped at 5 per sentiment
+- `save_feedback_rule()`: "Do:" for positive, "Avoid:" for negative; deduplicated; capped at 5
+- `get_feedback_rules()`: returns formatted block when rules exist, empty string when file missing
+- `get_feedback_context()`: returns empty string when file missing
+- `get_judge_lessons_for_agent()`: formatted block, max 3, empty when file missing
+- `_compose_instruction()`: includes base, critic lessons, judge lessons, feedback rules; classifier-only includes pattern knowledge; non-classifier excludes pattern knowledge
+
+**`test_classifier.py` (15 tests)**
+- `CLASSIFIER_INSTRUCTION` contains all 20 pattern names
+- Contains Sliding Window vs Two Pointers disambiguation rule
+- Contains DP vs Backtracking rule
+- Contains BFS vs DFS rule
+- `CLASSIFIER_CRITIC_INSTRUCTION` catches Sliding Window for DP problems, mentions "number of ways"
+- `validate_and_fix_pattern()`: valid pattern passes unchanged; qualifier stripped and canonicalized; invalid pattern triggers reclassification; all 20 canonical patterns pass without triggering reclassification (includes "BFS (Breadth-First Search)", "Union Find (Disjoint Set)", "Trie (Prefix Tree)")
+- `run_classifier_direct()`: uses `gpt-4o` model; uses `temperature=0`; no retry when critic scores ≥ 4; retries when critic scores ≤ 3 (2 LLM calls); correction saved to `corrections.json` when critic scores low
+
+**`test_pipeline.py` (10 tests)**
+- `run_pipeline()` returns all expected result keys: `problem_text`, `pattern`, `solution`, `complexity`, `agent_log`, `needs_fallback`
+- All agents logged as "success" in the happy path
+- Fallback text (paste-text) skips Browser Agent and processes from problem text directly
+- Browser Agent failure sets `needs_fallback=True`
+- Browser failure skips all downstream agents (Classifier, Solution, Complexity)
+- Classifier failure skips Solution and Complexity agents
+- Solution failure skips Complexity agent
+- Log entries contain `agent`, `status`, `duration_s` keys
+- Planner strategy stored in results
+- Self-corrected agent has multiple log attempts (attempt 1, attempt 2)
+
+**`test_regeneration.py` (9 tests)**
+- `rerun_section("classifier")`: uses Classifier Critic (not General Critic)
+- Correction comment injected into classifier prompt with "IMPORTANT" prefix
+- No comment → generic "unhappy"/"simpler" rewrite note used
+- `rerun_section("solution")`: uses General Critic (not Classifier Critic); includes pattern in prompt; injects feedback comment
+- `rerun_section("complexity")`: uses General Critic; includes solution text in prompt
+- All `rerun_section()` calls return `(str, list)` tuple
+
+**`test_evaluation.py` (13 tests)**
+- LLM Judge response parsed: all 6 dimensions (beginner_friendliness, pattern_accuracy, solution_correctness, explanation_quality, complexity_accuracy, quiz_quality)
+- Summary sentence extracted from SUMMARY line
+- Returns `{"error": ...}` when no API key set
+- Returns error dict on API failure (not exception)
+- Uses `gpt-4o-mini` model
+- `save_judge_lessons()`: low score (≤ 3) routes to correct agent; pattern_accuracy routes to classifier; complexity_accuracy routes to complexity; high scores (> 3) produce no lessons; lessons capped at 5 per agent; error results write nothing
+- `save_eval_result()`: creates file, appends entries, history capped at 50
+- `load_eval_history()`: returns empty list when file missing
+
+**`test_pattern_research_agent.py` (13 tests)**
+- `run_pattern_research()`: returns valid canonical pattern name; returns sub-pattern field; lesson saved to `pattern_knowledge.json`
+- Deduplication: second research on same problem title overwrites the first entry (no duplicates)
+- Invalid pattern in LLM response fixed by case-insensitive canonical lookup
+- Completely unknown pattern (not in canonical list) returns error dict
+- API failure returns error dict (not exception)
+- Result dict includes all required fields: `correct_pattern`, `sub_pattern`, `why`, `signal`, `classifier_lesson`
+- Knowledge file capped at 10 entries per pattern
+- `get_pattern_knowledge_for_classifier()`: returns empty string when file missing; returns formatted lesson block when knowledge exists; caps output at 6 pattern entries
+
+### Known Bugs Found by Tests
+
+One real production bug was discovered and fixed during test development:
+
+**`validate_and_fix_pattern()` regex bug** (`agents.py`): The original code used `re.sub(r'\s*\(.*?\)', '', identified)` on all pattern names before validation. This incorrectly stripped parenthetical content from canonical pattern names:
+- `"BFS (Breadth-First Search)"` → `"bfs"` (not in `_VALID_PATTERN_NAMES` → flagged as invalid)
+- `"DFS (Depth-First Search)"` → `"dfs"` (same)
+- `"Union Find (Disjoint Set)"` → `"union find"` (same)
+- `"Trie (Prefix Tree)"` → `"trie"` (same)
+
+**Fix:** Check exact match against `_VALID_PATTERN_NAMES` first. Only strip parenthetical qualifiers if exact match fails. This correctly handles both canonical names with parentheses AND user-added qualifiers like `"Dynamic Programming (2D DP)"`.
+
+---
+
 ## Tech Stack
 
 | Component | Technology | Purpose |
@@ -582,6 +707,18 @@ LeetCoach/
 ├── pattern_research_agent.py       # Pattern Research Agent — gpt-4o, writes to pattern_knowledge.json
 ├── evaluation.py                   # RAGAS + LLM Judge + ground truth accuracy check
 ├── ground_truth.py                 # 57 hand-labeled problems for pattern accuracy evaluation
+├── pytest.ini                      # asyncio_mode = auto for async test support
+├── tests/
+│   ├── conftest.py                 # Shared fixtures, sys.path setup, dummy API key
+│   ├── helpers.py                  # Mock factories: make_openai_response, make_critic_response, make_classifier_response
+│   ├── test_patterns.py            # 27 tests — pattern library structure and content
+│   ├── test_ground_truth.py        # 12 tests — ground truth dataset and URL matching
+│   ├── test_feedback.py            # 20 tests — feedback store, rules, compose_instruction
+│   ├── test_classifier.py          # 15 tests — classifier instruction, validator, self-correction
+│   ├── test_pipeline.py            # 10 tests — full pipeline: happy path, failures, log
+│   ├── test_regeneration.py        #  9 tests — rerun_section cascade for all three sections
+│   ├── test_evaluation.py          # 13 tests — LLM Judge, lesson routing, eval history
+│   └── test_pattern_research_agent.py  # 13 tests — research, save, deduplication, knowledge retrieval
 ├── feedback.json                   # Auto-generated — raw human likes/dislikes (gitignored)
 ├── feedback_rules.json             # Auto-generated — compact Do/Avoid rules (gitignored)
 ├── corrections.json                # Auto-generated — critic lessons across sessions (gitignored)
