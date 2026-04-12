@@ -370,35 +370,15 @@ with tab1:
 
         st.markdown("---")
 
-        # ---- Pattern & Debate summary ----
+        # ---- Pattern ----
         st.markdown("## 🎯 Pattern Match")
         st.markdown(results["pattern"])
         render_feedback("classifier", results["pattern"])
 
-        debate = results.get("debate_summary")
-        if debate and debate.get("debate_happened"):
-            with st.expander("⚖️ Pattern Debate — how we settled on this pattern", expanded=False):
-                st.markdown(f"**Initial proposal:** {debate.get('initial_pattern_name', '')}")
-                st.markdown(f"**Devil's Advocate challenged:** {debate.get('challenge', '')}")
-                st.markdown(f"**Alternative suggested:** `{debate.get('alternative', '')}`")
-                st.markdown(f"**Judge ruled (gpt-4o):** {debate.get('judge_reasoning', '')}")
-
-        # ---- Solution + Competitive winner badge ----
+        # ---- Solution ----
         if results.get("solution"):
             st.markdown("---")
             st.markdown("## 💡 Solution")
-
-            winner = results.get("competitive_winner")
-            reason = results.get("competitive_reason", "")
-            model_a = results.get("competitive_model_a", "gpt-4o-mini")
-            model_b = results.get("competitive_model_b", "gpt-4o")
-            if winner:
-                winner_model = model_a if winner == "A" else model_b
-                st.success(
-                    f"🏆 **Solution {winner} won** ({winner_model})"
-                    + (f" — {reason}" if reason else "")
-                )
-
             st.markdown(results["solution"])
             render_feedback("solution", results["solution"])
 
@@ -520,16 +500,12 @@ with tab3:
         if st.session_state.last_url:
             st.caption(f"Last run: {st.session_state.last_url}")
 
-        # Multi-agent summary badges
+        # Planner summary
         results = st.session_state.last_results or {}
         if results.get("planner_strategy"):
-            col_p, col_d, col_c, col_m = st.columns(4)
-            strategy = results["planner_strategy"]
-            col_p.metric("Planner Strategy", strategy.upper())
-            debate = results.get("debate_summary")
-            col_d.metric("Pattern Debate", "YES" if debate and debate.get("debate_happened") else ("SKIPPED" if strategy == "simplified" else "NO"))
-            col_c.metric("Competitive Winner", f"Solution {results['competitive_winner']}" if results.get("competitive_winner") else ("SKIPPED" if strategy == "simplified" else "—"))
-            col_m.metric("Model Tiering", "gpt-4o + mini")
+            col_p, col_m = st.columns(2)
+            col_p.metric("Planner Strategy", results["planner_strategy"].upper())
+            col_m.metric("Planner Model", "gpt-4o")
 
         st.markdown("---")
 
@@ -572,18 +548,6 @@ with tab3:
                         st.markdown(f"- Attempt {num}: Score :{score_color}[{score}/5] — {issues}")
                     if len(corrections) > 1:
                         st.success("Agent self-corrected and improved its output.")
-
-        # Multi-agent pattern details
-        if results.get("debate_summary"):
-            st.markdown("---")
-            st.markdown("### ⚖️ Debate Pattern Detail")
-            debate = results["debate_summary"]
-            st.markdown(f"- **Initial pattern:** {debate.get('initial_pattern_name', '')}")
-            st.markdown(f"- **Debate happened:** {'Yes' if debate.get('debate_happened') else 'No — Advocate agreed'}")
-            if debate.get("debate_happened"):
-                st.markdown(f"- **Challenge:** {debate.get('challenge', '')}")
-                st.markdown(f"- **Alternative proposed:** {debate.get('alternative', '')}")
-                st.markdown(f"- **Judge reasoning (gpt-4o):** {debate.get('judge_reasoning', '')}")
 
         # Human feedback summary
         st.markdown("---")
