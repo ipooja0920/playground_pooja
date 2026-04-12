@@ -39,7 +39,7 @@ _DIMENSION_TO_AGENT = {
 # Try importing RAGAS — graceful fallback if not installed
 try:
     from ragas import evaluate as ragas_evaluate, EvaluationDataset
-    from ragas.metrics import Faithfulness, ResponseRelevancy
+    from ragas.metrics.collections import Faithfulness, ResponseRelevancy
     from ragas.llms import LangchainLLMWrapper
     from langchain_openai import ChatOpenAI
     RAGAS_AVAILABLE = True

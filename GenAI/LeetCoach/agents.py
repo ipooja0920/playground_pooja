@@ -521,13 +521,20 @@ async def validate_and_fix_pattern(pattern_text: str, problem_text: str, classif
     name_match = re.search(r"##\s*🎯\s*Pattern\s*\n(.+)", pattern_text)
     identified = name_match.group(1).strip() if name_match else ""
 
-    # Strict exact match — strip parenthetical qualifiers like "(2D DP)", "(Top-Down)"
-    # before comparing so "Dynamic Programming (2D DP)" → "Dynamic Programming"
-    normalized = re.sub(r'\s*\(.*?\)', '', identified).strip().lower()
-    is_valid = normalized in _VALID_PATTERN_NAMES
+    # Try exact match first — handles canonical names with parentheses like
+    # "BFS (Breadth-First Search)", "Union Find (Disjoint Set)", "Trie (Prefix Tree)"
+    is_valid = identified.lower() in _VALID_PATTERN_NAMES
+
+    if not is_valid:
+        # Try stripping parenthetical qualifiers like "(2D DP)", "(Top-Down)"
+        # so "Dynamic Programming (2D DP)" → "Dynamic Programming"
+        normalized = re.sub(r'\s*\(.*?\)', '', identified).strip().lower()
+        is_valid = normalized in _VALID_PATTERN_NAMES
+    else:
+        normalized = identified.lower()
 
     if is_valid:
-        # If the name had a qualifier, clean it up in the output
+        # If the name had a user-added qualifier, clean it up in the output
         if normalized != identified.lower():
             canonical = next(p["name"] for p in PATTERNS if p["name"].lower() == normalized)
             pattern_text = re.sub(
