@@ -710,7 +710,7 @@ python eval.py | tee eval_results.txt
 
 ## Future Extensibility
 
-> **Note:** FastAPI is **not** used in this project. The app is a single Streamlit process. The items below are potential future upgrades only.
+> **Note:** The app is a single Streamlit process. The items below are potential future upgrades only.
 
 The modular structure (`doc_processor.py`, `vector_db.py`, `llm_client.py`) makes it straightforward to:
 - Swap GPT-4o for another LLM (Claude, Gemini, local models via Ollama)
