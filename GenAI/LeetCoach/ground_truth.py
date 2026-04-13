@@ -1,5 +1,5 @@
 """
-Ground truth dataset — 25 well-known LeetCode problems with correct patterns.
+Ground truth dataset — well-known LeetCode problems with correct patterns.
 Used for Phase 2 pattern accuracy evaluation.
 
 Pattern names must match the names in patterns.py.
@@ -39,99 +39,126 @@ GROUND_TRUTH = {
         "accepted_patterns": ["Sliding Window"], "difficulty": "Medium",
     },
 
-    # Binary Search
+    # Binary Search (and Variants)
     "https://leetcode.com/problems/binary-search/": {
         "title": "Binary Search", "number": 704,
-        "accepted_patterns": ["Binary Search"], "difficulty": "Easy",
+        "accepted_patterns": ["Binary Search (and Variants)"], "difficulty": "Easy",
     },
     "https://leetcode.com/problems/search-in-rotated-sorted-array/": {
         "title": "Search in Rotated Sorted Array", "number": 33,
-        "accepted_patterns": ["Binary Search"], "difficulty": "Medium",
+        "accepted_patterns": ["Binary Search (and Variants)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/koko-eating-bananas/": {
         "title": "Koko Eating Bananas", "number": 875,
-        "accepted_patterns": ["Binary Search"], "difficulty": "Medium",
+        "accepted_patterns": ["Binary Search (and Variants)"], "difficulty": "Medium",
     },
 
-    # BFS / DFS
+    # Graph Traversals (BFS, DFS)
     "https://leetcode.com/problems/number-of-islands/": {
         "title": "Number of Islands", "number": 200,
-        "accepted_patterns": ["BFS (Breadth-First Search)", "DFS (Depth-First Search)", "Union Find (Disjoint Set)"],
+        "accepted_patterns": ["Graph Traversals (BFS, DFS)", "Graph Algorithms (DAGs, MSTs, Shortest Paths)"],
         "difficulty": "Medium",
     },
     "https://leetcode.com/problems/binary-tree-level-order-traversal/": {
         "title": "Binary Tree Level Order Traversal", "number": 102,
-        "accepted_patterns": ["BFS (Breadth-First Search)"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Traversals (BFS, DFS)", "Binary Trees & BSTs (Traversal, Construction)"],
+        "difficulty": "Medium",
     },
     "https://leetcode.com/problems/rotting-oranges/": {
         "title": "Rotting Oranges", "number": 994,
-        "accepted_patterns": ["BFS (Breadth-First Search)"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Traversals (BFS, DFS)"], "difficulty": "Medium",
     },
 
-    # Backtracking
+    # Backtracking & Recursive Search
     "https://leetcode.com/problems/permutations/": {
         "title": "Permutations", "number": 46,
-        "accepted_patterns": ["Backtracking"], "difficulty": "Medium",
+        "accepted_patterns": ["Backtracking & Recursive Search"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/combination-sum/": {
         "title": "Combination Sum", "number": 39,
-        "accepted_patterns": ["Backtracking", "Subsets / Combinations"], "difficulty": "Medium",
+        "accepted_patterns": ["Backtracking & Recursive Search"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/subsets/": {
         "title": "Subsets", "number": 78,
-        "accepted_patterns": ["Subsets / Combinations", "Backtracking"], "difficulty": "Medium",
+        "accepted_patterns": ["Backtracking & Recursive Search"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/subsets-ii/": {
+        "title": "Subsets II", "number": 90,
+        "accepted_patterns": ["Backtracking & Recursive Search"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/palindrome-partitioning/": {
+        "title": "Palindrome Partitioning", "number": 131,
+        "accepted_patterns": ["Backtracking & Recursive Search"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/letter-combinations-of-a-phone-number/": {
+        "title": "Letter Combinations of a Phone Number", "number": 17,
+        "accepted_patterns": ["Backtracking & Recursive Search"], "difficulty": "Medium",
     },
 
-    # Dynamic Programming
+    # Dynamic Programming (Knapsack, Range DP)
     "https://leetcode.com/problems/climbing-stairs/": {
         "title": "Climbing Stairs", "number": 70,
-        "accepted_patterns": ["Dynamic Programming"], "difficulty": "Easy",
+        "accepted_patterns": ["Dynamic Programming (Knapsack, Range DP)"], "difficulty": "Easy",
     },
     "https://leetcode.com/problems/coin-change/": {
         "title": "Coin Change", "number": 322,
-        "accepted_patterns": ["Dynamic Programming"], "difficulty": "Medium",
+        "accepted_patterns": ["Dynamic Programming (Knapsack, Range DP)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/house-robber/": {
         "title": "House Robber", "number": 198,
-        "accepted_patterns": ["Dynamic Programming"], "difficulty": "Medium",
+        "accepted_patterns": ["Dynamic Programming (Knapsack, Range DP)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/longest-common-subsequence/": {
         "title": "Longest Common Subsequence", "number": 1143,
-        "accepted_patterns": ["Dynamic Programming"], "difficulty": "Medium",
+        "accepted_patterns": ["Dynamic Programming (Knapsack, Range DP)"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/counting-bits/": {
+        "title": "Counting Bits", "number": 338,
+        "accepted_patterns": ["Dynamic Programming (Knapsack, Range DP)"], "difficulty": "Easy",
     },
 
-    # Monotonic Stack
+    # Monotonic Stack / Queue
     "https://leetcode.com/problems/daily-temperatures/": {
         "title": "Daily Temperatures", "number": 739,
-        "accepted_patterns": ["Monotonic Stack"], "difficulty": "Medium",
+        "accepted_patterns": ["Monotonic Stack / Queue"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/largest-rectangle-in-histogram/": {
         "title": "Largest Rectangle in Histogram", "number": 84,
-        "accepted_patterns": ["Monotonic Stack"], "difficulty": "Hard",
+        "accepted_patterns": ["Monotonic Stack / Queue"], "difficulty": "Hard",
     },
 
-    # Top K Elements
-    "https://leetcode.com/problems/kth-largest-element-in-an-array/": {
-        "title": "Kth Largest Element in an Array", "number": 215,
-        "accepted_patterns": ["Top K Elements"], "difficulty": "Medium",
-    },
+    # Top K Frequent Elements
     "https://leetcode.com/problems/top-k-frequent-elements/": {
         "title": "Top K Frequent Elements", "number": 347,
-        "accepted_patterns": ["Top K Elements"], "difficulty": "Medium",
+        "accepted_patterns": ["Top K Frequent Elements"], "difficulty": "Medium",
     },
 
-    # Fast & Slow Pointers
+    # Kth Largest/Smallest Elements (Heaps / QuickSelect)
+    "https://leetcode.com/problems/kth-largest-element-in-an-array/": {
+        "title": "Kth Largest Element in an Array", "number": 215,
+        "accepted_patterns": ["Kth Largest/Smallest Elements (Heaps / QuickSelect)"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/find-median-from-data-stream/": {
+        "title": "Find Median from Data Stream", "number": 295,
+        "accepted_patterns": ["Kth Largest/Smallest Elements (Heaps / QuickSelect)"], "difficulty": "Hard",
+    },
+    "https://leetcode.com/problems/ipo/": {
+        "title": "IPO", "number": 502,
+        "accepted_patterns": ["Kth Largest/Smallest Elements (Heaps / QuickSelect)"], "difficulty": "Hard",
+    },
+
+    # Fast and Slow Pointers
     "https://leetcode.com/problems/linked-list-cycle/": {
         "title": "Linked List Cycle", "number": 141,
-        "accepted_patterns": ["Fast & Slow Pointers"], "difficulty": "Easy",
+        "accepted_patterns": ["Fast and Slow Pointers"], "difficulty": "Easy",
     },
     "https://leetcode.com/problems/find-the-duplicate-number/": {
         "title": "Find the Duplicate Number", "number": 287,
-        "accepted_patterns": ["Fast & Slow Pointers"], "difficulty": "Medium",
+        "accepted_patterns": ["Fast and Slow Pointers"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/middle-of-the-linked-list/": {
         "title": "Middle of the Linked List", "number": 876,
-        "accepted_patterns": ["Fast & Slow Pointers"], "difficulty": "Easy",
+        "accepted_patterns": ["Fast and Slow Pointers"], "difficulty": "Easy",
     },
 
     # Merge Intervals
@@ -143,157 +170,135 @@ GROUND_TRUTH = {
         "title": "Insert Interval", "number": 57,
         "accepted_patterns": ["Merge Intervals"], "difficulty": "Medium",
     },
-    "https://leetcode.com/problems/non-overlapping-intervals/": {
-        "title": "Non-overlapping Intervals", "number": 435,
-        "accepted_patterns": ["Merge Intervals"], "difficulty": "Medium",
-    },
 
-    # Prefix Sum
+    # Prefix Sums
     "https://leetcode.com/problems/range-sum-query-immutable/": {
         "title": "Range Sum Query - Immutable", "number": 303,
-        "accepted_patterns": ["Prefix Sum"], "difficulty": "Easy",
+        "accepted_patterns": ["Prefix Sums"], "difficulty": "Easy",
     },
     "https://leetcode.com/problems/subarray-sum-equals-k/": {
         "title": "Subarray Sum Equals K", "number": 560,
-        "accepted_patterns": ["Prefix Sum"], "difficulty": "Medium",
+        "accepted_patterns": ["Prefix Sums"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/product-of-array-except-self/": {
         "title": "Product of Array Except Self", "number": 238,
-        "accepted_patterns": ["Prefix Sum"], "difficulty": "Medium",
+        "accepted_patterns": ["Prefix Sums"], "difficulty": "Medium",
     },
 
-    # Cyclic Sort
-    "https://leetcode.com/problems/missing-number/": {
-        "title": "Missing Number", "number": 268,
-        "accepted_patterns": ["Cyclic Sort", "Bit Manipulation"], "difficulty": "Easy",
-    },
-    "https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/": {
-        "title": "Find All Numbers Disappeared in an Array", "number": 448,
-        "accepted_patterns": ["Cyclic Sort"], "difficulty": "Easy",
-    },
-    "https://leetcode.com/problems/find-all-duplicates-in-an-array/": {
-        "title": "Find All Duplicates in an Array", "number": 442,
-        "accepted_patterns": ["Cyclic Sort"], "difficulty": "Medium",
-    },
-
-    # Topological Sort
+    # Graph Algorithms (DAGs, MSTs, Shortest Paths)
     "https://leetcode.com/problems/course-schedule/": {
         "title": "Course Schedule", "number": 207,
-        "accepted_patterns": ["Topological Sort", "DFS (Depth-First Search)"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Algorithms (DAGs, MSTs, Shortest Paths)", "Graph Traversals (BFS, DFS)"],
+        "difficulty": "Medium",
     },
     "https://leetcode.com/problems/course-schedule-ii/": {
         "title": "Course Schedule II", "number": 210,
-        "accepted_patterns": ["Topological Sort"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Algorithms (DAGs, MSTs, Shortest Paths)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/find-eventual-safe-states/": {
         "title": "Find Eventual Safe States", "number": 802,
-        "accepted_patterns": ["Topological Sort", "DFS (Depth-First Search)"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Algorithms (DAGs, MSTs, Shortest Paths)", "Graph Traversals (BFS, DFS)"],
+        "difficulty": "Medium",
     },
-
-    # Union Find
     "https://leetcode.com/problems/redundant-connection/": {
         "title": "Redundant Connection", "number": 684,
-        "accepted_patterns": ["Union Find (Disjoint Set)"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Algorithms (DAGs, MSTs, Shortest Paths)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/accounts-merge/": {
         "title": "Accounts Merge", "number": 721,
-        "accepted_patterns": ["Union Find (Disjoint Set)"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Algorithms (DAGs, MSTs, Shortest Paths)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/number-of-provinces/": {
         "title": "Number of Provinces", "number": 547,
-        "accepted_patterns": ["Union Find (Disjoint Set)", "DFS (Depth-First Search)"], "difficulty": "Medium",
+        "accepted_patterns": ["Graph Algorithms (DAGs, MSTs, Shortest Paths)", "Graph Traversals (BFS, DFS)"],
+        "difficulty": "Medium",
     },
 
-    # Trie
+    # Design Problems (LRU Cache, Twitter)
     "https://leetcode.com/problems/implement-trie-prefix-tree/": {
         "title": "Implement Trie (Prefix Tree)", "number": 208,
-        "accepted_patterns": ["Trie (Prefix Tree)"], "difficulty": "Medium",
+        "accepted_patterns": ["Design Problems (LRU Cache, Twitter)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/design-add-and-search-words-data-structure/": {
         "title": "Design Add and Search Words Data Structure", "number": 211,
-        "accepted_patterns": ["Trie (Prefix Tree)"], "difficulty": "Medium",
+        "accepted_patterns": ["Design Problems (LRU Cache, Twitter)"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/word-search-ii/": {
         "title": "Word Search II", "number": 212,
-        "accepted_patterns": ["Trie (Prefix Tree)", "Backtracking"], "difficulty": "Hard",
+        "accepted_patterns": ["Design Problems (LRU Cache, Twitter)", "Backtracking & Recursive Search"],
+        "difficulty": "Hard",
     },
 
-    # Two Heaps
-    "https://leetcode.com/problems/find-median-from-data-stream/": {
-        "title": "Find Median from Data Stream", "number": 295,
-        "accepted_patterns": ["Two Heaps"], "difficulty": "Hard",
-    },
-    "https://leetcode.com/problems/ipo/": {
-        "title": "IPO", "number": 502,
-        "accepted_patterns": ["Two Heaps", "Top K Elements"], "difficulty": "Hard",
-    },
-
-    # Subsets / Combinations
-    "https://leetcode.com/problems/subsets-ii/": {
-        "title": "Subsets II", "number": 90,
-        "accepted_patterns": ["Subsets / Combinations", "Backtracking"], "difficulty": "Medium",
-    },
-    "https://leetcode.com/problems/palindrome-partitioning/": {
-        "title": "Palindrome Partitioning", "number": 131,
-        "accepted_patterns": ["Subsets / Combinations", "Backtracking"], "difficulty": "Medium",
-    },
-    "https://leetcode.com/problems/letter-combinations-of-a-phone-number/": {
-        "title": "Letter Combinations of a Phone Number", "number": 17,
-        "accepted_patterns": ["Subsets / Combinations", "Backtracking"], "difficulty": "Medium",
-    },
-
-    # Bit Manipulation
-    "https://leetcode.com/problems/single-number/": {
-        "title": "Single Number", "number": 136,
-        "accepted_patterns": ["Bit Manipulation"], "difficulty": "Easy",
-    },
-    "https://leetcode.com/problems/number-of-1-bits/": {
-        "title": "Number of 1 Bits", "number": 191,
-        "accepted_patterns": ["Bit Manipulation"], "difficulty": "Easy",
-    },
-    "https://leetcode.com/problems/counting-bits/": {
-        "title": "Counting Bits", "number": 338,
-        "accepted_patterns": ["Bit Manipulation", "Dynamic Programming"], "difficulty": "Easy",
-    },
-    "https://leetcode.com/problems/reverse-bits/": {
-        "title": "Reverse Bits", "number": 190,
-        "accepted_patterns": ["Bit Manipulation"], "difficulty": "Easy",
-    },
-
-    # Greedy
+    # Greedy & Interval Partitioning
     "https://leetcode.com/problems/candy/": {
         "title": "Candy", "number": 135,
-        "accepted_patterns": ["Greedy"], "difficulty": "Hard",
+        "accepted_patterns": ["Greedy & Interval Partitioning"], "difficulty": "Hard",
     },
     "https://leetcode.com/problems/jump-game/": {
         "title": "Jump Game", "number": 55,
-        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+        "accepted_patterns": ["Greedy & Interval Partitioning"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/jump-game-ii/": {
         "title": "Jump Game II", "number": 45,
-        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+        "accepted_patterns": ["Greedy & Interval Partitioning"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/non-overlapping-intervals/": {
         "title": "Non-overlapping Intervals", "number": 435,
-        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+        "accepted_patterns": ["Greedy & Interval Partitioning"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/task-scheduler/": {
         "title": "Task Scheduler", "number": 621,
-        "accepted_patterns": ["Greedy"], "difficulty": "Medium",
+        "accepted_patterns": ["Greedy & Interval Partitioning"], "difficulty": "Medium",
     },
 
-    # Divide & Conquer
+    # Divide and Conquer
     "https://leetcode.com/problems/maximum-subarray/": {
         "title": "Maximum Subarray", "number": 53,
-        "accepted_patterns": ["Divide & Conquer", "Dynamic Programming"], "difficulty": "Medium",
+        "accepted_patterns": ["Divide and Conquer", "Dynamic Programming (Knapsack, Range DP)"],
+        "difficulty": "Medium",
     },
     "https://leetcode.com/problems/sort-an-array/": {
         "title": "Sort an Array", "number": 912,
-        "accepted_patterns": ["Divide & Conquer"], "difficulty": "Medium",
+        "accepted_patterns": ["Divide and Conquer"], "difficulty": "Medium",
     },
     "https://leetcode.com/problems/median-of-two-sorted-arrays/": {
         "title": "Median of Two Sorted Arrays", "number": 4,
-        "accepted_patterns": ["Divide & Conquer", "Binary Search"], "difficulty": "Hard",
+        "accepted_patterns": ["Divide and Conquer", "Binary Search (and Variants)"], "difficulty": "Hard",
+    },
+
+    # Hashmaps & Frequency Counting
+    "https://leetcode.com/problems/two-sum/": {
+        "title": "Two Sum", "number": 1,
+        "accepted_patterns": ["Hashmaps & Frequency Counting"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/longest-consecutive-sequence/": {
+        "title": "Longest Consecutive Sequence", "number": 128,
+        "accepted_patterns": ["Hashmaps & Frequency Counting"], "difficulty": "Medium",
+    },
+    "https://leetcode.com/problems/group-anagrams/": {
+        "title": "Group Anagrams", "number": 49,
+        "accepted_patterns": ["Hashmaps & Frequency Counting", "String Manipulation & Regular Expressions"],
+        "difficulty": "Medium",
+    },
+
+    # Linked List Techniques (Dummy Node, In-place Reversal)
+    "https://leetcode.com/problems/reverse-linked-list/": {
+        "title": "Reverse Linked List", "number": 206,
+        "accepted_patterns": ["Linked List Techniques (Dummy Node, In-place Reversal)"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/merge-two-sorted-lists/": {
+        "title": "Merge Two Sorted Lists", "number": 21,
+        "accepted_patterns": ["Linked List Techniques (Dummy Node, In-place Reversal)"], "difficulty": "Easy",
+    },
+    "https://leetcode.com/problems/remove-nth-node-from-end-of-list/": {
+        "title": "Remove Nth Node From End of List", "number": 19,
+        "accepted_patterns": ["Linked List Techniques (Dummy Node, In-place Reversal)"], "difficulty": "Medium",
+    },
+
+    # Merge K Sorted Lists
+    "https://leetcode.com/problems/merge-k-sorted-lists/": {
+        "title": "Merge K Sorted Lists", "number": 23,
+        "accepted_patterns": ["Merge K Sorted Lists"], "difficulty": "Hard",
     },
 }
 

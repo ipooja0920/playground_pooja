@@ -8,9 +8,12 @@ import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 from helpers import make_openai_response
 
+# Canonical DP name in the 25-pattern library
+_DP = "Dynamic Programming (Knapsack, Range DP)"
+
 
 def _research_response(
-    correct_pattern="Dynamic Programming",
+    correct_pattern=_DP,
     sub_pattern="2D / Grid DP",
     why="Two strings being compared — dp[i][j] encodes matching state.",
     signal="Two string inputs + interleaving/matching = 2D DP, NOT Sliding Window",
@@ -32,13 +35,14 @@ class TestRunPatternResearch:
         from pattern_research_agent import run_pattern_research
         mock_client = AsyncMock()
         mock_client.chat.completions.create.return_value = make_openai_response(
-            _research_response("Dynamic Programming")
+            _research_response(_DP)
         )
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             result = await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
 
-        assert result["correct_pattern"] == "Dynamic Programming"
+        assert result["correct_pattern"] == _DP
         assert result["error"] is None
 
     @pytest.mark.asyncio
@@ -49,7 +53,8 @@ class TestRunPatternResearch:
             _research_response(sub_pattern="2D / Grid DP")
         )
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             result = await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
 
         assert result["sub_pattern"] == "2D / Grid DP"
@@ -63,14 +68,15 @@ class TestRunPatternResearch:
             _research_response()
         )
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             result = await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
 
         assert result["lesson_saved"] is True
         assert pk_file.exists()
         data = json.loads(pk_file.read_text())
-        assert "Dynamic Programming" in data
-        assert len(data["Dynamic Programming"]) == 1
+        assert _DP in data
+        assert len(data[_DP]) == 1
 
     @pytest.mark.asyncio
     async def test_deduplication_by_problem_title(self, tmp_path):
@@ -81,14 +87,15 @@ class TestRunPatternResearch:
             _research_response()
         )
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             # Save same problem twice
             await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
             await run_pattern_research("problem text", "Interleaving String", "Backtracking")
 
         data = json.loads(pk_file.read_text())
         # Should still only have 1 entry for Interleaving String
-        assert len(data["Dynamic Programming"]) == 1
+        assert len(data[_DP]) == 1
 
     @pytest.mark.asyncio
     async def test_invalid_pattern_triggers_case_insensitive_correction(self, tmp_path):
@@ -96,13 +103,14 @@ class TestRunPatternResearch:
         mock_client = AsyncMock()
         # Return lowercase version — should be corrected to canonical name
         mock_client.chat.completions.create.return_value = make_openai_response(
-            _research_response(correct_pattern="dynamic programming")
+            _research_response(correct_pattern="dynamic programming (knapsack, range dp)")
         )
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             result = await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
 
-        assert result["correct_pattern"] == "Dynamic Programming"  # canonicalized
+        assert result["correct_pattern"] == _DP  # canonicalized
 
     @pytest.mark.asyncio
     async def test_unknown_pattern_triggers_discovery(self, tmp_path):
@@ -170,7 +178,8 @@ class TestRunPatternResearch:
         mock_client = AsyncMock()
         mock_client.chat.completions.create.side_effect = Exception("rate limit")
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", tmp_path / "pk.json"), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             result = await run_pattern_research("problem text", "Title", "wrong")
 
         assert result.get("error") is not None
@@ -185,11 +194,12 @@ class TestRunPatternResearch:
             _research_response()
         )
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             await run_pattern_research("problem text", "Interleaving String", "Sliding Window")
 
         data = json.loads(pk_file.read_text())
-        entry = data["Dynamic Programming"][0]
+        entry = data[_DP][0]
         for field in ["problem", "sub_pattern", "why", "signal", "classifier_lesson", "wrong_pattern", "timestamp"]:
             assert field in entry, f"Missing field '{field}' in saved entry"
 
@@ -200,7 +210,8 @@ class TestRunPatternResearch:
         mock_client = AsyncMock()
 
         with patch("pattern_research_agent.AsyncOpenAI", return_value=mock_client), \
-             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file):
+             patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file), \
+             patch("pattern_research_agent.CUSTOM_PATTERNS_FILE", tmp_path / "custom.json"):
             for i in range(13):
                 mock_client.chat.completions.create.return_value = make_openai_response(
                     _research_response()
@@ -208,7 +219,7 @@ class TestRunPatternResearch:
                 await run_pattern_research("problem text", f"Problem {i}", "Sliding Window")
 
         data = json.loads(pk_file.read_text())
-        assert len(data.get("Dynamic Programming", [])) <= 10
+        assert len(data.get(_DP, [])) <= 10
 
 
 class TestGetPatternKnowledge:
@@ -222,7 +233,7 @@ class TestGetPatternKnowledge:
     def test_returns_formatted_block_when_knowledge_exists(self, tmp_path):
         pk_file = tmp_path / "pk.json"
         pk_file.write_text(json.dumps({
-            "Dynamic Programming": [{
+            _DP: [{
                 "problem": "Interleaving String",
                 "sub_pattern": "2D / Grid DP",
                 "signal": "two strings = 2D DP",
@@ -236,7 +247,7 @@ class TestGetPatternKnowledge:
         with patch("pattern_research_agent.PATTERN_KNOWLEDGE_FILE", pk_file):
             result = get_pattern_knowledge_for_classifier()
 
-        assert "Dynamic Programming" in result
+        assert _DP in result
         assert "Pattern research lessons" in result
         assert "two strings = 2D DP" in result
 

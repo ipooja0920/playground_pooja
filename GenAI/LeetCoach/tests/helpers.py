@@ -13,7 +13,7 @@ def make_critic_response(score: int = 5, issues: str = "none", suggestion: str =
     return f"SCORE: {score}\nISSUES: {issues}\nSUGGESTION: {suggestion}"
 
 
-def make_classifier_response(pattern: str = "Dynamic Programming") -> str:
+def make_classifier_response(pattern: str = "Dynamic Programming (Knapsack, Range DP)") -> str:
     return (
         f"## 🎯 Pattern\n{pattern}\n\n"
         "## Why This Pattern?\nBecause the problem has overlapping subproblems.\n\n"

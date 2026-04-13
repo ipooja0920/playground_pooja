@@ -95,26 +95,26 @@ class TestCheckPatternAccuracy:
         assert result["is_correct"] is True
 
     def test_partial_pattern_match(self):
-        """'Dynamic Programming (2D DP)' should still match 'Dynamic Programming'."""
+        """Short 'Dynamic Programming' should still match 'Dynamic Programming (Knapsack, Range DP)'."""
         result = check_pattern_accuracy(
-            "Dynamic Programming (2D DP)",
+            "Dynamic Programming",
             "https://leetcode.com/problems/climbing-stairs/"
         )
         assert result["is_correct"] is True
 
     def test_multi_accepted_pattern_either_is_correct(self):
         """Problems with multiple accepted patterns accept any of them."""
-        # Number of Islands accepts BFS or DFS or Union Find
-        result_bfs = check_pattern_accuracy(
-            "BFS (Breadth-First Search)",
+        # Number of Islands accepts Graph Traversals or Graph Algorithms
+        result_traversals = check_pattern_accuracy(
+            "Graph Traversals (BFS, DFS)",
             "https://leetcode.com/problems/number-of-islands/"
         )
-        result_dfs = check_pattern_accuracy(
-            "DFS (Depth-First Search)",
+        result_algorithms = check_pattern_accuracy(
+            "Graph Algorithms (DAGs, MSTs, Shortest Paths)",
             "https://leetcode.com/problems/number-of-islands/"
         )
-        assert result_bfs["is_correct"] is True
-        assert result_dfs["is_correct"] is True
+        assert result_traversals["is_correct"] is True
+        assert result_algorithms["is_correct"] is True
 
     def test_result_includes_identified_pattern(self):
         result = check_pattern_accuracy(

@@ -195,15 +195,16 @@ You MUST pick EXACTLY ONE pattern from this list — no other patterns allowed:
 
 Decision rules for commonly confused patterns:
 - Sliding Window vs Two Pointers: if the problem is about a contiguous subarray/substring → Sliding Window. If it's about pairs from both ends of a sorted array → Two Pointers.
-- BFS vs DFS: if you need shortest path or level-by-level → BFS. If you need to explore all paths or detect cycles → DFS.
-- DP vs Backtracking: if there are overlapping subproblems with optimal substructure → DP. If you're building all combinations/permutations explicitly → Backtracking.
-- Cyclic Sort vs prefix/hash: if the problem has numbers in range [1, n] and asks for missing/duplicate → Cyclic Sort.
-- Greedy vs DP: if the problem can be solved by 1 or 2 linear passes where each local decision is final (no need to revisit) → Greedy. If you need to consider all subproblems or look back at previous states → DP. Key Greedy signals: "distribute items to neighbors", "assign candies based on ratings", "minimum total cost by scanning left then right", "can you reach the end?".
+- Graph Traversals (BFS, DFS) — BFS for shortest path or level-by-level exploration; DFS for connected components, cycle detection, or exhaustive path exploration.
+- Graph Algorithms (DAGs, MSTs, Shortest Paths) — use when the problem involves weighted graphs (Dijkstra), dependency ordering (Topological Sort), or connecting components with minimum cost (Union-Find / Kruskal).
+- Dynamic Programming (Knapsack, Range DP) vs Backtracking & Recursive Search: if there are overlapping subproblems with optimal substructure → DP. If you need to enumerate all combinations/permutations explicitly → Backtracking.
+- Greedy & Interval Partitioning vs Dynamic Programming (Knapsack, Range DP): if the problem can be solved by 1 or 2 linear passes where each local decision is final → Greedy. Key Greedy signals: "distribute items to neighbors", "assign candies based on ratings", "can you reach the end?", "minimum rooms/platforms needed".
+- Top K Frequent Elements vs Kth Largest/Smallest Elements (Heaps / QuickSelect): if the problem asks for the k most/least *frequent* items → Top K Frequent Elements. If it asks for the k-th largest/smallest *value* → Kth Largest/Smallest.
 
 Use this EXACT format:
 
 ## 🎯 Pattern
-[Pattern name — must be one of the 21 above, copied exactly]
+[Pattern name — must be one of the 25 above, copied exactly]
 
 ## Why This Pattern?
 [2-3 short sentences. Pretend you're explaining to a curious 10-year-old.
@@ -321,16 +322,17 @@ You are an expert algorithm pattern reviewer. Your ONLY job is to verify that th
 Evaluate:
 1. Is the identified pattern ACTUALLY correct for this problem? Not just plausible — actually the best fit?
 2. Are the reasoning clues accurate and specific to this problem?
-3. Is the pattern name exactly one of our 20 allowed patterns?
+3. Is the pattern name exactly one of our 25 allowed patterns?
 
 Common mistakes to catch:
 - Picking Sliding Window for DP problems just because they involve strings/substrings
 - Picking Two Pointers for problems that need a hash map (like Two Sum on unsorted arrays)
-- Picking BFS/DFS when the problem needs DP (e.g. counting paths, interleaving)
-- Picking Backtracking when DP works (overlapping subproblems = DP, not Backtracking)
-- Any problem asking "can we form X from Y" or "number of ways" → almost always Dynamic Programming
-- Picking Dynamic Programming for problems solvable with 1–2 greedy passes — if local decisions are final and no subproblems overlap, it is Greedy (e.g. Candy, Jump Game, Task Scheduler)
-- Key Greedy signal: "distribute/assign to neighbors based on a comparison" = Greedy, NOT DP
+- Picking Graph Traversals (BFS, DFS) when the problem needs Dynamic Programming (Knapsack, Range DP) (e.g. counting paths, interleaving)
+- Picking Backtracking & Recursive Search when DP works (overlapping subproblems = DP, not Backtracking)
+- Any problem asking "can we form X from Y" or "number of ways" → almost always Dynamic Programming (Knapsack, Range DP)
+- Picking Dynamic Programming (Knapsack, Range DP) for problems solvable with 1–2 greedy passes — if local decisions are final and no subproblems overlap, it is Greedy & Interval Partitioning (e.g. Candy, Jump Game, Task Scheduler)
+- Key Greedy signal: "distribute/assign to neighbors based on a comparison" = Greedy & Interval Partitioning, NOT DP
+- Picking Graph Traversals (BFS, DFS) for weighted shortest paths or topological ordering — use Graph Algorithms (DAGs, MSTs, Shortest Paths) instead
 
 Respond in EXACTLY this format (no extra text):
 SCORE: [1-5]
@@ -513,7 +515,7 @@ async def rerun_section(section: str, context: dict, agents: dict, feedback_comm
 
 
 # --------------------------------------------------------------------------- #
-#  Pattern validator — checks classifier output is one of our 20 patterns
+#  Pattern validator — checks classifier output is one of our 25 patterns
 # --------------------------------------------------------------------------- #
 
 async def validate_and_fix_pattern(pattern_text: str, problem_text: str, classifier_llm) -> tuple:

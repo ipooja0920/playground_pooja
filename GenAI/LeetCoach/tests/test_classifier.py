@@ -76,34 +76,35 @@ class TestValidateAndFixPattern:
     @pytest.mark.asyncio
     async def test_valid_pattern_passes_unchanged(self):
         from agents import validate_and_fix_pattern
-        text = make_classifier_response("Dynamic Programming")
+        text = make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
         mock_llm = AsyncMock()
         result, was_corrected, original, corrected = await validate_and_fix_pattern(
             text, "some problem", mock_llm
         )
         assert was_corrected is False
-        assert original == "Dynamic Programming"
+        assert original == "Dynamic Programming (Knapsack, Range DP)"
 
     @pytest.mark.asyncio
     async def test_qualifier_stripped_and_canonicalized(self):
         from agents import validate_and_fix_pattern
-        text = make_classifier_response("Dynamic Programming (2D DP)")
+        # "Sliding Window (fixed size)" → strip → "Sliding Window" → valid canonical name
+        text = make_classifier_response("Sliding Window (fixed size)")
         mock_llm = AsyncMock()
         result, was_corrected, original, corrected = await validate_and_fix_pattern(
             text, "some problem", mock_llm
         )
         # Should pass (valid after stripping qualifier) but original name had qualifier
         assert was_corrected is False
-        assert "Dynamic Programming" in result
+        assert "Sliding Window" in result
         # Qualifier should be cleaned from the output
-        assert "(2D DP)" not in result
+        assert "(fixed size)" not in result
 
     @pytest.mark.asyncio
     async def test_invalid_pattern_triggers_reclassification(self):
         from agents import validate_and_fix_pattern
         text = make_classifier_response("Quantum Sort")
         mock_llm = AsyncMock()
-        mock_llm.generate_str.return_value = make_classifier_response("Dynamic Programming")
+        mock_llm.generate_str.return_value = make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
         result, was_corrected, original, corrected = await validate_and_fix_pattern(
             text, "some problem", mock_llm
         )
@@ -116,7 +117,7 @@ class TestValidateAndFixPattern:
         from agents import validate_and_fix_pattern
         from patterns import PATTERNS
         mock_llm = AsyncMock()
-        mock_llm.generate_str.return_value = make_classifier_response("Dynamic Programming")
+        mock_llm.generate_str.return_value = make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
         for p in PATTERNS:
             text = make_classifier_response(p["name"])
             _, was_corrected, _, _ = await validate_and_fix_pattern(
@@ -145,7 +146,7 @@ class TestRunClassifierDirect:
 
             mock_client = AsyncMock()
             mock_client.chat.completions.create.return_value = make_openai_response(
-                make_classifier_response("Dynamic Programming")
+                make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
             )
 
             mock_critic = AsyncMock()
@@ -171,7 +172,7 @@ class TestRunClassifierDirect:
 
             mock_client = AsyncMock()
             mock_client.chat.completions.create.return_value = make_openai_response(
-                make_classifier_response("Dynamic Programming")
+                make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
             )
             mock_critic = AsyncMock()
             mock_critic.generate_str.return_value = make_critic_response(score=5)
@@ -194,7 +195,7 @@ class TestRunClassifierDirect:
 
             mock_client = AsyncMock()
             mock_client.chat.completions.create.return_value = make_openai_response(
-                make_classifier_response("Dynamic Programming")
+                make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
             )
             mock_critic = AsyncMock()
             mock_critic.generate_str.return_value = make_critic_response(score=5)
@@ -218,7 +219,7 @@ class TestRunClassifierDirect:
 
             mock_client = AsyncMock()
             mock_client.chat.completions.create.return_value = make_openai_response(
-                make_classifier_response("Dynamic Programming")
+                make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
             )
             mock_critic = AsyncMock()
             # First critique low, second high
@@ -246,7 +247,7 @@ class TestRunClassifierDirect:
 
             mock_client = AsyncMock()
             mock_client.chat.completions.create.return_value = make_openai_response(
-                make_classifier_response("Dynamic Programming")
+                make_classifier_response("Dynamic Programming (Knapsack, Range DP)")
             )
             mock_critic = AsyncMock()
             mock_critic.generate_str.side_effect = [
