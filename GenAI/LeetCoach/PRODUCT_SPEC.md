@@ -55,7 +55,7 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
   ╔═════════════════════════════════════════════╗
   ║  AGENT 3 — Classifier Agent                ║
   ║  Model: gpt-4o (direct AsyncOpenAI)         ║
-  ║  Picks 1 of 20 patterns, explains why       ║
+  ║  Picks 1 of 25 patterns, explains why       ║
   ║  Grounded: full pattern menu injected       ║
   ║  Memory: pattern_knowledge.json injected    ║
   ╚══════════════════════╤══════════════════════╝
@@ -144,14 +144,15 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
 ### 3. Classifier Agent
 - **Model:** `gpt-4o` (direct `AsyncOpenAI` call — stronger reasoning than mini for pattern identification)
 - **Grounding:** Injected with all patterns (built-in + any discovered via Pattern Research Agent) + `when_to_use` signals at prompt time
-- **Sub-pattern awareness:** Classifier instruction includes decision rules for the 5 most commonly confused pairs:
+- **Sub-pattern awareness:** Classifier instruction includes decision rules for the most commonly confused pairs:
   - Sliding Window vs Two Pointers
-  - BFS vs DFS
-  - DP vs Backtracking (key rule: "number of ways / can we form X" = DP, not Backtracking)
-  - Cyclic Sort vs prefix/hash
-  - **Greedy vs DP** (key rule: "distribute/assign to neighbors by comparison with 1–2 passes" = Greedy, not DP)
+  - **Graph Traversals (BFS, DFS)** — BFS for shortest path / level-order; DFS for connected components / cycle detection
+  - **Graph Algorithms (DAGs, MSTs, Shortest Paths)** vs Graph Traversals — weighted graphs and topological ordering use the dedicated Graph Algorithms pattern; unweighted BFS/DFS use Graph Traversals
+  - **Dynamic Programming (Knapsack, Range DP)** vs **Backtracking & Recursive Search** (key rule: "number of ways / can we form X" = DP, not Backtracking)
+  - **Greedy & Interval Partitioning** vs DP (key rule: "distribute/assign to neighbors by comparison with 1–2 passes" = Greedy, not DP)
+  - **Top K Frequent Elements** vs **Kth Largest/Smallest Elements (Heaps / QuickSelect)** — frequency queries use Top K Frequent; value-rank queries use Kth Largest/Smallest
 - **Self-correction:** After generating output, the **Classifier Critic** (gpt-4o-mini) scores correctness 1–5. If ≤ 3, the Classifier retries with the critique injected
-- **Pattern Validator:** Checks exact match first (handles canonical names like "BFS (Breadth-First Search)"), then strips user-added qualifiers like `(2D DP)`. If still invalid, asks classifier to re-pick from the exact list
+- **Pattern Validator:** Checks exact match first (handles canonical names with parentheses like "Graph Traversals (BFS, DFS)"), then strips user-added qualifiers like `(fixed size)`. If still invalid, asks classifier to re-pick from the exact list
 - **Pattern Knowledge injection:** Lessons from `pattern_knowledge.json` (written by Pattern Research Agent) are injected into every classifier run, teaching it what mistakes were made on similar problems before
 
 ---
@@ -163,9 +164,10 @@ User pastes URL  ──or──  User types keyword → Search → picks problem
 - **Common mistakes it checks for:**
   - Sliding Window for string DP problems
   - Two Pointers for hash map problems
-  - BFS/DFS when counting paths/ways needs DP
-  - Backtracking when overlapping subproblems = DP
-  - **DP for problems solvable with 1–2 greedy passes** (e.g. Candy, Jump Game, Task Scheduler)
+  - Graph Traversals (BFS, DFS) when counting paths/ways needs Dynamic Programming (Knapsack, Range DP)
+  - Backtracking & Recursive Search when overlapping subproblems = DP
+  - Graph Traversals for weighted shortest paths or topological ordering — those need Graph Algorithms (DAGs, MSTs, Shortest Paths)
+  - **Dynamic Programming (Knapsack, Range DP) for problems solvable with 1–2 greedy passes** (e.g. Candy, Jump Game, Task Scheduler → Greedy & Interval Partitioning)
 - **Differs from General Critic:** General Critic checks beginner-friendliness and format; Classifier Critic checks if the answer is factually right
 
 ---
@@ -453,41 +455,45 @@ _compose_instruction(base, agent_name):
 
 ---
 
-## Pattern Library — 21 Built-in Patterns + Extensible
+## Pattern Library — 25 Built-in Patterns + Extensible
 
-Each pattern has: description, when-to-use signals (including NOT signals), sub-patterns, code template, example problems.
+Each pattern has: description, when-to-use signals (including NOT signals), sub-patterns (where applicable), Python code template, and 4 LeetCode example problems.
 
 | # | Pattern | Key Sub-Patterns |
 |---|---------|-----------------|
-| 1 | Two Pointers | — |
-| 2 | Sliding Window | — |
-| 3 | Fast & Slow Pointers | — |
-| 4 | Binary Search | — |
-| 5 | BFS (Breadth-First Search) | Multi-source BFS, 0-1 BFS, BFS on implicit graph |
-| 6 | DFS (Depth-First Search) | Tree DFS, Island/Flood Fill DFS, Cycle Detection DFS, Memoized DFS |
-| 7 | Backtracking | Permutations, Combinations/Subsets, Grid/Matrix, Constraint Satisfaction |
-| 8 | Dynamic Programming | 1D Linear DP, 2D/Grid DP, Knapsack DP, Interval DP, Tree DP, String DP |
-| 9 | Monotonic Stack | — |
-| 10 | Top K Elements | — |
-| 11 | Merge Intervals | — |
-| 12 | Prefix Sum | — |
-| 13 | Cyclic Sort | — |
-| 14 | Topological Sort | — |
-| 15 | Union Find (Disjoint Set) | — |
-| 16 | Trie (Prefix Tree) | — |
-| 17 | Two Heaps | — |
-| 18 | Subsets / Combinations | — |
-| 19 | Bit Manipulation | — |
-| 20 | Divide & Conquer | — |
-| 21 | **Greedy** *(added after Candy misclassification)* | Two-Pass Greedy, Interval Greedy, Jump Greedy, Sort+Scan Greedy |
+| 1 | Prefix Sums | 1D Prefix Sum, Prefix Sum + Hash Map, 2D Prefix Sum |
+| 2 | Sliding Window | Fixed-Size Window, Variable-Size Window |
+| 3 | Stacks and Queues | Bracket Matching Stack, Min/Max Stack, Queue with Two Stacks |
+| 4 | Fast and Slow Pointers | — |
+| 5 | Top K Frequent Elements | Min-Heap of Size K, Bucket Sort by Frequency |
+| 6 | Binary Search (and Variants) | Classic Binary Search, Binary Search on Answer, Rotated Array Search, Left/Right Boundary |
+| 7 | Graph Traversals (BFS, DFS) | BFS Shortest Path/Level Order, Multi-Source BFS, DFS Connected Components/Flood Fill, DFS Cycle Detection |
+| 8 | Backtracking & Recursive Search | Permutations, Combinations/Subsets, Grid/Matrix Search, Constraint Satisfaction |
+| 9 | Path Sum & Root-to-Leaf Techniques | Existence Check, Collect All Paths, Path as Number, Max Path Through Any Node |
+| 10 | String Manipulation & Regular Expressions | Frequency/Anagram, Two-Pointer Palindrome, Expand Around Center, DP Pattern Matching |
+| 11 | Dynamic Programming (Knapsack, Range DP) | 1D DP, 2D/Grid DP, Knapsack DP, Interval/Range DP, String DP |
+| 12 | Kth Largest/Smallest Elements (Heaps / QuickSelect) | Min-Heap of Size K, QuickSelect, Two-Heap Median |
+| 13 | Linked List Techniques (Dummy Node, In-place Reversal) | Dummy Head, In-place Reversal, Two-Pointer Gap |
+| 14 | Graph Algorithms (DAGs, MSTs, Shortest Paths) | Dijkstra (Weighted Shortest Path), Topological Sort (Kahn's BFS), Union-Find/MST (Kruskal), Bellman-Ford |
+| 15 | Binary Trees & BSTs (Traversal, Construction) | Recursive DFS Traversal, Level-Order BFS, Construct from Traversals, BST Properties |
+| 16 | Design Problems (LRU Cache, Twitter) | HashMap + Doubly Linked List (LRU), HashMap + Heap (Top-N Feed), Trie-based Design |
+| 17 | Expression Evaluation (Two Stacks) | Reverse Polish Notation (Postfix), Two-Stack Infix Evaluation, Stack-Based Decode |
+| 18 | Hashmaps & Frequency Counting | Complement Map (Two Sum), Frequency Counter, Set for Consecutive Sequence |
+| 19 | Greedy & Interval Partitioning | Two-Pass Greedy, Interval Scheduling (Earliest Deadline First), Interval Partitioning (Min Rooms), Jump Greedy |
+| 20 | Monotonic Stack / Queue | Monotonic Decreasing Stack (Next Greater), Monotonic Increasing Stack (Next Smaller/Histogram), Monotonic Deque (Sliding Window Max) |
+| 21 | Sorting-Based Patterns | Sort + Two Pointers, Custom Sort Key, Sort + Binary Search |
+| 22 | Merge K Sorted Lists | — |
+| 23 | Divide and Conquer | — |
+| 24 | Merge Intervals | Merge Overlapping, Insert Interval |
+| 25 | Two Pointers | Opposite Direction (Converging), Same Direction (Slow/Fast) |
 | + | *Custom patterns* — auto-discovered by Pattern Research Agent | Written to `custom_patterns.json`, loaded on startup |
 
-**NOT signals** are embedded in each pattern's `when_to_use` list to prevent cross-pattern confusion. Examples:
-- BFS: "NOT for counting paths or number-of-ways problems — those need DP"
-- DFS: "NOT when you need shortest path — use BFS instead"
-- Backtracking: "NOT for counting solutions — if only the COUNT is needed, use DP"
-- Dynamic Programming: "NOT for generating ALL solutions (use Backtracking) — DP only counts or optimizes"; "NOT when a greedy single/double pass works — use Greedy"
-- Greedy: "NOT when overlapping subproblems require look-back — use DP instead"
+**NOT signals** are embedded in each pattern's `when_to_use` list to prevent cross-pattern confusion. Key examples:
+- **Graph Traversals (BFS, DFS):** "NOT for counting paths or number-of-ways — those need Dynamic Programming (Knapsack, Range DP)"; "NOT for weighted shortest paths — use Graph Algorithms (DAGs, MSTs, Shortest Paths)"
+- **Backtracking & Recursive Search:** "NOT for counting solutions — if only the COUNT is needed, use DP"
+- **Dynamic Programming (Knapsack, Range DP):** "NOT for generating ALL solutions (use Backtracking) — DP only counts or optimizes"; "NOT when a greedy single/double pass works — use Greedy & Interval Partitioning"
+- **Greedy & Interval Partitioning:** "NOT when overlapping subproblems require look-back — use DP instead"
+- **Top K Frequent Elements:** "NOT for k-th largest by value — use Kth Largest/Smallest Elements (Heaps / QuickSelect)"
 
 **Extensibility:** When Pattern Research Agent encounters an unknown pattern, it generates a full definition and saves it to `custom_patterns.json`. This file is loaded at startup, so discovered patterns persist permanently and appear in the classifier menu, pattern library tab, and ground truth checks.
 
@@ -518,7 +524,7 @@ gpt-4o-mini scores each dimension 1–5:
 Low scores (≤ 3) surface a button to apply the feedback to future runs → routes lesson to the responsible agent via `judge_lessons.json`.
 
 ### Pattern Accuracy (Ground Truth)
-Checks against a hand-labeled dataset (62 problems across all 21 built-in patterns, including 5 Greedy problems added after the Candy fix). **Only shown when the problem is in the dataset** — no noisy "not found" messages for unknown problems.
+Checks against a hand-labeled dataset (~65 problems spanning all 25 built-in patterns). Pattern names in the dataset use the canonical names from `patterns.py`, enabling accurate substring matching. **Only shown when the problem is in the dataset** — no noisy "not found" messages for unknown problems.
 
 ---
 
@@ -540,7 +546,7 @@ Checks against a hand-labeled dataset (62 problems across all 21 built-in patter
 
 ### Tab 2: Pattern Library
 - Search bar filtering by name or description
-- All 21 built-in patterns + any auto-discovered custom patterns show: description, when-to-use signals, **sub-patterns** (where defined), code template, example problem links
+- All 25 built-in patterns + any auto-discovered custom patterns show: description, when-to-use signals, **sub-patterns** (where defined), code template, example problem links
 
 ### Tab 3: Agent Log
 - Summary metrics: Steps Run / Succeeded / Failed / Self-Corrected
@@ -578,7 +584,7 @@ Note: mcp-agent agents (`solution`, `complexity`, `critic`) use the model set in
 
 ## Test Suite
 
-**137 tests, 0 failures.** All tests mock external APIs — no real LLM calls, no API credits used.
+**136 tests, 0 failures.** All tests mock external APIs — no real LLM calls, no API credits used.
 
 Run with: `python -m pytest tests/ -v`
 
@@ -586,15 +592,15 @@ Run with: `python -m pytest tests/ -v`
 
 | File | Tests | What it covers |
 |------|-------|---------------|
-| `tests/test_patterns.py` | 32 | Pattern library structure, Greedy pattern, custom pattern loading, NOT signals |
-| `tests/test_ground_truth.py` | 12 | Ground truth dataset and URL matching |
+| `tests/test_patterns.py` | 29 | 25-pattern library structure, count/ID/field validation, sub-patterns, NOT signals, pattern menu |
+| `tests/test_ground_truth.py` | 12 | Ground truth dataset, URL normalization, pattern name matching |
 | `tests/test_feedback.py` | 20 | Feedback store, rules, judge lessons, `_compose_instruction()` |
 | `tests/test_classifier.py` | 17 | Classifier instruction, Greedy vs DP rule, pattern validator, self-correction |
 | `tests/test_pipeline.py` | 10 | Full pipeline: happy path, failures, agent log |
 | `tests/test_regeneration.py` | 9 | `rerun_section()` cascade — all three sections |
 | `tests/test_evaluation.py` | 13 | LLM Judge parsing, lesson routing, eval history |
-| `tests/test_pattern_research_agent.py` | 15 | Research, save, deduplication, auto-discovery of unknown patterns |
-| **Total** | **137** | **All 137 passed** |
+| `tests/test_pattern_research_agent.py` | 13 | Research, save, deduplication, auto-discovery, CUSTOM_PATTERNS_FILE isolation |
+| **Total** | **136** | **All 136 passed** |
 
 ### Test Infrastructure
 
@@ -606,18 +612,18 @@ Run with: `python -m pytest tests/ -v`
 
 ### What Each Module Tests
 
-**`test_patterns.py` (32 tests)**
-- Exactly 21 built-in patterns with sequential IDs 1–21
+**`test_patterns.py` (29 tests)**
+- Exactly 25 built-in patterns with sequential IDs 1–25
 - All patterns have required fields: name, description, when_to_use, template, examples
 - No duplicate names or IDs
 - All example URLs are LeetCode URLs
 - Sub-pattern fields (name, signal, example) are complete where present
-- BFS, DFS, Backtracking, DP, **Greedy** all have sub-patterns defined
+- Graph Traversals (BFS, DFS), Backtracking & Recursive Search, and Dynamic Programming (Knapsack, Range DP) all have sub-patterns defined
 - DP has the "2D/Grid DP" sub-pattern (fixes Interleaving String misclassification)
-- Greedy has the "Two-Pass Greedy" sub-pattern (fixes Candy misclassification)
-- NOT signals present on BFS, DFS, Backtracking, DP, Greedy
+- Greedy & Interval Partitioning has the "Two-Pass Greedy" sub-pattern (fixes Candy misclassification)
+- NOT signals present on Graph Traversals, Backtracking, DP, Greedy & Interval Partitioning
 - DP has NOT signal pointing to Greedy; Greedy has NOT signal pointing to DP
-- `_VALID_PATTERN_NAMES` contains all 21 pattern names; `_build_pattern_menu()` includes all signals
+- `_VALID_PATTERN_NAMES` contains all 25 pattern names; `_PATTERN_MENU` includes all signals
 - `custom_patterns.json` only loaded if entries have all required fields (guards against corrupt data)
 
 **`test_ground_truth.py` (12 tests)**
@@ -642,14 +648,14 @@ Run with: `python -m pytest tests/ -v`
 - `_compose_instruction()`: includes base, critic lessons, judge lessons, feedback rules; classifier-only includes pattern knowledge; non-classifier excludes pattern knowledge
 
 **`test_classifier.py` (17 tests)**
-- `CLASSIFIER_INSTRUCTION` contains all pattern names (including Greedy)
+- `CLASSIFIER_INSTRUCTION` contains all 25 pattern names
 - Contains Sliding Window vs Two Pointers disambiguation rule
-- Contains DP vs Backtracking rule
-- Contains BFS vs DFS rule
-- **Contains Greedy vs DP disambiguation rule**
+- Contains Dynamic Programming (Knapsack, Range DP) vs Backtracking & Recursive Search rule
+- Contains Graph Traversals (BFS, DFS) disambiguation rule
+- **Contains Greedy & Interval Partitioning vs DP disambiguation rule**
 - `CLASSIFIER_CRITIC_INSTRUCTION` catches Sliding Window for DP problems, mentions "number of ways"
-- **`CLASSIFIER_CRITIC_INSTRUCTION` catches DP used for Greedy problems**
-- `validate_and_fix_pattern()`: valid pattern passes unchanged; qualifier stripped and canonicalized; invalid pattern triggers reclassification; all canonical patterns pass without triggering reclassification (includes "BFS (Breadth-First Search)", "Union Find (Disjoint Set)", "Trie (Prefix Tree)")
+- **`CLASSIFIER_CRITIC_INSTRUCTION` catches DP used for Greedy problems (e.g. Candy, Jump Game)**
+- `validate_and_fix_pattern()`: valid pattern passes unchanged; extra qualifiers stripped (e.g. "Sliding Window (fixed size)" → "Sliding Window"); invalid pattern triggers reclassification; all 25 canonical patterns pass without triggering reclassification (including names with parentheses like "Graph Traversals (BFS, DFS)", "Dynamic Programming (Knapsack, Range DP)")
 - `run_classifier_direct()`: uses `gpt-4o` model; uses `temperature=0`; no retry when critic scores ≥ 4; retries when critic scores ≤ 3 (2 LLM calls); correction saved to `corrections.json` when critic scores low
 
 **`test_pipeline.py` (10 tests)**
@@ -682,13 +688,14 @@ Run with: `python -m pytest tests/ -v`
 - `save_eval_result()`: creates file, appends entries, history capped at 50
 - `load_eval_history()`: returns empty list when file missing
 
-**`test_pattern_research_agent.py` (15 tests)**
+**`test_pattern_research_agent.py` (13 tests)**
 - `run_pattern_research()`: returns valid canonical pattern name; returns sub-pattern field; lesson saved to `pattern_knowledge.json`
 - Deduplication: second research on same problem title overwrites the first entry (no duplicates)
 - Invalid pattern in LLM response fixed by case-insensitive canonical lookup
 - **Unknown pattern triggers auto-discovery**: second gpt-4o call generates full definition, saved to `custom_patterns.json`, added to live `PATTERNS`, result includes `pattern_discovered=True`
 - **Discovery failure returns error dict** (not exception) — tested separately from research failure
 - PATTERNS list restored after discovery tests to prevent cross-test pollution
+- All tests patch `CUSTOM_PATTERNS_FILE` to `tmp_path` — prevents real file writes and stale data between runs
 - API failure returns error dict (not exception)
 - Result dict includes all required fields: `correct_pattern`, `sub_pattern`, `why`, `signal`, `classifier_lesson`
 - Knowledge file capped at 10 entries per pattern
@@ -702,9 +709,9 @@ Run with: `python -m pytest tests/ -v`
 
 **Fix:** Check exact match first. Only strip qualifiers if exact match fails.
 
-**Bug 2 — Candy misclassified as Dynamic Programming**: Greedy was not in the 21 patterns. Classifier was forced to pick the closest match from the existing list.
+**Bug 2 — Candy misclassified as Dynamic Programming**: Greedy was not in the original pattern list. Classifier was forced to pick the closest match from the existing list.
 
-**Fix:** Added Greedy as pattern 21 with 4 sub-patterns, explicit NOT signals in both DP and Greedy, and Greedy vs DP disambiguation rules in both the classifier and critic instructions.
+**Fix:** Added Greedy & Interval Partitioning (pattern 19 in the current library) with 4 sub-patterns (Two-Pass, Interval Scheduling, Interval Partitioning, Jump Greedy), explicit NOT signals in both DP and Greedy, and Greedy vs DP disambiguation rules in both the classifier and critic instructions.
 
 **Bug 3 — Pattern Research Agent errored on unknown patterns**: When a user typed a pattern name not in the library, research returned an error instead of helping.
 
@@ -732,22 +739,22 @@ Run with: `python -m pytest tests/ -v`
 LeetCoach/
 ├── main.py                         # Streamlit app — 4 tabs, quiz, feedback UI, evaluation
 ├── agents.py                       # All agent logic: pipeline, self-correction, feedback, memory
-├── patterns.py                     # 21 built-in patterns + loads custom_patterns.json at startup
+├── patterns.py                     # 25 built-in patterns + loads custom_patterns.json at startup
 ├── pattern_research_agent.py       # Pattern Research Agent — research, discovery, writes knowledge files
 ├── evaluation.py                   # RAGAS + LLM Judge + ground truth accuracy check
-├── ground_truth.py                 # 57 hand-labeled problems for pattern accuracy evaluation
+├── ground_truth.py                 # ~65 hand-labeled problems for pattern accuracy evaluation
 ├── pytest.ini                      # asyncio_mode = auto for async test support
 ├── tests/
 │   ├── conftest.py                 # Shared fixtures, sys.path setup, dummy API key
 │   ├── helpers.py                  # Mock factories: make_openai_response, make_critic_response, make_classifier_response
-│   ├── test_patterns.py            # 27 tests — pattern library structure and content
+│   ├── test_patterns.py            # 29 tests — 25-pattern library structure, NOT signals, validator
 │   ├── test_ground_truth.py        # 12 tests — ground truth dataset and URL matching
 │   ├── test_feedback.py            # 20 tests — feedback store, rules, compose_instruction
-│   ├── test_classifier.py          # 15 tests — classifier instruction, validator, self-correction
+│   ├── test_classifier.py          # 17 tests — classifier instruction, validator, self-correction
 │   ├── test_pipeline.py            # 10 tests — full pipeline: happy path, failures, log
 │   ├── test_regeneration.py        #  9 tests — rerun_section cascade for all three sections
 │   ├── test_evaluation.py          # 13 tests — LLM Judge, lesson routing, eval history
-│   └── test_pattern_research_agent.py  # 13 tests — research, save, deduplication, knowledge retrieval
+│   └── test_pattern_research_agent.py  # 13 tests — research, save, deduplication, file isolation
 ├── feedback.json                   # Auto-generated — raw human likes/dislikes (gitignored)
 ├── feedback_rules.json             # Auto-generated — compact Do/Avoid rules (gitignored)
 ├── corrections.json                # Auto-generated — critic lessons across sessions (gitignored)
