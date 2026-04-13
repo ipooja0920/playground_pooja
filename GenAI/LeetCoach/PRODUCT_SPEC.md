@@ -719,6 +719,103 @@ Run with: `python -m pytest tests/ -v`
 
 ---
 
+## Setup & Installation
+
+### Prerequisites
+
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| Python | 3.10+ | 3.13 recommended (tested on conda) |
+| Node.js | 18+ | Required for Playwright MCP |
+| OpenAI API key | — | `gpt-4o` + `gpt-4o-mini` access required |
+
+### 1. Clone and navigate
+
+```bash
+git clone <repo-url>
+cd GenAI/LeetCoach
+```
+
+### 2. Install Python dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+`requirements.txt` installs:
+- `streamlit>=1.28.0` — UI framework
+- `mcp-agent>=0.0.14` — MCP agent framework
+- `openai>=1.0.0` — LLM API client
+- `pyyaml>=6.0` — config and secrets parsing
+- `ragas>=0.4.0` — Faithfulness + Answer Relevancy evaluation metrics
+- `datasets>=2.14.0` — RAGAS dependency
+- `langchain-openai>=0.1.0` — RAGAS LLM wrapper
+
+### 3. Install Playwright browser
+
+```bash
+npx playwright install chromium
+```
+
+This is used by the Browser Agent (Agent 1) to scrape LeetCode.
+
+### 4. Configure your OpenAI API key
+
+Copy the example secrets file and add your key:
+
+```bash
+cp mcp_agent.secrets.yaml.example mcp_agent.secrets.yaml
+```
+
+Edit `mcp_agent.secrets.yaml`:
+
+```yaml
+openai:
+  api_key: sk-...your-key-here...
+```
+
+> The app also accepts `OPENAI_API_KEY` as an environment variable — the secrets file takes precedence if both are set.
+
+### 5. Run the test suite
+
+```bash
+python -m pytest tests/ -v
+```
+
+Expected: **136 tests, 0 failures.** All tests mock external APIs — no real API calls, no credits used.
+
+### 6. Start the app
+
+```bash
+streamlit run main.py
+```
+
+Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+### Running a problem end-to-end
+
+1. Paste a LeetCode URL (e.g. `https://leetcode.com/problems/two-sum/`) in the input field
+2. Click **Analyze Problem**
+3. Wait ~15–30s for the full pipeline (Browser scrape → Pattern → Solution → Complexity)
+4. View results across the 3 sections; give 👍/👎 feedback per section
+5. If the pattern is wrong: expand the **Research Pattern** section, enter the correct pattern, click **🔬 Research Pattern**
+6. Open the **Evaluation** tab → click **Evaluate This Run** for RAGAS + LLM Judge scores
+7. If any Judge dimension scores ≤ 3, click **📥 Apply Judge Feedback** to improve future runs
+
+### If LeetCode scraping fails
+
+The Browser Agent retries 3× automatically. If all attempts fail, a text area appears — paste the problem text manually and the pipeline continues from Agent 2 onward.
+
+### Config files
+
+| File | Purpose | Edit? |
+|------|---------|-------|
+| `mcp_agent.config.yaml` | MCP model, logging, Playwright server path | Only to change default model |
+| `mcp_agent.secrets.yaml` | OpenAI API key | Yes — required |
+| `mcp_agent.secrets.yaml.example` | Template | No |
+
+---
+
 ## Tech Stack
 
 | Component | Technology | Purpose |
