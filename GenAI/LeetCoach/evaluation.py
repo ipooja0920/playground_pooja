@@ -39,9 +39,11 @@ _DIMENSION_TO_AGENT = {
 # Try importing RAGAS — graceful fallback if not installed
 try:
     from ragas import evaluate as ragas_evaluate, EvaluationDataset
-    from ragas.metrics.collections import Faithfulness, AnswerRelevancy as ResponseRelevancy
-    from ragas.llms import LangchainLLMWrapper
-    from langchain_openai import ChatOpenAI
+    from ragas.metrics import faithfulness, answer_relevancy
+    from ragas.llms import llm_factory
+    from ragas.embeddings import LangchainEmbeddingsWrapper
+    from langchain_openai import OpenAIEmbeddings
+    from openai import OpenAI
     RAGAS_AVAILABLE = True
 except Exception:
     RAGAS_AVAILABLE = False
@@ -157,9 +159,9 @@ def run_ragas_evaluations(
     code_context = code_match.group(1).strip() if code_match else solution[:800]
 
     try:
-        evaluator_llm = LangchainLLMWrapper(
-            ChatOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"))
-        )
+        openai_client  = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        evaluator_llm  = llm_factory("gpt-4o-mini", client=openai_client)
+        evaluator_emb  = LangchainEmbeddingsWrapper(OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY")))
 
         samples = [
             {
@@ -172,8 +174,9 @@ def run_ragas_evaluations(
 
         result = ragas_evaluate(
             dataset=dataset,
-            metrics=[Faithfulness(), ResponseRelevancy()],
+            metrics=[faithfulness, answer_relevancy],
             llm=evaluator_llm,
+            embeddings=evaluator_emb,
         )
 
         scores = result.to_pandas()
