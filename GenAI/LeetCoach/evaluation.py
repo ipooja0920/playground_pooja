@@ -40,10 +40,9 @@ _DIMENSION_TO_AGENT = {
 try:
     from ragas import evaluate as ragas_evaluate, EvaluationDataset
     from ragas.metrics import faithfulness, answer_relevancy
-    from ragas.llms import llm_factory
+    from ragas.llms import LangchainLLMWrapper
     from ragas.embeddings import LangchainEmbeddingsWrapper
-    from langchain_openai import OpenAIEmbeddings
-    from openai import OpenAI
+    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
     RAGAS_AVAILABLE = True
 except Exception:
     RAGAS_AVAILABLE = False
@@ -159,9 +158,8 @@ def run_ragas_evaluations(
     code_context = code_match.group(1).strip() if code_match else solution[:800]
 
     try:
-        openai_client  = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        evaluator_llm  = llm_factory("gpt-4o-mini", client=openai_client)
-        evaluator_emb  = LangchainEmbeddingsWrapper(OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY")))
+        evaluator_llm = LangchainLLMWrapper(ChatOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY")))
+        evaluator_emb = LangchainEmbeddingsWrapper(OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY")))
 
         samples = [
             {
@@ -185,7 +183,9 @@ def run_ragas_evaluations(
             if col in scores.columns:
                 val = scores[col].iloc[0]
                 try:
-                    return round(float(val), 3) if val is not None else None
+                    f = float(val)
+                    import math
+                    return round(f, 3) if not math.isnan(f) else None
                 except Exception:
                     return None
             return None
