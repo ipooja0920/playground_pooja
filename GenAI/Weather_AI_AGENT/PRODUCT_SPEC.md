@@ -40,14 +40,20 @@ A Python-based AI pipeline that fetches live weather data for Storrs, CT, stores
              │         weather_service.py         │
              │  condition, temp, feels-like,      │
              │  high, low, booleans, alert        │
-             └──────────┬────────────────┬────────┘
-                        │                │
-              ┌─────────▼──────┐  ┌──────▼──────────────┐
-              │ sync_weather   │  │  script_service.py   │
-              │   .py          │  │  reads CSV + alert   │
-              │ → CSV storage  │  │  Gemini 2.0 Flash    │
-              └────────────────┘  │  → 15–20 word script │
-                                  └──────────┬───────────┘
+             └──────────────────┬────────────────┘
+                                │
+                     ┌──────────▼──────────┐
+                     │   sync_weather.py   │
+                     │   → CSV storage     │
+                     └──────────┬──────────┘
+                                │ CSV row + alert
+                                ▼
+                     ┌──────────────────────┐
+                     │  script_service.py   │
+                     │  reads CSV + alert   │
+                     │  Gemini 2.0 Flash    │
+                     │  → 15–20 word script │
+                     └──────────┬───────────┘
                                              │ script_text
                                              ▼
                                   ┌──────────────────────┐
