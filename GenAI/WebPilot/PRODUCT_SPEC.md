@@ -1,7 +1,5 @@
 # WebPilot — Product Specification
 
-> Reference implementation: [Shubhamsaboo/awesome-llm-apps — browser_mcp_agent](https://github.com/Shubhamsaboo/awesome-llm-apps/tree/main/mcp_ai_agents/browser_mcp_agent)
-
 ---
 
 ## Overview
