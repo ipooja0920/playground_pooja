@@ -1,0 +1,16 @@
+question,expected_sql,difficulty
+What is the total number of tracks?,SELECT COUNT(*) FROM track,simple
+How many albums are in the database?,SELECT COUNT(*) FROM album,simple
+List all genres,"SELECT name FROM genre ORDER BY name",simple
+What is the most expensive track?,"SELECT name, unit_price FROM track ORDER BY unit_price DESC LIMIT 1",simple
+How many customers are from Brazil?,"SELECT COUNT(*) FROM customer WHERE country = 'Brazil'",simple
+Which artist has the most albums?,"SELECT a.name, COUNT(al.album_id) as album_count FROM artist a JOIN album al ON a.artist_id = al.artist_id GROUP BY a.name ORDER BY album_count DESC LIMIT 1",medium
+What is the total revenue?,"SELECT SUM(total) FROM invoice",simple
+Show the top 5 customers by total spending,"SELECT c.first_name || ' ' || c.last_name as customer, SUM(i.total) as total_spent FROM customer c JOIN invoice i ON c.customer_id = i.customer_id GROUP BY c.customer_id, c.first_name, c.last_name ORDER BY total_spent DESC LIMIT 5",complex
+Which genre has the most tracks?,"SELECT g.name, COUNT(t.track_id) as track_count FROM genre g JOIN track t ON g.genre_id = t.genre_id GROUP BY g.name ORDER BY track_count DESC LIMIT 1",medium
+What is the average invoice total?,SELECT AVG(total) FROM invoice,simple
+How many tracks are longer than 5 minutes?,"SELECT COUNT(*) FROM track WHERE milliseconds > 300000",simple
+List all employees and their titles,"SELECT first_name, last_name, title FROM employee",simple
+What tracks are in the Jazz genre?,"SELECT t.name FROM track t JOIN genre g ON t.genre_id = g.genre_id WHERE g.name = 'Jazz'",medium
+Which country has the most customers?,"SELECT country, COUNT(*) as customer_count FROM customer GROUP BY country ORDER BY customer_count DESC LIMIT 1",medium
+What is the revenue by genre?,"SELECT g.name, SUM(il.unit_price * il.quantity) as revenue FROM genre g JOIN track t ON g.genre_id = t.genre_id JOIN invoice_line il ON t.track_id = il.track_id GROUP BY g.name ORDER BY revenue DESC",complex
