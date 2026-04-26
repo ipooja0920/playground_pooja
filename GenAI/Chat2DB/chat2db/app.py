@@ -286,27 +286,28 @@ section[data-testid="stSidebar"] {
         0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
 }
 
-/* ── Export expander — match tab pill style ── */
-[data-testid="stExpander"] {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(139, 92, 246, 0.35) !important;
-    border-radius: 12px !important;
-    backdrop-filter: blur(12px) !important;
-}
-[data-testid="stExpander"] summary {
-    color: #c4b5fd !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    padding: 8px 14px !important;
-}
-[data-testid="stExpander"] summary:hover {
+/* ── Download / Export popover button ── */
+[data-testid="stPopover"] > button,
+button[data-testid="stBaseButton-secondary"][aria-haspopup="dialog"] {
     background: rgba(139, 92, 246, 0.15) !important;
-    border-radius: 12px !important;
-    color: #ede9fe !important;
+    border: 1px solid rgba(139, 92, 246, 0.40) !important;
+    border-radius: 10px !important;
+    color: #c4b5fd !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    padding: 6px 12px !important;
+    transition: all 0.2s ease !important;
 }
-[data-testid="stExpander"] > div[data-testid="stExpanderDetails"] {
-    border-top: 1px solid rgba(139, 92, 246, 0.20) !important;
-    padding: 10px 14px !important;
+[data-testid="stPopover"] > button:hover,
+button[data-testid="stBaseButton-secondary"][aria-haspopup="dialog"]:hover {
+    background: rgba(139, 92, 246, 0.28) !important;
+    border-color: rgba(139, 92, 246, 0.65) !important;
+    color: #ede9fe !important;
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.30) !important;
+}
+/* Pull tabs up to visually align with the export button row */
+.stTabs {
+    margin-top: -48px !important;
 }
 
 /* ── Tabs — glass pill style ── */
@@ -922,29 +923,21 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
         tab_names.append("Chart")
     tab_names.append("Context")
 
-    # ── Tab bar row: tabs left, export expander right ────────────────────────
-    tabs_col, export_col = st.columns([0.78, 0.22])
-
-    with export_col:
-        with st.expander("⬇ Export", expanded=False):
-            st.markdown(
-                '<p style="font-size:12px;color:#94a3b8;margin:0 0 8px 0;">'
-                'Select sheets to include:</p>',
-                unsafe_allow_html=True,
-            )
-            dl_all         = st.checkbox("Download all",          key=f"dl_all_{id(meta)}")
-            dl_results     = st.checkbox("Results",  value=True,  key=f"dl_res_{id(meta)}")
-            dl_table       = st.checkbox("Table",    value=True,  key=f"dl_tbl_{id(meta)}")
-            dl_sql         = st.checkbox("SQL",                   key=f"dl_sql_{id(meta)}")
-            dl_explanation = st.checkbox("Explanation",           key=f"dl_exp_{id(meta)}")
-            dl_context     = st.checkbox("Context",               key=f"dl_ctx_{id(meta)}")
-            dl_chart = st.checkbox("Chart data", key=f"dl_cht_{id(meta)}") if chartable else False
+    # ── Download button aligned right of the tab bar ──────────────────────────
+    _, dl_col = st.columns([0.88, 0.12])
+    with dl_col:
+        with st.popover("⬇ Export", use_container_width=True):
+            st.markdown("**Select content to export**")
+            dl_results     = st.checkbox("Results (answer text)", value=True, key=f"dl_res_{id(meta)}")
+            dl_table       = st.checkbox("Table (raw data)",      value=True, key=f"dl_tbl_{id(meta)}")
+            dl_sql         = st.checkbox("SQL query",                         key=f"dl_sql_{id(meta)}")
+            dl_explanation = st.checkbox("Explanation",                       key=f"dl_exp_{id(meta)}")
+            dl_context     = st.checkbox("Context",                           key=f"dl_ctx_{id(meta)}")
+            dl_chart       = st.checkbox("Chart data",                        key=f"dl_cht_{id(meta)}") if chartable else False
+            dl_all         = st.checkbox("Download all",                      key=f"dl_all_{id(meta)}")
 
             if dl_all:
-                selected = (
-                    ["Results", "Table", "SQL", "Explanation", "Context"]
-                    + (["Chart"] if chartable else [])
-                )
+                selected = ["Results", "Table", "SQL", "Explanation", "Context"] + (["Chart"] if chartable else [])
             else:
                 selected = (
                     (["Results"]     if dl_results     else []) +
@@ -955,7 +948,6 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
                     (["Chart"]       if dl_chart       else [])
                 )
 
-            st.divider()
             if selected:
                 excel_bytes = _build_excel(result, message, selected)
                 st.download_button(
@@ -967,12 +959,10 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
                     key=f"dl_btn_{id(meta)}",
                 )
             else:
-                st.caption("Select at least one option.")
+                st.caption("Select at least one option above.")
 
-    with tabs_col:
-        tabs = st.tabs(tab_names)
-
-    tab = dict(zip(tab_names, tabs))
+    tabs = st.tabs(tab_names)
+    tab  = dict(zip(tab_names, tabs))
 
     # ── Results ───────────────────────────────────────────────────────────────
     with tab["Results"]:
