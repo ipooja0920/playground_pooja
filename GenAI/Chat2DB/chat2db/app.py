@@ -930,11 +930,11 @@ def inject_sidebar_css():
     border-right: 1px solid rgba(148, 163, 184, 0.18);
 }
 [data-testid="stSidebar"] > div:first-child {
-    padding: 4px 10px 12px 4px;
+    padding: 0px 10px 12px 4px;
 }
 [data-testid="stSidebar"] > div:first-child > div:first-child {
     padding-top: 0 !important;
-    margin-top: 0 !important;
+    margin-top: -16px !important;
 }
 [data-testid="stSidebar"] section > div.block-container {
     padding-top: 0 !important;
