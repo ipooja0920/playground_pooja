@@ -1002,9 +1002,12 @@ def render_sidebar(history: HistoryManager):
         recent = history.get_recent(5)
         if recent:
             st.markdown(
-                '<div style="font-size:11px;font-weight:700;color:#7a8bb0;'
+                '<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#7a8bb0;'
                 'text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">'
-                '🕐  History</div>',
+                '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" '
+                'stroke="#7a8bb0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
+                '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'
+                '</svg>Conversation History</div>',
                 unsafe_allow_html=True,
             )
             for s in recent:
