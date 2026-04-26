@@ -109,6 +109,42 @@ class ChatDatabase:
             print(f"[Intent] LLM classification failed: {e}")
             return "new_question"
 
+    async def rewrite_query(self, query: str, conversation_history: str, previous_sql: str, config: ChatConfig) -> str:
+        """Rewrite the user query to be self-contained and domain-enriched before retrieval.
+
+        Resolves coreferences (it/them/those), expands abbreviations, and adds
+        Chinook domain terms so the downstream SQL generator has a cleaner signal.
+        Returns the original query unchanged if rewriting fails.
+        """
+        prompt = (
+            f"You are a query rewriter for a music-store database chatbot (Chinook schema).\n\n"
+            f"CONVERSATION HISTORY:\n{conversation_history or 'None'}\n\n"
+            f"PREVIOUS SQL:\n{previous_sql or 'None'}\n\n"
+            f"ORIGINAL QUERY: {query}\n\n"
+            f"Rewrite the query so it is:\n"
+            f"1. Fully self-contained (resolve pronouns like it/them/those/that using the conversation history)\n"
+            f"2. Abbreviation-free (expand rev→revenue, qty→quantity, etc.)\n"
+            f"3. Domain-enriched where helpful (e.g. 'most popular' → 'highest total revenue from invoice_line', "
+            f"'customer spend' → 'SUM of invoice.total per customer')\n\n"
+            f"Rules:\n"
+            f"- If the query is already clear and self-contained, return it verbatim\n"
+            f"- Do NOT answer the question — only rewrite it\n"
+            f"- Return ONLY the rewritten query, nothing else"
+        )
+        try:
+            llm = (
+                OpenAILLM(model="gpt-4o-mini", temperature=0.0)
+                if config.llm_provider == "OpenAI"
+                else AnthropicLLM(model="claude-3-5-haiku-20241022", temperature=0.0)
+            )
+            response_obj = await llm.acomplete(prompt)
+            rewritten = str(response_obj).strip()
+            print(f"[Rewrite] '{query}' → '{rewritten}'")
+            return rewritten if rewritten else query
+        except Exception as e:
+            print(f"[Rewrite] Failed (non-critical): {e}")
+            return query
+
     async def _judge_response(self, query: str, response: str, config: ChatConfig) -> dict:
         """Rate the response with a cheap LLM and push scores to Langfuse."""
         prompt = (
@@ -187,8 +223,14 @@ def render_query_details(result: dict, scores: dict):
     columns = result.get("columns", [])
     attempts = result.get("attempts", 1)
     raw = result.get("raw_results", [])
+    rewritten_query = result.get("rewritten_query")
 
     with st.expander("🔍 How we got this answer", expanded=False):
+        # Rewritten query (only shown when it differs from the original)
+        if rewritten_query:
+            st.markdown("**Rewritten query**")
+            st.info(rewritten_query)
+
         # Judge scores
         if scores:
             cols = st.columns(len(scores))
@@ -278,7 +320,7 @@ def main():
         st.header("⚙️ Configuration")
 
         interaction_method = st.selectbox(
-            "Mode", ["Standard", "Hybrid"],
+            "Mode", ["Hybrid", "Standard"],
             help="Standard: Schema-aware SQL generation. Hybrid: Self-correcting agentic pipeline with parallel context retrieval.",
         )
         llm_provider = st.selectbox(
@@ -356,12 +398,22 @@ def main():
                             if schema
                             else "I couldn't retrieve the schema right now."
                         )
-                        return {"answer": answer_text, "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
+                        return {"answer": answer_text, "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": [], "rewritten_query": None}
+
+                    # Query rewriting: resolve coreferences, expand abbreviations, add domain context
+                    rewritten = await chat.rewrite_query(
+                        query, conversation_history, st.session_state.previous_sql, config
+                    )
 
                     if interaction_method == "Standard":
-                        return await chat.rag_pipeline(query, config)
+                        result = await chat.rag_pipeline(rewritten, config)
                     else:
-                        return await chat.tag_pipeline(query, config)
+                        result = await chat.tag_pipeline(rewritten, config)
+
+                    # Attach rewritten query to result if it differs from original
+                    if isinstance(result, dict):
+                        result["rewritten_query"] = rewritten if rewritten != query else None
+                    return result
 
                 result = asyncio.run(_process())
                 scores = {}  # scores are pushed to Langfuse inside _judge_response
