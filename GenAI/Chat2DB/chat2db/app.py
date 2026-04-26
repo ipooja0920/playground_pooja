@@ -263,8 +263,78 @@ section[data-testid="stSidebar"] {
 .dash-card-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
 .dash-card-q { font-size: 14px; color: var(--text); }
 
-/* ── Chat message area ── */
-.stChatMessage { border-radius: 14px !important; }
+/* ── Chat message area — Glassmorphism ── */
+.stChatMessage {
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(18px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+    padding: 18px 22px !important;
+    margin-bottom: 16px !important;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+.stChatMessage:hover {
+    border-color: rgba(139, 92, 246, 0.30) !important;
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(139, 92, 246, 0.15),
+        0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
+}
+
+/* ── Tabs — glass pill style ── */
+.stTabs [data-baseweb="tab-list"] {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(12px) !important;
+    border-radius: 14px !important;
+    padding: 4px 6px !important;
+    gap: 2px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 10px !important;
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    padding: 8px 16px !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    background: rgba(139, 92, 246, 0.15) !important;
+    color: #e2d9ff !important;
+    border-color: rgba(139, 92, 246, 0.30) !important;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.20) !important;
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.55), rgba(67, 56, 202, 0.45)) !important;
+    color: #ffffff !important;
+    border-color: rgba(139, 92, 246, 0.60) !important;
+    box-shadow:
+        0 0 20px rgba(139, 92, 246, 0.35),
+        0 2px 8px rgba(0, 0, 0, 0.30) !important;
+}
+.stTabs [data-baseweb="tab-highlight"] {
+    display: none !important;
+}
+.stTabs [data-baseweb="tab-border"] {
+    display: none !important;
+}
+
+/* ── Tab content panel — frosted glass ── */
+.stTabs [data-baseweb="tab-panel"] {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 0 0 16px 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-top: none !important;
+    padding: 18px !important;
+    transition: all 0.2s ease !important;
+}
 
 /* ── Metric chips ── */
 .mchip {
