@@ -939,6 +939,12 @@ def inject_sidebar_css():
 [data-testid="stSidebar"] section > div.block-container {
     padding-top: 0 !important;
 }
+/* Keep the sidebar collapse arrow in its natural position */
+[data-testid="stSidebarCollapseButton"] {
+    margin-top: 16px !important;
+    position: relative !important;
+    top: 16px !important;
+}
 .sidebar-logo {
     display: flex;
     align-items: center;
