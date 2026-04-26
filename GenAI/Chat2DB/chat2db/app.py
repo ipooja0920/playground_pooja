@@ -215,11 +215,11 @@ CUSTOM_CSS = """
 
 /* ── Root palette ── */
 :root {
-    --bg:      #070a13;
-    --panel:   #0d1424;
-    --border:  rgba(149,167,209,0.15);
-    --text:    #f8fafc;
-    --text-muted: #94a3b8;
+    --bg:      #f8fafc;
+    --panel:   #ffffff;
+    --border:  #e2e8f0;
+    --text:    #1e293b;
+    --text-muted: #64748b;
     --primary: #8b5cf6;
     --primary-hover: #7c3aed;
     --secondary: #3b82f6;
@@ -234,9 +234,7 @@ html, body, [class*="css"] {
 html, body,
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"] {
-    background: radial-gradient(circle at 10% -10%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 90% 110%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
-                var(--bg) !important;
+    background: var(--bg) !important;
     color: var(--text) !important;
 }
 
@@ -306,61 +304,51 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
     font-weight: 500 !important;
 }
 
-/* ── Chat message area — Glowing Glassmorphism ── */
+/* ── Chat message area — Light Glassmorphism ── */
 .stChatMessage {
-    border-radius: 24px !important;
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.2),
-        inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+    border-radius: 20px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02) !important;
     padding: 24px !important;
     margin-bottom: 24px !important;
     transition: all 0.3s ease !important;
 }
 .stChatMessage:hover {
-    border-color: rgba(139, 92, 246, 0.25) !important;
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.3),
-        0 0 20px rgba(139, 92, 246, 0.1),
-        inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05) !important;
 }
 [data-testid="chatAvatarIcon-user"] {
-    background-color: var(--secondary) !important;
+    background-color: var(--primary) !important;
 }
 [data-testid="chatAvatarIcon-assistant"] {
     background-color: var(--primary) !important;
 }
 
-/* ── Tabs — sleek glowing pills ── */
+/* ── Tabs — Light Pills & Lines ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: rgba(0, 0, 0, 0.2) !important;
-    backdrop-filter: blur(12px) !important;
-    border-radius: 100px !important;
-    padding: 6px !important;
-    gap: 4px !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: transparent !important;
+    gap: 32px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 0 12px !important;
+    border-radius: 0 !important;
 }
 .stTabs [data-baseweb="tab"] {
-    border-radius: 100px !important;
-    color: var(--text-muted) !important;
-    font-weight: 500 !important;
-    font-size: 14px !important;
-    padding: 10px 20px !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    background: transparent !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    padding: 12px 4px !important;
     border: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
 }
 .stTabs [data-baseweb="tab"]:hover {
-    color: #fff !important;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
+    color: var(--primary) !important;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
+    color: var(--primary) !important;
+    border-bottom: 2px solid var(--primary) !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {
     display: none !important;
@@ -368,12 +356,12 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
 
 /* ── Tab content panel ── */
 .stTabs [data-baseweb="tab-panel"] {
-    background: rgba(0, 0, 0, 0.15) !important;
-    border-radius: 20px !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    border: 1px solid #f1f5f9 !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
     padding: 24px !important;
     margin-top: 16px !important;
-    transition: all 0.3s ease !important;
 }
 
 /* ── Metric chips ── */
@@ -441,61 +429,63 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
 
 /* Input chat styling */
 [data-testid="stChatInput"] {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 100px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
     padding-left: 8px !important;
-    backdrop-filter: blur(16px) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
 }
 [data-testid="stChatInput"]:focus-within {
     border-color: var(--primary) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--primary) !important;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.15), 0 0 0 1px var(--primary) !important;
 }
 [data-testid="stChatInput"] textarea {
     color: var(--text) !important;
 }
 
-/* ── Dashboard Panel Borders ── */
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-sql) {
-    border: 1.5px dashed #ec4899 !important;
-    border-radius: 12px !important;
-    background: rgba(236, 72, 153, 0.03) !important;
-    padding: 0 !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-context) {
-    border: 1.5px dashed #10b981 !important;
-    border-radius: 12px !important;
-    background: rgba(16, 185, 129, 0.03) !important;
-    padding: 0 !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-table) {
-    border: 1.5px dashed #06b6d4 !important;
-    border-radius: 12px !important;
-    background: rgba(6, 182, 212, 0.03) !important;
-    padding: 0 !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-chart) {
-    border: 1.5px dashed #f97316 !important;
-    border-radius: 12px !important;
-    background: rgba(249, 115, 22, 0.03) !important;
-    padding: 0 !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-explanation) {
-    border: 1.5px dashed #8b5cf6 !important;
-    border-radius: 12px !important;
-    background: rgba(139, 92, 246, 0.03) !important;
-    padding: 0 !important;
-}
-.panel-header {
-    font-weight: 600;
-    font-size: 15px;
-    margin-bottom: 8px;
+/* ── Custom Metric Dashboard ── */
+.metric-card {
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: var(--text);
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    gap: 12px;
 }
+.m-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+.m-icon.purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+.m-icon.blue   { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.m-icon.green  { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.m-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+
+.m-info { display: flex; flex-direction: column; }
+.m-label { font-size: 12px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.m-value { font-size: 16px; color: #0f172a; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+
+/* ── Top Chips ── */
+.top-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-bottom: 24px;
+}
+.top-chip.intent  { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.top-chip.mode    { background: rgba(139, 92, 246, 0.1); color: #7c3aed; }
+.top-chip.sources { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 </style>
 """
 
@@ -913,108 +903,180 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
     chart_info["_validation"] = result.get("chart_validation", {})
     chartable = chart_info.get("chartable", False)
 
-    # ── Metric chips ──────────────────────────────────────────────────────────
-    chips = ""
-    if raw:     chips += f'<span class="mchip">Rows <b>{len(raw)}</b></span>'
-    if tables:  chips += f'<span class="mchip">Tables <b>{len(tables)}</b></span>'
-    chips += f'<span class="mchip">Attempts <b>{attempts}</b></span>'
-    if qt_ms:   chips += f'<span class="mchip">Time <b>{qt_ms} ms</b></span>'
-    if scores:
-        avg = sum(scores.values()) / len(scores)
-        chips += f'<span class="mchip">Score <b>{avg:.2f}</b></span>'
-    if chips:
-        st.markdown(chips, unsafe_allow_html=True)
+    # ── User Question Chips & Favorite ────────────────────────────────────────
+    c1, _, c3 = st.columns([8, 1, 1])
+    with c1:
+        st.markdown('''
+            <div style="margin-top:-10px;">
+                <span class="top-chip intent">Intent: Analytical</span>
+                <span class="top-chip mode">Mode: Hybrid (RAG + TAG)</span>
+                <span class="top-chip sources">Sources: 8 docs, 12 tables</span>
+            </div>
+        ''', unsafe_allow_html=True)
+    with c3:
+        if st.button("☆", key=f"fav_{id(meta)}"):
+             history.add_favorite(st.session_state.session_id)
+             st.toast("Added to favourites!")
 
-    # ── Answer Text & Actions ─────────────────────────────────────────────────
     st.write(message["content"])
-    ac1, ac2, _ = st.columns([2, 2, 8])
-    if sql and ac1.button("💾 Save Query", key=f"save_{id(meta)}"):
-        history.save_query(
-            question=next(
-                (m["content"] for m in reversed(st.session_state.messages)
-                 if m["role"] == "user"), ""
-            ),
-            sql=sql,
-            answer=message["content"],
-        )
-        st.toast("Query saved!")
-    if ac2.button("⭐ Favourite", key=f"fav_{id(meta)}"):
-        history.add_favorite(st.session_state.session_id)
-        st.toast("Added to favourites!")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # ── Dynamic Metrics Logic ─────────────────────────────────────────────────
+    df = None
+    if raw:
+        try:
+            df = pd.DataFrame(raw)
+            if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
+                col_names = result.get("columns", [])
+                if col_names:
+                    df.columns = col_names[:len(df.columns)]
+        except Exception:
+            pass
 
-    # ── Dashboard Layout ──────────────────────────────────────────────────────
-    col_left, col_right = st.columns([1, 1.6])
-
-    with col_left:
-        # 1. SQL Query Panel
-        with st.container(border=True):
-            st.markdown('<span class="css-marker-sql" style="display:none;"></span>', unsafe_allow_html=True)
-            st.markdown('<div class="panel-header">📝 SQL Query</div>', unsafe_allow_html=True)
-            if sql:
-                st.code(sql, language="sql")
-                if attempts > 1:
-                    st.warning(f"SQL self-corrected after {attempts} attempt(s)")
-            else:
-                st.info("No SQL was generated for this response.")
-
-        # 2. Context Panel
-        with st.container(border=True):
-            st.markdown('<span class="css-marker-context" style="display:none;"></span>', unsafe_allow_html=True)
-            st.markdown('<div class="panel-header">🔍 Query Context</div>', unsafe_allow_html=True)
-            _render_context_tab(result, meta)
-
-    with col_right:
-        # 3. Table Results & Chart side-by-side
-        col_rt1, col_rt2 = st.columns([1, 1])
-        with col_rt1:
-            with st.container(border=True):
-                st.markdown('<span class="css-marker-table" style="display:none;"></span>', unsafe_allow_html=True)
-                st.markdown('<div class="panel-header">📊 Table Results</div>', unsafe_allow_html=True)
-                if raw:
-                    try:
-                        df = pd.DataFrame(raw)
-                        if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
-                            col_names = result.get("columns", [])
-                            if col_names:
-                                df.columns = col_names[:len(df.columns)]
-                        st.dataframe(df, use_container_width=True)
-                        st.caption(f"{len(df)} row(s) returned")
-                    except Exception as e:
-                        st.error(f"Could not render table: {e}")
+    metric_1 = ("Total Revenue", "$0.00")
+    metric_2 = ("Rows", "0")
+    metric_3 = ("Top Item", "N/A")
+    
+    if df is not None and not df.empty:
+        metric_2 = ("Rows", str(len(df)))
+        numeric_cols = df.select_dtypes(include=['number']).columns
+        if len(numeric_cols) > 0:
+            try:
+                first_num = numeric_cols[0]
+                total = df[first_num].sum()
+                metric_1 = (f"Total {str(first_num).replace('_',' ').title()}", f"{total:,.2f}")
+                
+                idx_max = df[first_num].idxmax()
+                if pd.isna(idx_max):
+                    raise ValueError
+                top_val = df[first_num].max()
+                
+                if len(df.columns) > 1:
+                    first_cat = [c for c in df.columns if c != first_num][0]
+                    top_label = df.loc[idx_max, first_cat]
+                    metric_3 = (f"Top {str(first_cat).replace('_',' ').title()}", f"{top_label} ({top_val:,.2f})")
                 else:
-                    st.info("No tabular results for this response.")
+                    metric_3 = ("Top Value", f"{top_val:,.2f}")
+            except Exception:
+                pass
+        else:
+            metric_1 = ("Columns", str(len(df.columns)))
+            metric_3 = ("Top Item", str(df.iloc[0, 0]) if len(df) > 0 else "N/A")
 
-        with col_rt2:
-            with st.container(border=True):
-                st.markdown('<span class="css-marker-chart" style="display:none;"></span>', unsafe_allow_html=True)
-                st.markdown('<div class="panel-header">📈 Chart</div>', unsafe_allow_html=True)
-                if chartable:
-                    st.caption(
-                        f"Chart type: **{chart_info.get('chart_type','?')}** · "
-                        f"x: `{chart_info.get('x_column','?')}` · "
-                        f"y: `{chart_info.get('y_column','?')}`"
-                    )
-                    _render_chart(chart_info, raw)
-                else:
-                    st.info("Chart not available.")
+    # ── Dynamic Placecards ────────────────────────────────────────────────────
+    st.markdown('<div class="placecards-container">', unsafe_allow_html=True)
+    pc1, pc2, pc3, pc4 = st.columns(4)
+    with pc1:
+        st.markdown(f'''
+            <div class="metric-card">
+                <div class="m-icon purple">💰</div>
+                <div class="m-info"><span class="m-label">{metric_1[0]}</span><span class="m-value">{metric_1[1]}</span></div>
+            </div>
+        ''', unsafe_allow_html=True)
+    with pc2:
+        st.markdown(f'''
+            <div class="metric-card">
+                <div class="m-icon blue">🌐</div>
+                <div class="m-info"><span class="m-label">{metric_2[0]}</span><span class="m-value">{metric_2[1]}</span></div>
+            </div>
+        ''', unsafe_allow_html=True)
+    with pc3:
+        st.markdown(f'''
+            <div class="metric-card">
+                <div class="m-icon green">📈</div>
+                <div class="m-info"><span class="m-label">{metric_3[0]}</span><span class="m-value">{metric_3[1]}</span></div>
+            </div>
+        ''', unsafe_allow_html=True)
+    with pc4:
+        st.markdown(f'''
+            <div class="metric-card">
+                <div class="m-icon orange">⏱️</div>
+                <div class="m-info"><span class="m-label">Query Time</span><span class="m-value">{qt_ms} ms</span></div>
+            </div>
+        ''', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-        # 4. Explanation Panel
-        with st.container(border=True):
-            st.markdown('<span class="css-marker-explanation" style="display:none;"></span>', unsafe_allow_html=True)
-            st.markdown('<div class="panel-header">✨ Explanation</div>', unsafe_allow_html=True)
-            explanation = result.get("explanation", "")
-            if explanation:
-                st.markdown(explanation)
-            else:
-                st.info("Explanation not available.")
+    # ── Tabs Configuration ────────────────────────────────────────────────────
+    tab_names = ["Results", "Chart", "SQL", "Explanation", "Context"]
+    if not chartable:
+        tab_names.remove("Chart")
 
-            rewritten = result.get("rewritten_query")
-            if rewritten:
-                st.divider()
-                st.markdown("**Rewritten query** _(how your question was interpreted)_")
-                st.info(rewritten)
+    tabs = st.tabs(tab_names)
+    tab  = dict(zip(tab_names, tabs))
+
+    # ── Results (Paginated) ───────────────────────────────────────────────────
+    with tab["Results"]:
+        if df is not None and not df.empty:
+            page_key = f"page_{id(meta)}"
+            if page_key not in st.session_state:
+                st.session_state[page_key] = 1
+            
+            per_page = 10
+            total_pages = max(1, (len(df) - 1) // per_page + 1)
+            
+            start_idx = (st.session_state[page_key] - 1) * per_page
+            end_idx = min(start_idx + per_page, len(df))
+            st.dataframe(df.iloc[start_idx:end_idx], use_container_width=True)
+            
+            pag_col1, pag_col2, pag_col3, pag_col4 = st.columns([6, 1, 1, 1])
+            with pag_col1:
+                st.markdown(f"<div style='margin-top:10px; color:#64748b; font-size:14px;'>Showing {start_idx + 1} to {end_idx} of {len(df)} rows</div>", unsafe_allow_html=True)
+            with pag_col2:
+                if st.button("〈", key=f"prev_{id(meta)}", disabled=(st.session_state[page_key] <= 1), use_container_width=True):
+                    st.session_state[page_key] -= 1
+                    st.rerun()
+            with pag_col3:
+                st.markdown(f"<div style='text-align:center; margin-top:10px; font-weight:600; color:#1e293b;'>{st.session_state[page_key]}</div>", unsafe_allow_html=True)
+            with pag_col4:
+                if st.button("〉", key=f"nxt_{id(meta)}", disabled=(st.session_state[page_key] >= total_pages), use_container_width=True):
+                    st.session_state[page_key] += 1
+                    st.rerun()
+        else:
+            st.info("No tabular results for this response.")
+
+    # ── Chart ─────────────────────────────────────────────────────────────────
+    if chartable:
+        with tab["Chart"]:
+            st.caption(
+                f"Chart type: **{chart_info.get('chart_type','?')}** · "
+                f"x: `{chart_info.get('x_column','?')}` · "
+                f"y: `{chart_info.get('y_column','?')}`"
+            )
+            _render_chart(chart_info, raw)
+
+    # ── SQL ───────────────────────────────────────────────────────────────────
+    with tab["SQL"]:
+        c1, c2 = st.columns([8, 2])
+        if sql and c2.button("💾 Save Query", key=f"save_{id(meta)}"):
+             history.save_query(
+                 question=next((m["content"] for m in reversed(st.session_state.messages) if m["role"] == "user"), ""),
+                 sql=sql, answer=message["content"]
+             )
+             st.toast("Query saved!")
+             
+        if sql:
+            st.code(sql, language="sql")
+            if attempts > 1:
+                st.warning(f"SQL self-corrected after {attempts} attempt(s)")
+        else:
+            st.info("No SQL was generated for this response.")
+
+    # ── Explanation ───────────────────────────────────────────────────────────
+    with tab["Explanation"]:
+        explanation = result.get("explanation", "")
+        if explanation:
+            st.markdown(explanation)
+        else:
+            st.info("Explanation not available.")
+
+        rewritten = result.get("rewritten_query")
+        if rewritten:
+            st.divider()
+            st.markdown("**Rewritten query** _(how your question was interpreted)_")
+            st.info(rewritten)
+
+    # ── Context ───────────────────────────────────────────────────────────────
+    with tab["Context"]:
+        _render_context_tab(result, meta)
 
 
 # ── Top bar ──────────────────────────────────────────────────────────────────
