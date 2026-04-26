@@ -11,6 +11,7 @@ Built on the Chinook music store database as the domain, using LlamaIndex, Langf
 - [Features](#features)
 - [Architecture](#architecture)
 - [Pipelines](#pipelines)
+- [Query Processing Pipeline](#query-processing-pipeline)
 - [LLM-as-Judge Scoring](#llm-as-judge-scoring)
 - [Conversational SQL](#conversational-sql)
 - [UI Highlights](#ui-highlights)
@@ -28,13 +29,17 @@ Built on the Chinook music store database as the domain, using LlamaIndex, Langf
 | Feature | Description |
 |---|---|
 | Natural language to SQL | Ask questions in plain English, get SQL + results |
-| Two pipelines | RAG (schema-aware) and TAG (self-correcting agentic) |
+| Two modes | Standard (schema-aware) and Hybrid (self-correcting agentic with parallel retrieval) |
+| LLM intent classification | Classifies every query into `schema_question`, `followup`, or `new_question` |
+| LLM query rewriting | Resolves coreferences, expands abbreviations, adds domain context before retrieval |
 | Multi-turn conversation | Follow-up questions modify the previous SQL automatically |
+| Curated domain knowledge | Business rules, aggregation gotchas, and column clarifications injected into Hybrid prompts |
+| Parallel retrieval | Hybrid mode fetches schema and business rules concurrently via `asyncio.gather` |
 | LLM-as-Judge | Automated response scoring pushed to Langfuse |
 | Schema Explorer | Live sidebar browser of all tables and columns |
-| Query Provenance | Expander shows SQL used, tables, columns, raw results with column names |
+| Query Provenance | Expander shows rewritten query, SQL used, tables, columns, raw results |
 | LLM provider choice | OpenAI GPT-4o-mini or Anthropic Claude 3.5 Sonnet |
-| Intent classifier | TF-IDF + SVM filters non-database questions |
+| Intent classifier | TF-IDF + SVM filters non-database questions (optional toggle) |
 | Observability | Full Langfuse tracing, scoring, and dashboard |
 | Eval pipeline | Automated SQL accuracy scoring against ground truth |
 
@@ -46,26 +51,36 @@ Built on the Chinook music store database as the domain, using LlamaIndex, Langf
 User Question
       │
       ▼
-Intent Classifier (optional)
+[Optional] Binary Classifier (TF-IDF + SVM)
       │ is DB question?
       ▼
-┌─────────────┐     ┌──────────────────────┐
-│  RAG Path   │  or │     TAG Path         │
-│             │     │                      │
-│ Schema +    │     │ Schema + Conv history│
-│ Conv history│     │ → LLM generates SQL  │
-│ → LLM SQL   │     │ → Execute            │
-│ → Execute   │     │ → Error? Self-correct│
-│ → Answer    │     │   (up to 3 retries)  │
-└─────────────┘     │ → Answer             │
-                    └──────────────────────┘
-                              │
-                              ▼
-                    LLM-as-Judge Scoring
-                    (relevance + answer_quality)
-                              │
-                              ▼
-                    Langfuse (traces + scores)
+LLM Intent Classifier
+      │ schema_question | followup | new_question
+      ├─── schema_question ──→ Answer from live schema (no SQL)
+      │
+      ▼
+LLM Query Rewriter
+      │ resolve coreferences, expand abbreviations, add domain context
+      ▼
+┌─────────────────┐     ┌──────────────────────────────────┐
+│  Standard Mode  │  or │          Hybrid Mode             │
+│                 │     │                                  │
+│ Schema +        │     │ asyncio.gather(                  │
+│ Conv history    │     │   schema_context,                │
+│ → LLM SQL       │     │   business_rules_context         │
+│ → Execute       │     │ ) + Conv history                 │
+│ → Answer        │     │ → LLM generates SQL              │
+└─────────────────┘     │ → Execute                        │
+                        │ → Error? Self-correct (3 retries)│
+                        │ → Answer                         │
+                        └──────────────────────────────────┘
+                                      │
+                                      ▼
+                            LLM-as-Judge Scoring
+                            (relevance + answer_quality)
+                                      │
+                                      ▼
+                            Langfuse (traces + scores)
 ```
 
 **Infrastructure:**
@@ -80,25 +95,55 @@ Intent Classifier (optional)
 
 ## Pipelines
 
-### RAG — Retrieval-Augmented Generation
+### Standard — Schema-Aware SQL Generation
 
 1. Injects the full live database schema into the prompt
 2. Includes conversation history and previous SQL for follow-up support
 3. Uses LlamaIndex `NLSQLTableQueryEngine` to generate and execute SQL
 4. Returns answer, SQL, tables used, columns used, and raw results
 
-### TAG — Table-Augmented Generation
+### Hybrid — Agentic Self-Correcting Pipeline
 
-An agentic workflow built with LlamaIndex `Workflow`:
+An agentic workflow built with LlamaIndex `Workflow` that also fetches curated domain knowledge:
 
 | Step | What happens |
 |---|---|
-| `query_synthesis` | NL → SQL with schema + conversation context |
+| `query_synthesis` | Parallel fetch of schema + business rules via `asyncio.gather`, then NL → SQL with full context |
 | `query_execution` | Execute SQL against PostgreSQL |
 | `sql_correction` | If execution fails, LLM fixes SQL and retries (up to 3x) |
 | `answer_generation` | SQL results → natural language answer |
 
 Self-correction fires a `SQLCorrectionEvent` with the failed SQL + error message, letting the LLM produce a corrected query autonomously.
+
+---
+
+## Query Processing Pipeline
+
+Every user query goes through four stages before reaching SQL generation:
+
+### Stage 0 — Binary Classifier (optional)
+TF-IDF + SVM model filters out non-database questions. Toggled via the **Intent Classifier** switch in Advanced Settings.
+
+### Stage 1 — LLM Intent Classification
+A cheap LLM call classifies the query into one of three categories:
+
+| Intent | Meaning | Action |
+|---|---|---|
+| `schema_question` | User asks about tables, columns, or data available | Answer directly from live schema — no SQL generated |
+| `followup` | User modifies or references the previous query/results | Pass to pipeline with conversation context |
+| `new_question` | Completely new independent question | Pass to pipeline fresh |
+
+### Stage 2 — LLM Query Rewriting
+Before retrieval, the query is reformulated by a cheap LLM to improve SQL generation accuracy:
+
+- **Coreference resolution**: "show them sorted" → "show the top 5 customers by total spend, sorted descending"
+- **Abbreviation expansion**: "rev by genre" → "total revenue from invoice_line grouped by genre"
+- **Domain enrichment**: "most popular track" → "track with the highest total revenue from invoice_line"
+
+If the query is already clear and self-contained, it is returned verbatim (no noise added).
+
+### Stage 3 — SQL Generation + Execution
+The rewritten query is sent to Standard or Hybrid mode for SQL generation, execution, and answer synthesis.
 
 ---
 
@@ -132,16 +177,7 @@ Each new question receives:
 - Last 3 turns of conversation history
 - The previous SQL query
 
-The LLM silently decides: **modification** or **new question?**
-
-**Signs it's a modification:**
-- Uses pronouns: "it", "that", "those", "them"
-- Uses words: "filter", "only", "also", "sort", "limit", "top N", "add", "exclude"
-- Short message that wouldn't make sense without context
-
-**Signs it's a new question:**
-- Introduces a completely new entity or topic
-- Would make sense asked in isolation
+The LLM intent classifier first decides: **schema_question**, **followup**, or **new_question**. For followups, the query rewriter resolves all pronouns before SQL generation.
 
 **Example conversation:**
 ```
@@ -149,13 +185,18 @@ User:  Which customer spent the most?
 SQL:   SELECT c.first_name, SUM(i.total) FROM customer c JOIN invoice i ...
 
 User:  What country are they from?
+Intent: followup
+Rewritten: "What country is the customer with the highest total spend from?"
 → Modifies previous SQL, adds billing_country
 
 User:  Now show top 5 instead
+Intent: followup
+Rewritten: "Show the top 5 customers by total spend with their country"
 → Adds LIMIT 5 to the existing query
 
 User:  List all jazz albums
-→ New question, fresh SQL generated
+Intent: new_question
+→ Fresh SQL generated from scratch
 ```
 
 ---
@@ -166,10 +207,11 @@ User:  List all jazz albums
 - Live browser of all tables and columns pulled directly from the database at runtime
 
 **"How we got this answer" expander**
+- Rewritten query (shown only when it differs from what you typed)
 - LLM-as-Judge scores with color-coded indicators
 - Generated SQL with syntax highlighting
 - Tables and columns referenced in the query
-- Raw query results as a labeled DataFrame with proper column names (not 0, 1, 2)
+- Raw query results as a labeled DataFrame with proper column names
 - Warning badge if SQL needed self-correction retries
 
 ---
@@ -295,6 +337,8 @@ List all jazz albums
 How many tracks per genre?
 Show top 5 artists by album count
 What is the total revenue by country?
+What tables are in the database?        ← answered from schema directly
+What columns does the invoice table have?  ← answered from schema directly
 ```
 
 ### Multi-turn follow-ups
@@ -311,10 +355,10 @@ How many tracks per genre?
 ## CLI Usage
 
 ```bash
-# RAG pipeline
+# Standard pipeline
 ENV=dev venv/bin/python -m chat2db.tools.rag "which customer spent the most" --llm OpenAI
 
-# TAG pipeline
+# Hybrid pipeline
 ENV=dev venv/bin/python -m chat2db.tools.tag "list all jazz albums" --llm Claude --temperature 0.1
 ```
 
@@ -325,13 +369,13 @@ ENV=dev venv/bin/python -m chat2db.tools.tag "list all jazz albums" --llm Claude
 ```
 Chat2DB/
 ├── chat2db/
-│   ├── app.py              # Streamlit UI — chat, LLM-as-judge, schema explorer
+│   ├── app.py              # Streamlit UI — intent classifier, query rewriter, chat, LLM-as-judge
 │   ├── classifier/
-│   │   └── combined_sql_classifier.pkl   # TF-IDF + SVM intent classifier
+│   │   └── combined_sql_classifier.pkl   # TF-IDF + SVM binary intent classifier
 │   └── tools/
-│       ├── db.py           # DatabaseManager — schema introspection, query execution
-│       ├── rag.py          # RAG pipeline — schema-aware conversational NL→SQL
-│       ├── tag.py          # TAG pipeline — agentic self-correcting workflow
+│       ├── db.py           # DatabaseManager — schema introspection, query execution (returns named dicts)
+│       ├── rag.py          # Standard pipeline — schema-aware conversational NL→SQL
+│       ├── tag.py          # Hybrid pipeline — parallel retrieval + agentic self-correcting workflow
 │       └── ingest.py       # Vector store ingestion (Docling + pgvector)
 ├── eval/
 │   ├── evaltools.py        # SQL metrics: exact_match, structural_match, result_match
@@ -339,7 +383,11 @@ Chat2DB/
 │   ├── README.md           # Eval framework documentation
 │   └── data/
 │       └── eval_set.csv    # Ground truth question→SQL pairs
-├── db/                     # Chinook database files and schema docs
+├── db/
+│   ├── Chinook_Data_Dictionary.md
+│   ├── Chinook_Data_Model.md
+│   ├── chinook_business_rules.md   # Curated domain rules injected into Hybrid prompts
+│   └── database_setup.sql
 ├── docker-compose.yml      # PostgreSQL + pgvector + Langfuse
 ├── Dockerfile
 ├── Makefile
@@ -353,6 +401,7 @@ Chat2DB/
 - [RAG Paper — Facebook AI](https://arxiv.org/abs/2005.11401)
 - [TAG Paper — UC Berkeley & Stanford](https://arxiv.org/pdf/2408.14717)
 - [LLM-as-Judge — Zheng et al., 2023](https://arxiv.org/abs/2306.05685)
+- [Query Rewriting for RAG — Ma et al., 2023](https://arxiv.org/abs/2305.14283)
 - [Chinook Database](https://github.com/lerocha/chinook-database)
 - [LlamaIndex Workflows](https://docs.llamaindex.ai/en/stable/module_guides/workflow/)
 - [Langfuse Observability](https://langfuse.com/docs)
