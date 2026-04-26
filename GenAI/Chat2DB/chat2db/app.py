@@ -214,63 +214,144 @@ class ChatDatabase:
             return {"answer": f"Error in TAG pipeline: {e}", "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
 
 
+# ── Custom CSS ────────────────────────────────────────────────────────────────
+
+CUSTOM_CSS = """
+<style>
+#MainMenu, footer { visibility: hidden; }
+
+/* ── Sidebar ── */
+section[data-testid="stSidebar"] > div:first-child { padding-top: 0.75rem; }
+section[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* ── Intent badges ── */
+.badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-right: 6px;
+    margin-bottom: 10px;
+}
+.badge-new      { background:#0d2818; color:#4ade80; border:1px solid #22c55e; }
+.badge-followup { background:#0d1f3a; color:#60a5fa; border:1px solid #3b82f6; }
+.badge-schema   { background:#1e0d3a; color:#c084fc; border:1px solid #a855f7; }
+.badge-rewrite  { background:#2a1a04; color:#fbbf24; border:1px solid #f59e0b; }
+
+/* ── Conversation history items ── */
+.history-item {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #8b949e;
+    cursor: default;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 2px solid #30363d;
+}
+.history-item:hover { color: #c9d1d9; border-left-color: #58a6ff; }
+
+/* ── Welcome screen ── */
+.welcome-card {
+    background: linear-gradient(135deg, #161b22, #1c2128);
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+.welcome-card:hover { border-color: #58a6ff; }
+.welcome-card h4 { margin: 0 0 4px 0; color: #c9d1d9; font-size: 14px; }
+.welcome-card p  { margin: 0; color: #8b949e; font-size: 12px; }
+
+/* ── Metric strip ── */
+.metric-strip {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.metric-chip {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #8b949e;
+}
+.metric-chip span { color: #c9d1d9; font-weight: 600; margin-left: 4px; }
+</style>
+"""
+
+
 # ── UI Helpers ────────────────────────────────────────────────────────────────
 
-def render_query_details(result: dict, scores: dict):
-    """Render the 'How we got this answer' expander."""
-    sql = result.get("sql")
-    tables = result.get("tables", [])
-    columns = result.get("columns", [])
+def _intent_badge(intent: str) -> str:
+    mapping = {
+        "new_question": ("badge-new",      "new question"),
+        "followup":     ("badge-followup", "follow-up"),
+        "schema_question": ("badge-schema","schema lookup"),
+    }
+    cls, label = mapping.get(intent, ("badge-new", intent))
+    return f'<span class="badge {cls}">{label}</span>'
+
+
+def render_details_tab(result: dict, scores: dict, intent: str):
+    """Content for the 'How we got this answer' tab."""
+    sql      = result.get("sql")
+    tables   = result.get("tables", [])
+    columns  = result.get("columns", [])
     attempts = result.get("attempts", 1)
-    raw = result.get("raw_results", [])
-    rewritten_query = result.get("rewritten_query")
+    rewritten = result.get("rewritten_query")
 
-    with st.expander("🔍 How we got this answer", expanded=False):
-        # Rewritten query (only shown when it differs from the original)
-        if rewritten_query:
-            st.markdown("**Rewritten query**")
-            st.info(rewritten_query)
+    # Intent badge + optional rewrite badge
+    badges = _intent_badge(intent)
+    if rewritten:
+        badges += '<span class="badge badge-rewrite">rewritten</span>'
+    st.markdown(badges, unsafe_allow_html=True)
 
-        # Judge scores
-        if scores:
-            cols = st.columns(len(scores))
-            score_colors = {1.0: "🟢", 0.8: "🟡", 0.0: "🔴"}
-            for i, (name, value) in enumerate(scores.items()):
-                color = next(c for threshold, c in sorted(score_colors.items(), reverse=True) if value >= threshold)
-                cols[i].metric(label=name.replace("_", " ").title(), value=f"{color} {value:.2f}")
+    # Rewritten query text
+    if rewritten:
+        st.caption(f'"{rewritten}"')
+        st.divider()
 
-        if attempts > 1:
-            st.warning(f"⚡ SQL self-corrected after {attempts} attempt(s)")
+    # LLM-as-Judge scores
+    if scores:
+        score_cols = st.columns(len(scores))
+        for j, (name, value) in enumerate(scores.items()):
+            color = "🟢" if value >= 1.0 else "🟡" if value >= 0.8 else "🔴"
+            score_cols[j].metric(name.replace("_", " ").title(), f"{color} {value:.2f}")
+        st.divider()
 
-        # SQL
-        if sql:
-            st.markdown("**Generated SQL**")
-            st.code(sql, language="sql")
+    if attempts > 1:
+        st.warning(f"SQL self-corrected after {attempts} attempt(s)")
 
-            # Tables used
+    # Generated SQL
+    if sql:
+        st.markdown("**Generated SQL**")
+        st.code(sql, language="sql")
+
+        if tables or columns:
+            c1, c2 = st.columns(2)
             if tables:
-                st.markdown("**Tables referenced**")
-                st.markdown(" ".join(f"`{t}`" for t in tables))
-
-            # Columns used
+                c1.markdown("**Tables**")
+                c1.markdown(" ".join(f"`{t}`" for t in tables))
             if columns:
-                st.markdown("**Columns used**")
-                st.markdown(" ".join(f"`{c}`" for c in columns))
-        else:
-            st.info("No SQL was generated for this response.")
-
-        # Raw results as DataFrame
-        if raw:
-            try:
-                df = pd.DataFrame(raw)
-                # If columns are integers (tuples, not dicts), use SQL column names
-                if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
-                    if columns:
-                        df.columns = columns[:len(df.columns)]
-                st.markdown("**Raw query results**")
-                st.dataframe(df, use_container_width=True)
-            except Exception:
-                pass
+                c2.markdown("**Columns**")
+                c2.markdown(" ".join(f"`{c}`" for c in columns))
+    else:
+        st.info("No SQL was generated — answer came directly from the schema.")
 
 
 def render_schema_explorer(db_manager: DatabaseManager):
@@ -283,80 +364,158 @@ def render_schema_explorer(db_manager: DatabaseManager):
                 if line.startswith("Table:"):
                     current_table = line.replace("Table:", "").strip()
                     st.markdown(f"**{current_table}**")
-                elif line.strip().startswith(("album_", "artist_", "customer_", "employee_", "genre_",
-                                              "invoice_", "media_", "playlist_", "track_")) or (
-                    line.strip() and not line.startswith("Table:") and current_table
-                ):
-                    st.markdown(f"<small style='color:gray;margin-left:12px'>{line.strip()}</small>",
-                                unsafe_allow_html=True)
+                elif line.strip() and not line.startswith("Table:") and current_table:
+                    st.markdown(
+                        f"<small style='color:gray;margin-left:12px'>{line.strip()}</small>",
+                        unsafe_allow_html=True,
+                    )
         except Exception as e:
             st.caption(f"Could not load schema: {e}")
 
 
+def _render_assistant_message(message: dict, meta: dict):
+    """Render a single assistant message with metric strip + Answer/Details tabs."""
+    result  = meta["result"]
+    scores  = meta["scores"]
+    intent  = meta.get("intent", "new_question")
+    raw     = result.get("raw_results", [])
+    tables  = result.get("tables", [])
+    attempts = result.get("attempts", 1)
+
+    # ── Metric strip ──────────────────────────────────────────────────────────
+    chips = []
+    if raw:
+        chips.append(f'<span class="metric-chip">Rows<span>{len(raw)}</span></span>')
+    if tables:
+        chips.append(f'<span class="metric-chip">Tables<span>{len(tables)}</span></span>')
+    chips.append(f'<span class="metric-chip">Attempts<span>{attempts}</span></span>')
+    if scores:
+        avg = sum(scores.values()) / len(scores)
+        chips.append(f'<span class="metric-chip">LLM Score<span>{avg:.2f}</span></span>')
+    if chips:
+        st.markdown(f'<div class="metric-strip">{"".join(chips)}</div>', unsafe_allow_html=True)
+
+    # ── Tabs ──────────────────────────────────────────────────────────────────
+    tab_answer, tab_details = st.tabs(["Answer", "How we got this answer"])
+
+    with tab_answer:
+        st.write(message["content"])
+        if raw:
+            try:
+                df = pd.DataFrame(raw)
+                if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
+                    cols_list = result.get("columns", [])
+                    if cols_list:
+                        df.columns = cols_list[:len(df.columns)]
+                st.dataframe(df, use_container_width=True)
+            except Exception:
+                pass
+
+    with tab_details:
+        render_details_tab(result, scores, intent)
+
+
 # ── Main App ──────────────────────────────────────────────────────────────────
 
+SAMPLE_QUESTIONS = [
+    ("What track has the most revenue?",      "Revenue analysis"),
+    ("Which customer spent the most?",         "Customer ranking"),
+    ("How many tracks per genre?",             "Genre breakdown"),
+    ("Show top 5 artists by album count",      "Artist stats"),
+    ("What is the total revenue by country?",  "Geographic revenue"),
+    ("What tables are in the database?",       "Schema question"),
+]
+
+
 def main():
+    st.set_page_config(
+        page_title="Chat2DB",
+        page_icon="🤖",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+    # ── Session state init ────────────────────────────────────────────────────
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "message_meta" not in st.session_state:
-        st.session_state.message_meta = {}  # index → {result, scores}
+        st.session_state.message_meta = {}
     if "intent_classifier_enabled" not in st.session_state:
         st.session_state.intent_classifier_enabled = False
     if "previous_sql" not in st.session_state:
         st.session_state.previous_sql = ""
 
-    st.set_page_config(
-        page_title="Chat2DB — Talk to Your Database",
-        page_icon="🤖",
-        layout="wide",
-    )
-
-    st.title("🤖 Chat To Your Database")
-    st.caption("Ask questions about your database in plain English")
-
     chat = ChatDatabase()
 
+    # ── Sidebar ───────────────────────────────────────────────────────────────
     with st.sidebar:
-        st.header("⚙️ Configuration")
+        st.markdown("## 🤖 Chat2DB")
+        st.caption("Talk to your database in plain English")
+        st.divider()
+
+        if st.button("＋  New Chat", use_container_width=True, type="primary"):
+            st.session_state.messages = []
+            st.session_state.message_meta = {}
+            st.session_state.previous_sql = ""
+            st.rerun()
+
+        st.divider()
 
         interaction_method = st.selectbox(
             "Mode", ["Hybrid", "Standard"],
-            help="Standard: Schema-aware SQL generation. Hybrid: Self-correcting agentic pipeline with parallel context retrieval.",
+            help="Hybrid: parallel retrieval + self-correcting SQL. Standard: schema-aware SQL generation.",
         )
         llm_provider = st.selectbox(
             "LLM Provider", ["OpenAI", "Claude"],
-            help="Choose which LLM to use for query generation.",
         )
 
-        with st.expander("Advanced Settings"):
+        with st.expander("Advanced"):
             temperature = st.slider("Temperature", 0.0, 1.0, 0.1, 0.1,
                                     help="Lower = more deterministic")
             st.session_state.intent_classifier_enabled = st.toggle(
-                "Intent Classifier",
+                "Binary intent filter",
                 value=st.session_state.intent_classifier_enabled,
+                help="Pre-filter non-database questions with a local ML classifier",
             )
 
         st.divider()
-        st.markdown("### 📊 Sample Questions")
-        st.markdown("""
-- What track has the most revenue?
-- Which customer spent the most?
-- List all jazz albums
-- How many tracks per genre?
-- Show top 5 artists by album count
-- What is the total revenue by country?
-        """)
 
-        # Live schema explorer
+        # Conversation history
+        user_msgs = [(i, m) for i, m in enumerate(st.session_state.messages) if m["role"] == "user"]
+        if user_msgs:
+            st.markdown("**💬 History**")
+            for _, m in reversed(user_msgs[-8:]):
+                truncated = m["content"][:48] + ("…" if len(m["content"]) > 48 else "")
+                st.markdown(
+                    f'<div class="history-item">• {truncated}</div>',
+                    unsafe_allow_html=True,
+                )
+            st.divider()
+
+        # Schema explorer
         if chat.chat_db_manager:
             render_schema_explorer(chat.chat_db_manager)
 
+    # ── Main content ──────────────────────────────────────────────────────────
+
+    # Welcome screen when conversation is empty
+    if not st.session_state.messages:
+        st.markdown("## Ask your database anything")
+        st.caption("Powered by Hybrid (parallel retrieval + self-correcting SQL) · LLM intent routing · Query rewriting")
+        st.markdown("")
+        cols = st.columns(3)
+        for idx, (question, label) in enumerate(SAMPLE_QUESTIONS):
+            with cols[idx % 3]:
+                st.markdown(
+                    f'<div class="welcome-card"><h4>{label}</h4><p>{question}</p></div>',
+                    unsafe_allow_html=True,
+                )
+
     # Chat input
-    if query := st.chat_input("Ask a question about your database"):
-        # Build conversation history from last 6 messages (3 turns)
+    if query := st.chat_input("Ask a question about your database…"):
         history_lines = []
-        recent = st.session_state.messages[-6:]
-        for m in recent:
+        for m in st.session_state.messages[-6:]:
             role = "User" if m["role"] == "user" else "Assistant"
             history_lines.append(f"{role}: {m['content']}")
         conversation_history = "\n".join(history_lines)
@@ -371,7 +530,7 @@ def main():
 
         st.session_state.messages.append({"role": "user", "content": query})
 
-        with st.spinner("Thinking..."):
+        with st.spinner("Thinking…"):
             should_process = True
             if st.session_state.intent_classifier_enabled:
                 should_process = chat.classify_prompt(query)
@@ -383,24 +542,20 @@ def main():
 
             if should_process:
                 async def _process():
-                    # LLM intent classification runs first
                     intent = await chat.classify_intent_llm(
                         query, conversation_history, st.session_state.previous_sql, config
                     )
                     config.intent = intent
 
                     if intent == "schema_question":
-                        # Answer directly from live schema — no SQL needed
                         schema = chat.chat_db_manager.get_schema_info() if chat.chat_db_manager else ""
                         answer_text = (
-                            "Here's the current database schema:\n\n"
-                            + schema
-                            if schema
-                            else "I couldn't retrieve the schema right now."
+                            "Here's the current database schema:\n\n" + schema
+                            if schema else "I couldn't retrieve the schema right now."
                         )
-                        return {"answer": answer_text, "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": [], "rewritten_query": None}
+                        return {"answer": answer_text, "sql": None, "tables": [], "columns": [],
+                                "attempts": 1, "raw_results": [], "rewritten_query": None}
 
-                    # Query rewriting: resolve coreferences, expand abbreviations, add domain context
                     rewritten = await chat.rewrite_query(
                         query, conversation_history, st.session_state.previous_sql, config
                     )
@@ -410,30 +565,29 @@ def main():
                     else:
                         result = await chat.tag_pipeline(rewritten, config)
 
-                    # Attach rewritten query to result if it differs from original
                     if isinstance(result, dict):
                         result["rewritten_query"] = rewritten if rewritten != query else None
                     return result
 
                 result = asyncio.run(_process())
-                scores = {}  # scores are pushed to Langfuse inside _judge_response
-
                 answer = result.get("answer", str(result)) if isinstance(result, dict) else str(result)
-                # Track the SQL for next turn
                 if isinstance(result, dict) and result.get("sql"):
                     st.session_state.previous_sql = result["sql"]
                 msg_index = len(st.session_state.messages)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
-                st.session_state.message_meta[msg_index] = {"result": result, "scores": scores}
+                st.session_state.message_meta[msg_index] = {
+                    "result": result,
+                    "scores": {},
+                    "intent": config.intent,
+                }
 
     # Render chat history
     for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
-            st.write(message["content"])
-            # Show query details expander for assistant messages that have metadata
             if message["role"] == "assistant" and i in st.session_state.message_meta:
-                meta = st.session_state.message_meta[i]
-                render_query_details(meta["result"], meta["scores"])
+                _render_assistant_message(message, st.session_state.message_meta[i])
+            else:
+                st.write(message["content"])
 
 
 if __name__ == "__main__":
