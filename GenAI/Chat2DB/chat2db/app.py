@@ -6,9 +6,11 @@ Claude-style sidebar layout with persistent chat history.
 from dataclasses import dataclass
 import asyncio
 import pickle
+import time
 import uuid
 from pathlib import Path
 
+import plotly.express as px
 import streamlit as st
 from dotenv import load_dotenv
 import pandas as pd
@@ -17,6 +19,12 @@ from tools.db import DatabaseManager
 from tools.rag import RAGSearch
 from tools.tag import create_tag_pipeline
 from history import HistoryManager
+from agents import (
+    determine_chart,
+    validate_chart,
+    generate_explanation,
+    extract_joins,
+)
 
 load_dotenv()
 
@@ -526,7 +534,7 @@ def _load_session(session: dict):
 def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
                   interaction_method: str, llm_provider: str, temperature: float,
                   intent_filter: bool):
-    """Classify → rewrite → run pipeline → save to history."""
+    """Classify → rewrite → pipeline → explanation + chart agents → save to history."""
     history_lines = [
         f"{'User' if m['role']=='user' else 'Assistant'}: {m['content']}"
         for m in st.session_state.messages[-6:]
@@ -555,6 +563,7 @@ def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
                 return
 
         async def _process():
+            # ── Stage 1: intent ───────────────────────────────────────────────
             intent = await chat.classify_intent_llm(
                 query, conversation_history, st.session_state.previous_sql, config
             )
@@ -562,20 +571,64 @@ def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
 
             if intent == "schema_question":
                 schema = chat.chat_db_manager.get_schema_info() if chat.chat_db_manager else ""
-                answer_text = "Here's the current database schema:\n\n" + schema if schema else "Schema unavailable."
-                return {"answer": answer_text, "sql": None, "tables": [], "columns": [],
-                        "attempts": 1, "raw_results": [], "rewritten_query": None}
+                return {
+                    "answer": "Here's the current database schema:\n\n" + schema if schema else "Schema unavailable.",
+                    "sql": None, "tables": [], "columns": [], "attempts": 1,
+                    "raw_results": [], "rewritten_query": None,
+                    "explanation": "This answer came directly from the live database schema.",
+                    "chart_info": {"chartable": False}, "chart_validation": {},
+                    "joins": [], "mode": interaction_method, "query_time_ms": 0,
+                }
 
+            # ── Stage 2: rewrite ──────────────────────────────────────────────
             rewritten = await chat.rewrite_query(
                 query, conversation_history, st.session_state.previous_sql, config
             )
+
+            # ── Stage 3: pipeline ─────────────────────────────────────────────
+            t0 = time.perf_counter()
             if interaction_method == "Standard":
                 result = await chat.rag_pipeline(rewritten, config)
             else:
                 result = await chat.tag_pipeline(rewritten, config)
+            query_time_ms = round((time.perf_counter() - t0) * 1000)
 
             if isinstance(result, dict):
                 result["rewritten_query"] = rewritten if rewritten != query else None
+                result["mode"]            = interaction_method
+                result["query_time_ms"]   = query_time_ms
+                result["joins"]           = extract_joins(result.get("sql") or "")
+
+            # ── Stage 4: parallel enrichment — explanation + chart decision ───
+            raw     = result.get("raw_results", []) if isinstance(result, dict) else []
+            tables  = result.get("tables", [])  if isinstance(result, dict) else []
+            columns = result.get("columns", []) if isinstance(result, dict) else []
+            sql     = result.get("sql") or ""   if isinstance(result, dict) else ""
+
+            explanation, chart_info = await asyncio.gather(
+                generate_explanation(query, sql, raw, tables, columns, llm_provider),
+                determine_chart(raw, query, llm_provider),
+                return_exceptions=True,
+            )
+
+            if isinstance(explanation, Exception):
+                explanation = ""
+            if isinstance(chart_info, Exception):
+                chart_info = {"chartable": False}
+
+            result["explanation"] = explanation
+
+            # ── Stage 5: chart validation ─────────────────────────────────────
+            if chart_info.get("chartable") and raw:
+                chart_validation = await validate_chart(chart_info, raw, llm_provider)
+                # Use fixed spec if validator corrected it
+                if chart_validation.get("fixed"):
+                    chart_info = chart_validation["fixed"]
+                result["chart_validation"] = chart_validation
+            else:
+                result["chart_validation"] = {}
+
+            result["chart_info"] = chart_info
             return result
 
         result = asyncio.run(_process())
@@ -589,9 +642,10 @@ def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
             "result": result,
             "scores": {},
             "intent": config.intent,
+            "llm_provider": llm_provider,
         }
 
-    # Persist to history file
+    # Persist to history
     history.upsert_session(
         session_id=st.session_state.session_id,
         messages=st.session_state.messages,
@@ -600,32 +654,200 @@ def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
     )
 
 
-def _render_assistant(message: dict, meta: dict, history: HistoryManager):
-    """Render assistant message with metric strip + Answer / Details tabs."""
-    result  = meta["result"]
-    scores  = meta.get("scores", {})
-    intent  = meta.get("intent", "new_question")
-    raw     = result.get("raw_results", [])
-    tables  = result.get("tables", [])
-    attempts = result.get("attempts", 1)
+def _render_chart(chart_info: dict, data: list[dict]):
+    """Render a Plotly chart from the chart agent's spec."""
+    chart_type = chart_info.get("chart_type")
+    x_col      = chart_info.get("x_column")
+    y_col      = chart_info.get("y_column")
+    title      = chart_info.get("title", "")
 
-    # Metric chips
+    try:
+        df = pd.DataFrame(data)
+        if y_col and y_col in df.columns:
+            df[y_col] = pd.to_numeric(df[y_col], errors="coerce")
+
+        DARK = dict(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(14,23,41,0.6)",
+            font_color="#f0f4ff",
+            title_font_size=16,
+        )
+
+        if chart_type == "bar":
+            fig = px.bar(df, x=x_col, y=y_col, title=title)
+        elif chart_type == "line":
+            fig = px.line(df, x=x_col, y=y_col, title=title, markers=True)
+        elif chart_type == "pie":
+            fig = px.pie(df, names=x_col, values=y_col, title=title)
+        elif chart_type == "scatter":
+            fig = px.scatter(df, x=x_col, y=y_col, title=title)
+        else:
+            st.info("Chart type not recognised.")
+            return
+
+        fig.update_layout(**DARK)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Validation notice
+        validation = chart_info.get("_validation", {})
+        if validation.get("issues"):
+            with st.expander("⚠️ Chart validator notes", expanded=False):
+                for issue in validation["issues"]:
+                    st.caption(f"• {issue}")
+
+    except Exception as e:
+        st.error(f"Chart render error: {e}")
+
+
+def _render_context_tab(result: dict, meta: dict):
+    """Render the Context / debug tab."""
+    tables   = result.get("tables", [])
+    columns  = result.get("columns", [])
+    joins    = result.get("joins", [])
+    mode     = result.get("mode", "Hybrid")
+    qt_ms    = result.get("query_time_ms", 0)
+    scores   = meta.get("scores", {})
+    intent   = meta.get("intent", "new_question")
+    rewritten = result.get("rewritten_query")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.markdown("**Tables used**")
+        if tables:
+            for t in tables:
+                st.markdown(f"• `{t}`")
+        else:
+            st.caption("None detected")
+
+        st.markdown("**Columns used**")
+        if columns:
+            for col in columns:
+                st.markdown(f"• `{col}`")
+        else:
+            st.caption("None detected")
+
+        st.markdown("**Joins used**")
+        if joins:
+            for j in joins:
+                st.code(j, language="sql")
+        else:
+            st.caption("No JOINs")
+
+    with c2:
+        st.markdown("**RAG sources**")
+        if mode == "Hybrid (RAG + TAG)" or mode == "Hybrid":
+            st.markdown("• Live database schema")
+            st.markdown("• `chinook_business_rules.md`")
+        else:
+            st.markdown("• Live database schema")
+
+        st.markdown("**Business definitions**")
+        rules_path = Path(__file__).parent.parent / "db" / "chinook_business_rules.md"
+        if rules_path.exists() and (mode in ("Hybrid (RAG + TAG)", "Hybrid")):
+            with st.expander("View injected rules", expanded=False):
+                st.markdown(rules_path.read_text())
+        else:
+            st.caption("Only used in Hybrid mode")
+
+        st.markdown("**Confidence score**")
+        if scores:
+            avg = sum(scores.values()) / len(scores)
+            icon = "🟢" if avg >= 0.9 else "🟡" if avg >= 0.7 else "🔴"
+            st.markdown(f"{icon} **{avg:.2f}** (avg of {', '.join(scores.keys())})")
+        else:
+            st.caption("N/A — scored asynchronously in Langfuse")
+
+    st.divider()
+    mc1, mc2, mc3 = st.columns(3)
+    mc1.metric("Query time", f"{qt_ms} ms")
+    mc2.metric("Intent", intent.replace("_", " ").title())
+    if rewritten:
+        mc3.metric("Query rewritten", "Yes")
+    else:
+        mc3.metric("Query rewritten", "No")
+
+
+def _render_assistant(message: dict, meta: dict, history: HistoryManager):
+    """Render assistant message with 6 left-aligned tabs."""
+    result   = meta["result"]
+    scores   = meta.get("scores", {})
+    raw      = result.get("raw_results", [])
+    tables   = result.get("tables", [])
+    attempts = result.get("attempts", 1)
+    qt_ms    = result.get("query_time_ms", 0)
+    sql      = result.get("sql")
+    chart_info = result.get("chart_info", {"chartable": False})
+
+    # Attach validation info into chart_info for the renderer
+    chart_info["_validation"] = result.get("chart_validation", {})
+    chartable = chart_info.get("chartable", False)
+
+    # ── Metric chips ──────────────────────────────────────────────────────────
     chips = ""
-    if raw:
-        chips += f'<span class="mchip">Rows <b>{len(raw)}</b></span>'
-    if tables:
-        chips += f'<span class="mchip">Tables <b>{len(tables)}</b></span>'
+    if raw:     chips += f'<span class="mchip">Rows <b>{len(raw)}</b></span>'
+    if tables:  chips += f'<span class="mchip">Tables <b>{len(tables)}</b></span>'
     chips += f'<span class="mchip">Attempts <b>{attempts}</b></span>'
+    if qt_ms:   chips += f'<span class="mchip">Time <b>{qt_ms} ms</b></span>'
     if scores:
         avg = sum(scores.values()) / len(scores)
         chips += f'<span class="mchip">Score <b>{avg:.2f}</b></span>'
-    st.markdown(chips, unsafe_allow_html=True)
+    if chips:
+        st.markdown(chips, unsafe_allow_html=True)
 
-    # Tabs
-    t_answer, t_details = st.tabs(["Answer", "How we got this answer"])
+    # ── Dynamic tab list (Chart only appears when chartable) ──────────────────
+    tab_names = ["Results", "SQL", "Explanation", "Table"]
+    if chartable:
+        tab_names.append("Chart")
+    tab_names.append("Context")
 
-    with t_answer:
+    tabs = st.tabs(tab_names)
+    tab  = dict(zip(tab_names, tabs))
+
+    # ── Results ───────────────────────────────────────────────────────────────
+    with tab["Results"]:
         st.write(message["content"])
+        c1, c2 = st.columns([1, 1])
+        if sql and c1.button("💾 Save Query", key=f"save_{id(meta)}"):
+            history.save_query(
+                question=next(
+                    (m["content"] for m in reversed(st.session_state.messages)
+                     if m["role"] == "user"), ""
+                ),
+                sql=sql,
+                answer=message["content"],
+            )
+            st.toast("Query saved!")
+        if c2.button("⭐ Favourite", key=f"fav_{id(meta)}"):
+            history.add_favorite(st.session_state.session_id)
+            st.toast("Added to favourites!")
+
+    # ── SQL ───────────────────────────────────────────────────────────────────
+    with tab["SQL"]:
+        if sql:
+            st.code(sql, language="sql")
+            if attempts > 1:
+                st.warning(f"SQL self-corrected after {attempts} attempt(s)")
+        else:
+            st.info("No SQL was generated for this response.")
+
+    # ── Explanation ───────────────────────────────────────────────────────────
+    with tab["Explanation"]:
+        explanation = result.get("explanation", "")
+        if explanation:
+            st.markdown(explanation)
+        else:
+            st.info("Explanation not available.")
+
+        rewritten = result.get("rewritten_query")
+        if rewritten:
+            st.divider()
+            st.markdown("**Rewritten query** _(how your question was interpreted)_")
+            st.info(rewritten)
+
+    # ── Table ─────────────────────────────────────────────────────────────────
+    with tab["Table"]:
         if raw:
             try:
                 df = pd.DataFrame(raw)
@@ -634,64 +856,25 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
                     if col_names:
                         df.columns = col_names[:len(df.columns)]
                 st.dataframe(df, use_container_width=True)
-            except Exception:
-                pass
-
-        # Save Query / Favorite buttons
-        c1, c2 = st.columns([1, 1])
-        sql = result.get("sql")
-        if sql and c1.button("💾 Save Query", key=f"save_{id(meta)}"):
-            history.save_query(
-                question=st.session_state.messages[
-                    max(i for i, m in enumerate(st.session_state.messages) if m["role"] == "user")
-                ]["content"],
-                sql=sql,
-                answer=message["content"],
-            )
-            st.toast("Query saved!")
-        if c2.button("⭐ Favorite chat", key=f"fav_{id(meta)}"):
-            history.add_favorite(st.session_state.session_id)
-            st.toast("Added to favorites!")
-
-    with t_details:
-        # Intent badge
-        badge_map = {
-            "new_question": ("b-new",      "new question"),
-            "followup":     ("b-followup", "follow-up"),
-            "schema_question": ("b-schema","schema lookup"),
-        }
-        cls, lbl = badge_map.get(intent, ("b-new", intent))
-        badges = f'<span class="badge {cls}">{lbl}</span>'
-        rewritten = result.get("rewritten_query")
-        if rewritten:
-            badges += '<span class="badge b-rewrite">rewritten</span>'
-        st.markdown(badges, unsafe_allow_html=True)
-
-        if rewritten:
-            st.caption(f'"{rewritten}"')
-            st.divider()
-
-        if scores:
-            sc = st.columns(len(scores))
-            for j, (name, value) in enumerate(scores.items()):
-                icon = "🟢" if value >= 1.0 else "🟡" if value >= 0.8 else "🔴"
-                sc[j].metric(name.replace("_", " ").title(), f"{icon} {value:.2f}")
-            st.divider()
-
-        if attempts > 1:
-            st.warning(f"SQL self-corrected after {attempts} attempt(s)")
-
-        if sql:
-            st.markdown("**Generated SQL**")
-            st.code(sql, language="sql")
-            col_a, col_b = st.columns(2)
-            if tables:
-                col_a.markdown("**Tables**\n" + " ".join(f"`{t}`" for t in tables))
-            cols = result.get("columns", [])
-            if cols:
-                col_b.markdown("**Columns**\n" + " ".join(f"`{c}`" for c in cols))
+                st.caption(f"{len(df)} row(s) returned")
+            except Exception as e:
+                st.error(f"Could not render table: {e}")
         else:
-            st.info("No SQL generated — answered from schema directly.")
+            st.info("No tabular results for this response.")
+
+    # ── Chart (conditional) ───────────────────────────────────────────────────
+    if chartable:
+        with tab["Chart"]:
+            st.caption(
+                f"Chart type: **{chart_info.get('chart_type','?')}** · "
+                f"x: `{chart_info.get('x_column','?')}` · "
+                f"y: `{chart_info.get('y_column','?')}`"
+            )
+            _render_chart(chart_info, raw)
+
+    # ── Context ───────────────────────────────────────────────────────────────
+    with tab["Context"]:
+        _render_context_tab(result, meta)
 
 
 # ── Top bar ──────────────────────────────────────────────────────────────────
