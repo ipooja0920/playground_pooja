@@ -30,7 +30,7 @@ from llama_index.llms.anthropic import Anthropic
 from llama_index.core.workflow import (
     Workflow, StartEvent, StopEvent, step, Context, Event,
 )
-from typing import List, Union
+from typing import Any, List, Union
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,7 +47,7 @@ class QuerySynthesisEvent(Event):
 
 
 class QueryExecutionEvent(Event):
-    results: List[tuple]
+    results: List[Any]
     query: str
     sql_query: str
 
