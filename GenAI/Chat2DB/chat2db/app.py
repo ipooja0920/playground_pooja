@@ -211,24 +211,31 @@ class ChatDatabase:
 
 CUSTOM_CSS = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
 /* ── Root palette ── */
 :root {
-    --bg:      #07101f;
-    --panel:   #0e1729;
-    --border:  rgba(149,167,209,0.14);
-    --text:    #f0f4ff;
-    --muted:   #7a8bb0;
-    --purple:  #7c3aed;
-    --purple2: #5b21b6;
-    --green:   #10b981;
+    --bg:      #070a13;
+    --panel:   #0d1424;
+    --border:  rgba(149,167,209,0.15);
+    --text:    #f8fafc;
+    --text-muted: #94a3b8;
+    --primary: #8b5cf6;
+    --primary-hover: #7c3aed;
+    --secondary: #3b82f6;
+    --accent:  #10b981;
 }
 
-/* ── Global background ── */
+/* ── Global Typography & Background ── */
+html, body, [class*="css"] {
+    font-family: 'Outfit', sans-serif !important;
+}
+
 html, body,
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"] {
-    background: radial-gradient(circle at 10% 0%, rgba(124,58,237,.15) 0%, transparent 40%),
-                radial-gradient(circle at 90% 100%, rgba(37,99,235,.10) 0%, transparent 40%),
+    background: radial-gradient(circle at 10% -10%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 110%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
                 var(--bg) !important;
     color: var(--text) !important;
 }
@@ -237,135 +244,154 @@ html, body,
 #MainMenu, footer, header { visibility: hidden; }
 
 [data-testid="stAppViewContainer"] .main .block-container {
-    padding-top: 0.8rem;
-    padding-bottom: 2rem;
-    max-width: 1400px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+    max-width: 1200px;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.2);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
 }
 
 /* ── Sidebar shell width ── */
 section[data-testid="stSidebar"] {
-    min-width: 260px !important;
-    max-width: 260px !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
 }
 
-/* ── Dashboard cards (now st.button styled as cards) ── */
-/* ── Dashboard card buttons — uniform fixed height ── */
+/* ── Dashboard card buttons — uniform fixed height & animated ── */
 div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button {
-    background: linear-gradient(160deg,#101c35,#0c1628) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 16px !important;
-    padding: 20px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
     text-align: left !important;
     justify-content: flex-start !important;
     align-items: flex-start !important;
     white-space: pre-line !important;
-    line-height: 1.55 !important;
-    font-size: 14px !important;
+    line-height: 1.6 !important;
+    font-size: 15px !important;
     color: var(--text) !important;
-    height: 130px !important;
+    height: 140px !important;
     width: 100% !important;
-    transition: border-color .15s, box-shadow .15s !important;
-    box-shadow: none !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
     overflow: hidden !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
 }
 div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button:hover {
-    border-color: var(--purple) !important;
-    box-shadow: 0 0 0 1px rgba(124,58,237,.25) !important;
-    background: linear-gradient(160deg,#121f3d,#0e1a30) !important;
+    border-color: rgba(139, 92, 246, 0.5) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 30px rgba(139, 92, 246, 0.15) !important;
 }
 div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button p {
     white-space: pre-line !important;
     overflow: hidden !important;
     display: -webkit-box !important;
     -webkit-box-orient: vertical !important;
+    font-weight: 500 !important;
 }
 
-/* ── Chat message area — Glassmorphism ── */
+/* ── Chat message area — Glowing Glassmorphism ── */
 .stChatMessage {
-    border-radius: 20px !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(18px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-radius: 24px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.35),
-        0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
-    padding: 18px 22px !important;
-    margin-bottom: 16px !important;
-    transition: box-shadow 0.25s ease, border-color 0.25s ease !important;
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+    padding: 24px !important;
+    margin-bottom: 24px !important;
+    transition: all 0.3s ease !important;
 }
 .stChatMessage:hover {
-    border-color: rgba(139, 92, 246, 0.30) !important;
+    border-color: rgba(139, 92, 246, 0.25) !important;
     box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(139, 92, 246, 0.15),
-        0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
+        0 12px 40px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(139, 92, 246, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+}
+[data-testid="chatAvatarIcon-user"] {
+    background-color: var(--secondary) !important;
+}
+[data-testid="chatAvatarIcon-assistant"] {
+    background-color: var(--primary) !important;
 }
 
-/* ── Tabs — glass pill style ── */
+/* ── Tabs — sleek glowing pills ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(0, 0, 0, 0.2) !important;
     backdrop-filter: blur(12px) !important;
-    border-radius: 14px !important;
-    padding: 4px 6px !important;
-    gap: 2px !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 100px !important;
+    padding: 6px !important;
+    gap: 4px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 .stTabs [data-baseweb="tab"] {
-    border-radius: 10px !important;
-    color: #94a3b8 !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-    padding: 8px 16px !important;
-    transition: all 0.2s ease !important;
+    border-radius: 100px !important;
+    color: var(--text-muted) !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    padding: 10px 20px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     background: transparent !important;
-    border: 1px solid transparent !important;
+    border: none !important;
 }
 .stTabs [data-baseweb="tab"]:hover {
-    background: rgba(139, 92, 246, 0.15) !important;
-    color: #e2d9ff !important;
-    border-color: rgba(139, 92, 246, 0.30) !important;
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.20) !important;
+    color: #fff !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.55), rgba(67, 56, 202, 0.45)) !important;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
     color: #ffffff !important;
-    border-color: rgba(139, 92, 246, 0.60) !important;
-    box-shadow:
-        0 0 20px rgba(139, 92, 246, 0.35),
-        0 2px 8px rgba(0, 0, 0, 0.30) !important;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
 }
-.stTabs [data-baseweb="tab-highlight"] {
-    display: none !important;
-}
-.stTabs [data-baseweb="tab-border"] {
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {
     display: none !important;
 }
 
-/* ── Tab content panel — frosted glass ── */
+/* ── Tab content panel ── */
 .stTabs [data-baseweb="tab-panel"] {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(10px) !important;
-    border-radius: 0 0 16px 16px !important;
-    border: 1px solid rgba(255, 255, 255, 0.07) !important;
-    border-top: none !important;
-    padding: 18px !important;
-    transition: all 0.2s ease !important;
+    background: rgba(0, 0, 0, 0.15) !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding: 24px !important;
+    margin-top: 16px !important;
+    transition: all 0.3s ease !important;
 }
 
 /* ── Metric chips ── */
 .mchip {
-    display: inline-block;
-    background: rgba(17,27,48,.9);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 5px 13px;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 100px;
+    padding: 6px 14px;
     font-size: 12px;
-    color: var(--muted);
+    font-weight: 500;
+    color: var(--text-muted);
     margin-right: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(8px);
 }
-.mchip b { color: var(--text); }
+.mchip b { color: var(--text); margin-left: 6px; }
 
 /* ── Intent badges ── */
 .badge {
@@ -385,49 +411,49 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
 .b-rewrite  { background:#2a1a04; color:#fbbf24; border:1px solid #f59e0b; }
 
 /* ── Schema table ── */
-.schema-table { font-size: 12px; color: var(--muted); margin-left: 12px; }
-.schema-table-name { font-weight: 700; color: var(--text); font-size: 13px; margin-top: 10px; }
+.schema-table { font-size: 13px; color: var(--text-muted); margin-left: 12px; }
+.schema-table-name { font-weight: 600; color: var(--text); font-size: 15px; margin-top: 16px; margin-bottom: 4px; }
 
-/* ── Top bar ── */
-.topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(14,23,41,0.80);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 10px 20px;
-    margin-bottom: 18px;
-    backdrop-filter: blur(8px);
-}
-.topbar-left  { display: flex; align-items: center; gap: 10px; }
-.topbar-right { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+/* ── Connection Dot ── */
 .conn-dot {
     width: 10px; height: 10px; border-radius: 50%;
-    display: inline-block; margin-right: 4px;
+    display: inline-block; margin-right: 8px;
 }
-.conn-dot.green { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,.7); }
-.conn-dot.red   { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,.7); }
+.conn-dot.green { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.conn-dot.red   { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
 
 /* ── Saved / Favorites cards ── */
 .saved-card {
-    background: #0e1729;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
-.saved-card h4 { margin: 0 0 6px 0; font-size: 14px; color: var(--text); }
-.saved-card p  { margin: 0; font-size: 12px; color: var(--muted); }
+.saved-card:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-2px);
+}
+.saved-card h4 { margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: var(--text); }
+.saved-card p  { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
 
-/* ── History placecard body ── */
-.hist-card-body {
-    background: linear-gradient(160deg,rgba(18,28,49,0.90),rgba(11,18,32,0.90));
-    border: 1px solid rgba(149,167,209,0.16);
-    border-top: none;
-    border-radius: 0 0 14px 14px;
-    padding: 6px 6px 10px 6px;
-    margin-bottom: 8px;
+/* Input chat styling */
+[data-testid="stChatInput"] {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 100px !important;
+    padding-left: 8px !important;
+    backdrop-filter: blur(16px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+[data-testid="stChatInput"]:focus-within {
+    border-color: var(--primary) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--primary) !important;
+}
+[data-testid="stChatInput"] textarea {
+    color: var(--text) !important;
 }
 </style>
 """
@@ -1015,11 +1041,14 @@ NAV = [
 
 
 def inject_sidebar_css():
+def inject_sidebar_css():
     st.markdown("""
 <style>
+/* ── Sidebar styling ── */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #07111f 0%, #050b16 100%);
-    border-right: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(5, 8, 16, 0.7);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
 }
 [data-testid="stSidebar"] > div:first-child {
     padding: 0px 10px 12px 4px;
@@ -1031,152 +1060,145 @@ def inject_sidebar_css():
 [data-testid="stSidebar"] section > div.block-container {
     padding-top: 0 !important;
 }
-/* Keep the sidebar collapse arrow in its natural position */
-[data-testid="stSidebarCollapseButton"] {
-    margin-top: 16px !important;
-    position: relative !important;
-    top: 16px !important;
-}
+
 .sidebar-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding: 16px 8px 0 8px;
 }
 .logo-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
-    box-shadow: 0 0 28px rgba(139, 92, 246, 0.45);
+    font-size: 28px;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
 }
 .logo-title {
     color: #ffffff;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1;
+    letter-spacing: -0.5px;
 }
 .logo-subtitle {
     color: #94a3b8;
-    font-size: 15px;
+    font-size: 14px;
     margin-top: 4px;
+    font-weight: 500;
 }
-/* All sidebar buttons: transparent nav style, left-aligned */
+
+/* Nav items */
 [data-testid="stSidebar"] .stButton > button {
     width: 100%;
     border: none;
     border-radius: 12px;
     background: transparent;
-    color: #dbeafe;
+    color: #94a3b8;
     font-weight: 600;
     font-size: 15px;
     text-align: left !important;
     justify-content: flex-start !important;
-    padding: 13px 16px;
-    margin: 3px 0;
-    transition: all 0.2s ease;
+    padding: 14px 18px;
+    margin: 4px 0;
+    transition: all 0.3s ease;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(139, 92, 246, 0.18);
+    background: rgba(255, 255, 255, 0.05);
     color: #ffffff;
-    border: 1px solid rgba(139, 92, 246, 0.35);
+    transform: translateX(4px);
 }
-/* New Question button: first .stButton in sidebar gets solid purple */
+[data-testid="stSidebar"] .stButton > button:active {
+    transform: translateX(2px);
+}
+
+/* New Question button */
 [data-testid="stSidebar"] .stButton:first-of-type > button {
     background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
     color: white !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
-    padding: 13px 18px !important;
-    margin-bottom: 16px !important;
-    box-shadow: 0 0 26px rgba(139, 92, 246, 0.42) !important;
-    border: none !important;
-    border-radius: 12px !important;
+    padding: 16px 20px !important;
+    margin-bottom: 24px !important;
+    margin-top: 8px !important;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4) !important;
+    border-radius: 100px !important;
+    transform: none !important;
 }
 [data-testid="stSidebar"] .stButton:first-of-type > button:hover {
-    opacity: 0.9 !important;
     background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
-    border: none !important;
-    box-shadow: 0 0 32px rgba(139, 92, 246, 0.55) !important;
+    box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5) !important;
+    transform: translateY(-2px) !important;
 }
+
 [data-testid="stSidebar"] hr {
     border: none;
-    border-top: 1px solid rgba(148, 163, 184, 0.18);
-    margin: 24px 0 18px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 32px 0 24px 0;
 }
 .sidebar-section-title {
-    color: #e5e7eb;
-    font-size: 16px;
-    font-weight: 750;
-    margin: 10px 0 14px 0;
+    color: #e2e8f0;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 8px 12px 16px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-.history-card-active {
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.40), rgba(67, 56, 202, 0.25));
-    border: 1px solid rgba(139, 92, 246, 0.65);
-    border-radius: 13px;
-    padding: 13px 14px;
-    margin-bottom: 12px;
-    color: white;
-    line-height: 1.4;
-    cursor: pointer;
-}
+
+/* History items */
 .history-card {
-    padding: 10px 8px;
-    margin-bottom: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
     color: #cbd5e1;
     font-size: 14px;
-    line-height: 1.4;
-    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+    text-align: center;
 }
 .history-time {
-    color: #94a3b8;
+    color: #64748b;
     font-size: 12px;
-    margin-top: 5px;
-    margin-left: 24px;
+    margin-top: 8px;
+    font-weight: 500;
 }
-[data-testid="stSidebar"] button:focus {
-    box-shadow: none !important;
-    outline: none !important;
-}
-/* ── History item buttons — look like cards, not buttons ── */
+
+/* History card buttons pseudo style */
 [data-testid="stSidebar"] button[kind="secondary"][data-testid^="stBaseButton"] {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #cbd5e1 !important;
-    font-size: 13px !important;
-    font-weight: 400 !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.05) !important;
+    color: #94a3b8 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    padding: 14px 16px !important;
+    margin-bottom: 8px !important;
+    border-radius: 16px !important;
+    line-height: 1.5 !important;
     text-align: left !important;
     justify-content: flex-start !important;
     white-space: pre-line !important;
-    line-height: 1.45 !important;
-    padding: 10px 8px !important;
-    margin-bottom: 2px !important;
-    border-radius: 10px !important;
+    transition: all 0.3s ease !important;
 }
 [data-testid="stSidebar"] button[kind="secondary"][data-testid^="stBaseButton"]:hover {
-    background: rgba(139, 92, 246, 0.12) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(139, 92, 246, 0.30) !important;
+    border-color: rgba(139, 92, 246, 0.3) !important;
+    transform: translateY(-2px) !important;
 }
-/* Most-recent history item gets the purple card treatment */
+
 .hist-btn-active button[kind="secondary"] {
-    background: linear-gradient(135deg, rgba(124,58,237,0.40), rgba(67,56,202,0.25)) !important;
-    border: 1px solid rgba(139, 92, 246, 0.65) !important;
-    border-radius: 13px !important;
-    color: white !important;
-    padding: 13px 14px !important;
-    margin-bottom: 12px !important;
-}
-.hist-btn-active button[kind="secondary"]:hover {
-    background: linear-gradient(135deg, rgba(124,58,237,0.55), rgba(67,56,202,0.40)) !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+    border: 1px solid rgba(139, 92, 246, 0.4) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1) !important;
 }
 </style>
 """, unsafe_allow_html=True)
