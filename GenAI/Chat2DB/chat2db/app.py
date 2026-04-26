@@ -249,29 +249,35 @@ section[data-testid="stSidebar"] {
 }
 
 /* ── Dashboard cards (now st.button styled as cards) ── */
-div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button,
-.dash-card-btn button {
+/* ── Dashboard card buttons — uniform fixed height ── */
+div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button {
     background: linear-gradient(160deg,#101c35,#0c1628) !important;
     border: 1px solid var(--border) !important;
     border-radius: 16px !important;
-    padding: 18px 20px !important;
-    margin-bottom: 4px !important;
+    padding: 20px !important;
     text-align: left !important;
     justify-content: flex-start !important;
+    align-items: flex-start !important;
     white-space: pre-line !important;
-    line-height: 1.6 !important;
+    line-height: 1.55 !important;
     font-size: 14px !important;
     color: var(--text) !important;
-    height: auto !important;
-    min-height: 110px !important;
+    height: 130px !important;
+    width: 100% !important;
     transition: border-color .15s, box-shadow .15s !important;
     box-shadow: none !important;
+    overflow: hidden !important;
 }
-div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button:hover,
-.dash-card-btn button:hover {
+div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button:hover {
     border-color: var(--purple) !important;
     box-shadow: 0 0 0 1px rgba(124,58,237,.25) !important;
     background: linear-gradient(160deg,#121f3d,#0e1a30) !important;
+}
+div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button p {
+    white-space: pre-line !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
 }
 
 /* ── Chat message area — Glassmorphism ── */
