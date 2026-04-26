@@ -960,16 +960,17 @@ def inject_sidebar_css():
     font-size: 15px;
     margin-top: 4px;
 }
+/* All sidebar buttons: transparent nav style, left-aligned */
 [data-testid="stSidebar"] .stButton > button {
     width: 100%;
     border: none;
     border-radius: 12px;
     background: transparent;
     color: #dbeafe;
-    font-weight: 650;
+    font-weight: 600;
     font-size: 15px;
-    text-align: left;
-    justify-content: flex-start;
+    text-align: left !important;
+    justify-content: flex-start !important;
     padding: 13px 16px;
     margin: 3px 0;
     transition: all 0.2s ease;
@@ -979,16 +980,23 @@ def inject_sidebar_css():
     color: #ffffff;
     border: 1px solid rgba(139, 92, 246, 0.35);
 }
-[data-testid="stSidebar"] .stButton:first-of-type > button {
-    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-    color: white;
-    text-align: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 750;
-    padding: 15px 18px;
-    margin-bottom: 24px;
-    box-shadow: 0 0 26px rgba(139, 92, 246, 0.42);
+/* New Question button: purple, left-aligned */
+.new-question-btn button {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
+    color: white !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    padding: 13px 18px !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 0 26px rgba(139, 92, 246, 0.42) !important;
+    border: none !important;
+}
+.new-question-btn button:hover {
+    opacity: 0.9 !important;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
+    border: none !important;
 }
 [data-testid="stSidebar"] hr {
     border: none;
@@ -1083,10 +1091,12 @@ def render_sidebar(history: HistoryManager):
 </div>
 """, unsafe_allow_html=True)
 
-        # New Question
+        # New Question — purple button, left-aligned
+        st.markdown('<div class="new-question-btn">', unsafe_allow_html=True)
         if st.button("＋  New Question", key="new_question", use_container_width=True):
             _new_chat()
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # Nav items
         for label, page_id in NAV:
