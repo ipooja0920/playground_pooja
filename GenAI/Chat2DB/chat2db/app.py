@@ -455,6 +455,47 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
 [data-testid="stChatInput"] textarea {
     color: var(--text) !important;
 }
+
+/* ── Dashboard Panel Borders ── */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-sql) {
+    border: 1.5px dashed #ec4899 !important;
+    border-radius: 12px !important;
+    background: rgba(236, 72, 153, 0.03) !important;
+    padding: 0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-context) {
+    border: 1.5px dashed #10b981 !important;
+    border-radius: 12px !important;
+    background: rgba(16, 185, 129, 0.03) !important;
+    padding: 0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-table) {
+    border: 1.5px dashed #06b6d4 !important;
+    border-radius: 12px !important;
+    background: rgba(6, 182, 212, 0.03) !important;
+    padding: 0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-chart) {
+    border: 1.5px dashed #f97316 !important;
+    border-radius: 12px !important;
+    background: rgba(249, 115, 22, 0.03) !important;
+    padding: 0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.css-marker-explanation) {
+    border: 1.5px dashed #8b5cf6 !important;
+    border-radius: 12px !important;
+    background: rgba(139, 92, 246, 0.03) !important;
+    padding: 0 !important;
+}
+.panel-header {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
 </style>
 """
 
@@ -884,85 +925,96 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
     if chips:
         st.markdown(chips, unsafe_allow_html=True)
 
-    # ── Dynamic tab list (Chart only appears when chartable) ──────────────────
-    tab_names = ["Results", "SQL", "Explanation", "Table"]
-    if chartable:
-        tab_names.append("Chart")
-    tab_names.append("Context")
+    # ── Answer Text & Actions ─────────────────────────────────────────────────
+    st.write(message["content"])
+    ac1, ac2, _ = st.columns([2, 2, 8])
+    if sql and ac1.button("💾 Save Query", key=f"save_{id(meta)}"):
+        history.save_query(
+            question=next(
+                (m["content"] for m in reversed(st.session_state.messages)
+                 if m["role"] == "user"), ""
+            ),
+            sql=sql,
+            answer=message["content"],
+        )
+        st.toast("Query saved!")
+    if ac2.button("⭐ Favourite", key=f"fav_{id(meta)}"):
+        history.add_favorite(st.session_state.session_id)
+        st.toast("Added to favourites!")
 
-    tabs = st.tabs(tab_names)
-    tab  = dict(zip(tab_names, tabs))
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Results ───────────────────────────────────────────────────────────────
-    with tab["Results"]:
-        st.write(message["content"])
-        c1, c2 = st.columns([1, 1])
-        if sql and c1.button("💾 Save Query", key=f"save_{id(meta)}"):
-            history.save_query(
-                question=next(
-                    (m["content"] for m in reversed(st.session_state.messages)
-                     if m["role"] == "user"), ""
-                ),
-                sql=sql,
-                answer=message["content"],
-            )
-            st.toast("Query saved!")
-        if c2.button("⭐ Favourite", key=f"fav_{id(meta)}"):
-            history.add_favorite(st.session_state.session_id)
-            st.toast("Added to favourites!")
+    # ── Dashboard Layout ──────────────────────────────────────────────────────
+    col_left, col_right = st.columns([1, 1.6])
 
-    # ── SQL ───────────────────────────────────────────────────────────────────
-    with tab["SQL"]:
-        if sql:
-            st.code(sql, language="sql")
-            if attempts > 1:
-                st.warning(f"SQL self-corrected after {attempts} attempt(s)")
-        else:
-            st.info("No SQL was generated for this response.")
+    with col_left:
+        # 1. SQL Query Panel
+        with st.container(border=True):
+            st.markdown('<span class="css-marker-sql" style="display:none;"></span>', unsafe_allow_html=True)
+            st.markdown('<div class="panel-header">📝 SQL Query</div>', unsafe_allow_html=True)
+            if sql:
+                st.code(sql, language="sql")
+                if attempts > 1:
+                    st.warning(f"SQL self-corrected after {attempts} attempt(s)")
+            else:
+                st.info("No SQL was generated for this response.")
 
-    # ── Explanation ───────────────────────────────────────────────────────────
-    with tab["Explanation"]:
-        explanation = result.get("explanation", "")
-        if explanation:
-            st.markdown(explanation)
-        else:
-            st.info("Explanation not available.")
+        # 2. Context Panel
+        with st.container(border=True):
+            st.markdown('<span class="css-marker-context" style="display:none;"></span>', unsafe_allow_html=True)
+            st.markdown('<div class="panel-header">🔍 Query Context</div>', unsafe_allow_html=True)
+            _render_context_tab(result, meta)
 
-        rewritten = result.get("rewritten_query")
-        if rewritten:
-            st.divider()
-            st.markdown("**Rewritten query** _(how your question was interpreted)_")
-            st.info(rewritten)
+    with col_right:
+        # 3. Table Results & Chart side-by-side
+        col_rt1, col_rt2 = st.columns([1, 1])
+        with col_rt1:
+            with st.container(border=True):
+                st.markdown('<span class="css-marker-table" style="display:none;"></span>', unsafe_allow_html=True)
+                st.markdown('<div class="panel-header">📊 Table Results</div>', unsafe_allow_html=True)
+                if raw:
+                    try:
+                        df = pd.DataFrame(raw)
+                        if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
+                            col_names = result.get("columns", [])
+                            if col_names:
+                                df.columns = col_names[:len(df.columns)]
+                        st.dataframe(df, use_container_width=True)
+                        st.caption(f"{len(df)} row(s) returned")
+                    except Exception as e:
+                        st.error(f"Could not render table: {e}")
+                else:
+                    st.info("No tabular results for this response.")
 
-    # ── Table ─────────────────────────────────────────────────────────────────
-    with tab["Table"]:
-        if raw:
-            try:
-                df = pd.DataFrame(raw)
-                if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
-                    col_names = result.get("columns", [])
-                    if col_names:
-                        df.columns = col_names[:len(df.columns)]
-                st.dataframe(df, use_container_width=True)
-                st.caption(f"{len(df)} row(s) returned")
-            except Exception as e:
-                st.error(f"Could not render table: {e}")
-        else:
-            st.info("No tabular results for this response.")
+        with col_rt2:
+            with st.container(border=True):
+                st.markdown('<span class="css-marker-chart" style="display:none;"></span>', unsafe_allow_html=True)
+                st.markdown('<div class="panel-header">📈 Chart</div>', unsafe_allow_html=True)
+                if chartable:
+                    st.caption(
+                        f"Chart type: **{chart_info.get('chart_type','?')}** · "
+                        f"x: `{chart_info.get('x_column','?')}` · "
+                        f"y: `{chart_info.get('y_column','?')}`"
+                    )
+                    _render_chart(chart_info, raw)
+                else:
+                    st.info("Chart not available.")
 
-    # ── Chart (conditional) ───────────────────────────────────────────────────
-    if chartable:
-        with tab["Chart"]:
-            st.caption(
-                f"Chart type: **{chart_info.get('chart_type','?')}** · "
-                f"x: `{chart_info.get('x_column','?')}` · "
-                f"y: `{chart_info.get('y_column','?')}`"
-            )
-            _render_chart(chart_info, raw)
+        # 4. Explanation Panel
+        with st.container(border=True):
+            st.markdown('<span class="css-marker-explanation" style="display:none;"></span>', unsafe_allow_html=True)
+            st.markdown('<div class="panel-header">✨ Explanation</div>', unsafe_allow_html=True)
+            explanation = result.get("explanation", "")
+            if explanation:
+                st.markdown(explanation)
+            else:
+                st.info("Explanation not available.")
 
-    # ── Context ───────────────────────────────────────────────────────────────
-    with tab["Context"]:
-        _render_context_tab(result, meta)
+            rewritten = result.get("rewritten_query")
+            if rewritten:
+                st.divider()
+                st.markdown("**Rewritten query** _(how your question was interpreted)_")
+                st.info(rewritten)
 
 
 # ── Top bar ──────────────────────────────────────────────────────────────────
