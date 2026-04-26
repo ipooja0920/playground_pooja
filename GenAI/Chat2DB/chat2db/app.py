@@ -495,6 +495,52 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
 .top-chip.intent  { background: rgba(16, 185, 129, 0.1); color: #059669; }
 .top-chip.mode    { background: rgba(139, 92, 246, 0.1); color: #7c3aed; }
 .top-chip.sources { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+/* ── Chrome-like Custom Tabs ── */
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) {
+    gap: 0 !important;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 16px;
+    padding-bottom: 0 !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) [data-testid="column"] {
+    min-width: unset !important;
+    padding: 0 !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) .stButton > button {
+    border-radius: 8px 8px 0 0 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-bottom: none !important;
+    background: #f8fafc !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 8px 12px !important;
+    box-shadow: none !important;
+    margin-right: -1px !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) [data-testid="column"]:has(button p:contains("✅")) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) [data-testid="column"]:has(button p:contains("✅")) + [data-testid="column"] .stButton > button {
+    background: #ffffff !important;
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+    border-top: 3px solid var(--primary) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) .stButton:has(button p:contains("✖")) > button {
+    padding: 8px 4px !important;
+    color: #94a3b8 !important;
+    background: transparent !important;
+    border-left: none !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) .stButton:has(button p:contains("＋")) > button {
+    margin-left: 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.chrome-tab-marker) .stButton:has(button p:contains("＋")) > button:hover {
+    background: #f1f5f9 !important;
+}
 </style>
 """
 
@@ -602,6 +648,36 @@ def render_chat(chat: ChatDatabase, history: HistoryManager,
                 interaction_method: str, llm_provider: str, temperature: float,
                 intent_filter: bool):
     """Main chat page — processes pending questions, renders history, handles input."""
+    
+    # ── Chrome-like Tabs Navigation ──
+    tabs = st.session_state.open_tabs
+    if tabs:
+        st.markdown('<span class="chrome-tab-marker" style="display:none;"></span>', unsafe_allow_html=True)
+        # Create columns: 6 per label, 1 per close button, 1 for +, 1 spacer
+        widths = []
+        for _ in tabs:
+            widths.extend([6, 1])
+        widths.extend([1, max(1, 20 - len(widths))]) 
+        
+        tcols = st.columns(widths)
+        for i, t in enumerate(tabs):
+            is_active = (t["id"] == st.session_state.active_tab_id)
+            title = t.get("title", "New Question")
+            if is_active:
+                title = f"✅ {title}"
+                
+            if tcols[i*2].button(title, key=f"t_sel_{t['id']}_{i}", use_container_width=True):
+                _switch_tab(t["id"], history)
+                st.rerun()
+                
+            if tcols[i*2+1].button("✖", key=f"t_close_{t['id']}_{i}", use_container_width=True):
+                _close_tab(t["id"], history)
+                st.rerun()
+                
+        if tcols[len(tabs)*2].button("＋", key="t_new_tab", use_container_width=True):
+            _new_chat()
+            st.rerun()
+        st.divider()
 
     # ── Handle question from dashboard card ───────────────────────────────────
     pending = st.session_state.pop("pending_question", None)
@@ -660,22 +736,34 @@ def render_chat(chat: ChatDatabase, history: HistoryManager,
             with st.spinner("Thinking…"):
                 _handle_query(query, chat, history, interaction_method, llm_provider,
                               temperature, intent_filter)
+                
+        # Update tab title if this is the first message
+        if len(st.session_state.messages) == 2:
+            title = query[:20] + ("..." if len(query) > 20 else "")
+            for t in st.session_state.open_tabs:
+                if t["id"] == st.session_state.session_id:
+                    t["title"] = title
+                    
         st.rerun()
 
 
 # ── Chat helpers ──────────────────────────────────────────────────────────────
 
 def _new_chat():
-    """Reset session state to start a fresh conversation."""
-    st.session_state.session_id = str(uuid.uuid4())
+    """Start a fresh conversation in a new tab."""
+    new_id = str(uuid.uuid4())
+    st.session_state.session_id = new_id
     st.session_state.messages = []
     st.session_state.message_meta = {}
     st.session_state.previous_sql = ""
     st.session_state.current_page = "chat"
-
+    
+    if "open_tabs" in st.session_state:
+        st.session_state.open_tabs.append({"id": new_id, "title": "New Question"})
+        st.session_state.active_tab_id = new_id
 
 def _load_session(session: dict):
-    """Restore a saved session into session state."""
+    """Restore a saved session and open it as a tab."""
     st.session_state.session_id = session["id"]
     st.session_state.messages = session.get("messages", [])
     st.session_state.message_meta = {
@@ -683,6 +771,40 @@ def _load_session(session: dict):
     }
     st.session_state.previous_sql = session.get("previous_sql", "")
     st.session_state.current_page = "chat"
+    
+    if "open_tabs" in st.session_state:
+        if not any(t["id"] == session["id"] for t in st.session_state.open_tabs):
+            st.session_state.open_tabs.append({
+                "id": session["id"], 
+                "title": session.get("title", "Saved Query")
+            })
+        st.session_state.active_tab_id = session["id"]
+
+def _switch_tab(tab_id: str, history: HistoryManager):
+    """Switch active tab context."""
+    st.session_state.active_tab_id = tab_id
+    sess = history.get_session(tab_id)
+    if sess:
+        _load_session(sess)
+    else:
+        # It's an empty, unsaved tab
+        st.session_state.session_id = tab_id
+        st.session_state.messages = []
+        st.session_state.message_meta = {}
+        st.session_state.previous_sql = ""
+
+def _close_tab(tab_id: str, history: HistoryManager):
+    """Close a tab and refocus adjacent."""
+    tabs = st.session_state.open_tabs
+    idx = next((i for i, t in enumerate(tabs) if t["id"] == tab_id), None)
+    if idx is not None:
+        tabs.pop(idx)
+        
+    if len(tabs) == 0:
+        _new_chat()
+    elif st.session_state.active_tab_id == tab_id:
+        new_idx = min(idx, len(tabs) - 1)
+        _switch_tab(tabs[new_idx]["id"], history)
 
 
 def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
@@ -1421,6 +1543,12 @@ def main():
     if "previous_sql"  not in st.session_state: st.session_state.previous_sql  = ""
     if "current_page"  not in st.session_state: st.session_state.current_page  = "dashboard"
     if "intent_filter" not in st.session_state: st.session_state.intent_filter = False
+    
+    # Chrome-like tabs state
+    if "open_tabs" not in st.session_state: 
+        st.session_state.open_tabs = [{"id": st.session_state.session_id, "title": "New Question"}]
+    if "active_tab_id" not in st.session_state: 
+        st.session_state.active_tab_id = st.session_state.session_id
 
     history = HistoryManager()
     chat    = ChatDatabase()
