@@ -5,6 +5,7 @@ Claude-style sidebar layout with persistent chat history.
 
 from dataclasses import dataclass
 import asyncio
+import io
 import pickle
 import time
 import uuid
@@ -283,6 +284,30 @@ section[data-testid="stSidebar"] {
         0 12px 40px rgba(0, 0, 0, 0.45),
         0 0 0 1px rgba(139, 92, 246, 0.15),
         0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
+}
+
+/* ── Download / Export popover button ── */
+[data-testid="stPopover"] > button,
+button[data-testid="stBaseButton-secondary"][aria-haspopup="dialog"] {
+    background: rgba(139, 92, 246, 0.15) !important;
+    border: 1px solid rgba(139, 92, 246, 0.40) !important;
+    border-radius: 10px !important;
+    color: #c4b5fd !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    padding: 6px 12px !important;
+    transition: all 0.2s ease !important;
+}
+[data-testid="stPopover"] > button:hover,
+button[data-testid="stBaseButton-secondary"][aria-haspopup="dialog"]:hover {
+    background: rgba(139, 92, 246, 0.28) !important;
+    border-color: rgba(139, 92, 246, 0.65) !important;
+    color: #ede9fe !important;
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.30) !important;
+}
+/* Pull tabs up to visually align with the export button row */
+.stTabs {
+    margin-top: -48px !important;
 }
 
 /* ── Tabs — glass pill style ── */
@@ -809,6 +834,62 @@ def _render_context_tab(result: dict, meta: dict):
         mc3.metric("Query rewritten", "No")
 
 
+def _build_excel(result: dict, message: dict, selected: list[str]) -> bytes:
+    """Build a multi-sheet Excel workbook from selected content types."""
+    raw        = result.get("raw_results", [])
+    sql        = result.get("sql", "")
+    explanation = result.get("explanation", "")
+    tables     = result.get("tables", [])
+    columns    = result.get("columns", [])
+    chart_info = result.get("chart_info", {})
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+
+        if "Results" in selected:
+            text = message.get("content", "No answer text.")
+            pd.DataFrame({"Answer": [text]}).to_excel(
+                writer, sheet_name="Results", index=False
+            )
+
+        if "Table" in selected and raw:
+            df = pd.DataFrame(raw)
+            col_names = result.get("columns", [])
+            if col_names and len(col_names) == len(df.columns):
+                df.columns = col_names
+            df.to_excel(writer, sheet_name="Table", index=False)
+
+        if "Chart" in selected and raw:
+            df = pd.DataFrame(raw)
+            x_col = chart_info.get("x_column")
+            y_col = chart_info.get("y_column")
+            if x_col and y_col and x_col in df.columns and y_col in df.columns:
+                df[[x_col, y_col]].to_excel(writer, sheet_name="Chart Data", index=False)
+            else:
+                df.to_excel(writer, sheet_name="Chart Data", index=False)
+
+        if "SQL" in selected:
+            pd.DataFrame({"SQL Query": [sql or "No SQL generated."]}).to_excel(
+                writer, sheet_name="SQL", index=False
+            )
+
+        if "Explanation" in selected:
+            pd.DataFrame({"Explanation": [explanation or "No explanation available."]}).to_excel(
+                writer, sheet_name="Explanation", index=False
+            )
+
+        if "Context" in selected:
+            max_len = max(len(tables), len(columns), 1)
+            ctx_df = pd.DataFrame({
+                "Tables Used":   tables  + [""] * (max_len - len(tables)),
+                "Columns Used":  columns + [""] * (max_len - len(columns)),
+            })
+            ctx_df.to_excel(writer, sheet_name="Context", index=False)
+
+    output.seek(0)
+    return output.read()
+
+
 def _render_assistant(message: dict, meta: dict, history: HistoryManager):
     """Render assistant message with 6 left-aligned tabs."""
     result   = meta["result"]
@@ -841,6 +922,44 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
     if chartable:
         tab_names.append("Chart")
     tab_names.append("Context")
+
+    # ── Download button aligned right of the tab bar ──────────────────────────
+    _, dl_col = st.columns([0.88, 0.12])
+    with dl_col:
+        with st.popover("⬇ Export", use_container_width=True):
+            st.markdown("**Select content to export**")
+            dl_results     = st.checkbox("Results (answer text)", value=True, key=f"dl_res_{id(meta)}")
+            dl_table       = st.checkbox("Table (raw data)",      value=True, key=f"dl_tbl_{id(meta)}")
+            dl_sql         = st.checkbox("SQL query",                         key=f"dl_sql_{id(meta)}")
+            dl_explanation = st.checkbox("Explanation",                       key=f"dl_exp_{id(meta)}")
+            dl_context     = st.checkbox("Context",                           key=f"dl_ctx_{id(meta)}")
+            dl_chart       = st.checkbox("Chart data",                        key=f"dl_cht_{id(meta)}") if chartable else False
+            dl_all         = st.checkbox("Download all",                      key=f"dl_all_{id(meta)}")
+
+            if dl_all:
+                selected = ["Results", "Table", "SQL", "Explanation", "Context"] + (["Chart"] if chartable else [])
+            else:
+                selected = (
+                    (["Results"]     if dl_results     else []) +
+                    (["Table"]       if dl_table       else []) +
+                    (["SQL"]         if dl_sql         else []) +
+                    (["Explanation"] if dl_explanation else []) +
+                    (["Context"]     if dl_context     else []) +
+                    (["Chart"]       if dl_chart       else [])
+                )
+
+            if selected:
+                excel_bytes = _build_excel(result, message, selected)
+                st.download_button(
+                    label="⬇ Download .xlsx",
+                    data=excel_bytes,
+                    file_name="chat2db_export.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    key=f"dl_btn_{id(meta)}",
+                )
+            else:
+                st.caption("Select at least one option above.")
 
     tabs = st.tabs(tab_names)
     tab  = dict(zip(tab_names, tabs))
