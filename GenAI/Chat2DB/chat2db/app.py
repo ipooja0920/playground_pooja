@@ -993,23 +993,23 @@ def inject_sidebar_css():
     color: #ffffff;
     border: 1px solid rgba(139, 92, 246, 0.35);
 }
-/* New Question button: purple, left-aligned */
-.new-question-btn button {
+/* New Question button: purple solid button */
+[data-testid="stSidebar"] .new-question-btn .stButton > button {
     background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
     color: white !important;
-    text-align: left !important;
-    justify-content: flex-start !important;
     font-size: 15px !important;
     font-weight: 700 !important;
     padding: 13px 18px !important;
     margin-bottom: 16px !important;
     box-shadow: 0 0 26px rgba(139, 92, 246, 0.42) !important;
     border: none !important;
+    border-radius: 12px !important;
 }
-.new-question-btn button:hover {
+[data-testid="stSidebar"] .new-question-btn .stButton > button:hover {
     opacity: 0.9 !important;
     background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
     border: none !important;
+    box-shadow: 0 0 32px rgba(139, 92, 246, 0.55) !important;
 }
 [data-testid="stSidebar"] hr {
     border: none;
