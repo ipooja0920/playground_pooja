@@ -1,35 +1,32 @@
 """
 Chat2DB - Main Streamlit Application
-
-Improvements over baseline:
-  - Schema Explorer in sidebar (live table/column browser)
-  - "How we got this answer" expander: SQL, tables used, columns used
-  - LLM-as-judge scores displayed inline (relevance + answer_quality)
-  - Tabular results rendered as a DataFrame when possible
-  - Both RAG and TAG pipelines return structured metadata
+Claude-style sidebar layout with persistent chat history.
 """
 
-import streamlit as st
 from dataclasses import dataclass
+import asyncio
+import pickle
+import uuid
+from pathlib import Path
 
+import streamlit as st
 from dotenv import load_dotenv
+import pandas as pd
+
 from tools.db import DatabaseManager
 from tools.rag import RAGSearch
 from tools.tag import create_tag_pipeline
+from history import HistoryManager
 
 load_dotenv()
-
-import asyncio
-import pickle
-from pathlib import Path
-
-import pandas as pd
 
 from langfuse.llama_index import LlamaIndexInstrumentor
 from langfuse.decorators import langfuse_context, observe
 from llama_index.llms.openai import OpenAI as OpenAILLM
 from llama_index.llms.anthropic import Anthropic as AnthropicLLM
 
+
+# ── Config dataclass ──────────────────────────────────────────────────────────
 
 @dataclass
 class ChatConfig:
@@ -40,23 +37,25 @@ class ChatConfig:
     temperature: float = 0.1
     conversation_history: str = ""
     previous_sql: str = ""
-    intent: str = "new_question"   # schema_question | followup | new_question
+    intent: str = "new_question"
 
+
+# ── ChatDatabase ──────────────────────────────────────────────────────────────
 
 class ChatDatabase:
     def __init__(self):
         try:
-            self.vec_db_manager = DatabaseManager(db_type='vecdb')
+            self.vec_db_manager = DatabaseManager(db_type="vecdb")
             self.vec_db_manager.test_connection()
         except Exception as e:
-            st.error(f"Error connecting to vector store: {e}")
+            st.error(f"Vector store error: {e}")
             self.vec_db_manager = None
 
         try:
-            self.chat_db_manager = DatabaseManager(db_type='db')
+            self.chat_db_manager = DatabaseManager(db_type="db")
             self.chat_db_manager.test_connection()
         except Exception as e:
-            st.error(f"Error connecting to SQL database: {e}")
+            st.error(f"SQL database error: {e}")
             self.chat_db_manager = None
 
         self.classifier = self._load_classifier()
@@ -64,11 +63,11 @@ class ChatDatabase:
         self.instrumentor.start()
 
     def _load_classifier(self):
-        model_path = Path(__file__).parent / 'classifier/combined_sql_classifier.pkl'
+        model_path = Path(__file__).parent / "classifier/combined_sql_classifier.pkl"
         if not model_path.exists():
             return None
         try:
-            with open(model_path, 'rb') as f:
+            with open(model_path, "rb") as f:
                 return pickle.load(f)
         except Exception:
             return None
@@ -76,22 +75,20 @@ class ChatDatabase:
     def classify_prompt(self, prompt: str) -> bool:
         if self.classifier is None:
             return True
-        vectorizer = self.classifier["vectorizer"]
-        binary_clf = self.classifier["binary_classifier"]
-        is_sql = binary_clf.predict(vectorizer.transform([prompt]))[0]
-        return bool(is_sql)
+        v = self.classifier["vectorizer"]
+        clf = self.classifier["binary_classifier"]
+        return bool(clf.predict(v.transform([prompt]))[0])
 
-    async def classify_intent_llm(self, query: str, conversation_history: str, previous_sql: str, config: ChatConfig) -> str:
-        """Use a lightweight LLM call to classify query intent into one of three categories."""
+    async def classify_intent_llm(self, query, conv_history, prev_sql, config) -> str:
         prompt = (
             f"Classify this database chatbot query into exactly one category.\n\n"
-            f"CONVERSATION HISTORY:\n{conversation_history or 'None'}\n\n"
-            f"PREVIOUS SQL:\n{previous_sql or 'None'}\n\n"
+            f"CONVERSATION HISTORY:\n{conv_history or 'None'}\n\n"
+            f"PREVIOUS SQL:\n{prev_sql or 'None'}\n\n"
             f"USER QUERY: {query}\n\n"
             f"Categories:\n"
-            f"- schema_question: user asks about database structure, tables, columns, or what data is available\n"
-            f"- followup: user modifies or references the previous query/results (pronouns like it/that/those, words like filter/sort/limit/only/also/top N/add/exclude)\n"
-            f"- new_question: completely new independent question about the data\n\n"
+            f"- schema_question: user asks about database structure, tables, columns\n"
+            f"- followup: modifies/references previous query (it/that/filter/sort/limit)\n"
+            f"- new_question: completely new independent question\n\n"
             f"Reply with ONLY one word: schema_question, followup, or new_question"
         )
         try:
@@ -100,36 +97,22 @@ class ChatDatabase:
                 if config.llm_provider == "OpenAI"
                 else AnthropicLLM(model="claude-3-5-haiku-20241022", temperature=0.0)
             )
-            response_obj = await llm.acomplete(prompt)
-            intent = str(response_obj).strip().lower().split()[0]
-            if intent in ("schema_question", "followup", "new_question"):
-                return intent
-            return "new_question"
+            resp = await llm.acomplete(prompt)
+            intent = str(resp).strip().lower().split()[0]
+            return intent if intent in ("schema_question", "followup", "new_question") else "new_question"
         except Exception as e:
-            print(f"[Intent] LLM classification failed: {e}")
+            print(f"[Intent] {e}")
             return "new_question"
 
-    async def rewrite_query(self, query: str, conversation_history: str, previous_sql: str, config: ChatConfig) -> str:
-        """Rewrite the user query to be self-contained and domain-enriched before retrieval.
-
-        Resolves coreferences (it/them/those), expands abbreviations, and adds
-        Chinook domain terms so the downstream SQL generator has a cleaner signal.
-        Returns the original query unchanged if rewriting fails.
-        """
+    async def rewrite_query(self, query, conv_history, prev_sql, config) -> str:
         prompt = (
             f"You are a query rewriter for a music-store database chatbot (Chinook schema).\n\n"
-            f"CONVERSATION HISTORY:\n{conversation_history or 'None'}\n\n"
-            f"PREVIOUS SQL:\n{previous_sql or 'None'}\n\n"
+            f"CONVERSATION HISTORY:\n{conv_history or 'None'}\n\n"
+            f"PREVIOUS SQL:\n{prev_sql or 'None'}\n\n"
             f"ORIGINAL QUERY: {query}\n\n"
-            f"Rewrite the query so it is:\n"
-            f"1. Fully self-contained (resolve pronouns like it/them/those/that using the conversation history)\n"
-            f"2. Abbreviation-free (expand rev→revenue, qty→quantity, etc.)\n"
-            f"3. Domain-enriched where helpful (e.g. 'most popular' → 'highest total revenue from invoice_line', "
-            f"'customer spend' → 'SUM of invoice.total per customer')\n\n"
-            f"Rules:\n"
-            f"- If the query is already clear and self-contained, return it verbatim\n"
-            f"- Do NOT answer the question — only rewrite it\n"
-            f"- Return ONLY the rewritten query, nothing else"
+            f"Rewrite so it is self-contained (resolve pronouns), abbreviation-free, "
+            f"and domain-enriched. If already clear, return verbatim. "
+            f"Return ONLY the rewritten query."
         )
         try:
             llm = (
@@ -137,25 +120,19 @@ class ChatDatabase:
                 if config.llm_provider == "OpenAI"
                 else AnthropicLLM(model="claude-3-5-haiku-20241022", temperature=0.0)
             )
-            response_obj = await llm.acomplete(prompt)
-            rewritten = str(response_obj).strip()
+            resp = await llm.acomplete(prompt)
+            rewritten = str(resp).strip()
             print(f"[Rewrite] '{query}' → '{rewritten}'")
-            return rewritten if rewritten else query
+            return rewritten or query
         except Exception as e:
-            print(f"[Rewrite] Failed (non-critical): {e}")
+            print(f"[Rewrite] {e}")
             return query
 
-    async def _judge_response(self, query: str, response: str, config: ChatConfig) -> dict:
-        """Rate the response with a cheap LLM and push scores to Langfuse."""
+    async def _judge_response(self, query, response, config) -> dict:
         prompt = (
             f"Rate this database chatbot response (0.0–1.0).\n\n"
-            f"User question: {query}\n"
-            f"Response: {response}\n\n"
-            f"Reply with ONLY these two lines:\n"
-            f"relevance: <score>\n"
-            f"answer_quality: <score>\n\n"
-            f"relevance = does it directly answer the question?\n"
-            f"answer_quality = is it clear, accurate, and well-structured?"
+            f"User question: {query}\nResponse: {response}\n\n"
+            f"Reply with ONLY:\nrelevance: <score>\nanswer_quality: <score>"
         )
         try:
             llm = (
@@ -163,9 +140,9 @@ class ChatDatabase:
                 if config.llm_provider == "OpenAI"
                 else AnthropicLLM(model="claude-3-5-haiku-20241022", temperature=0.0)
             )
-            output = await llm.acomplete(prompt)
+            out = await llm.acomplete(prompt)
             scores = {}
-            for line in str(output).strip().splitlines():
+            for line in str(out).strip().splitlines():
                 if ":" in line:
                     k, _, v = line.partition(":")
                     try:
@@ -176,7 +153,7 @@ class ChatDatabase:
                 langfuse_context.score_current_trace(name=name, value=value)
             return scores
         except Exception as e:
-            print(f"[Judge] Scoring failed (non-critical): {e}")
+            print(f"[Judge] {e}")
             return {}
 
     @observe()
@@ -187,14 +164,15 @@ class ChatDatabase:
             await self._judge_response(query, result.get("answer", ""), config)
             return result
         except Exception as e:
-            return {"answer": f"Error in RAG pipeline: {e}", "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
+            return {"answer": f"Error in RAG pipeline: {e}", "sql": None, "tables": [],
+                    "columns": [], "attempts": 1, "raw_results": []}
 
     @observe()
     async def tag_pipeline(self, query: str, config: ChatConfig) -> dict:
         try:
             if not self.vec_db_manager or not self.chat_db_manager:
-                return {"answer": "Error: Database connections not initialized", "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
-
+                return {"answer": "Error: DB not initialised", "sql": None, "tables": [],
+                        "columns": [], "attempts": 1, "raw_results": []}
             workflow = create_tag_pipeline(
                 vec_db_manager=self.vec_db_manager,
                 chat_db_manager=self.chat_db_manager,
@@ -204,228 +182,560 @@ class ChatDatabase:
             obs_id = langfuse_context.get_current_observation_id()
             with self.instrumentor.observe(trace_id=trace_id, parent_observation_id=obs_id, update_parent=False):
                 result = await workflow.run(query=query)
-
             if isinstance(result, str):
-                result = {"answer": result, "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
-
+                result = {"answer": result, "sql": None, "tables": [], "columns": [],
+                          "attempts": 1, "raw_results": []}
             await self._judge_response(query, result.get("answer", ""), config)
             return result
         except Exception as e:
-            return {"answer": f"Error in TAG pipeline: {e}", "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
+            return {"answer": f"Error in TAG pipeline: {e}", "sql": None, "tables": [],
+                    "columns": [], "attempts": 1, "raw_results": []}
 
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
+# ── CSS ───────────────────────────────────────────────────────────────────────
 
 CUSTOM_CSS = """
 <style>
-#MainMenu, footer { visibility: hidden; }
-
-/* ── Sidebar ── */
-section[data-testid="stSidebar"] > div:first-child { padding-top: 0.75rem; }
-section[data-testid="stSidebar"] .stButton > button {
-    width: 100%;
-    border-radius: 8px;
-    font-weight: 600;
-    margin-bottom: 4px;
+/* ── Root palette ── */
+:root {
+    --bg:      #07101f;
+    --panel:   #0e1729;
+    --border:  rgba(149,167,209,0.14);
+    --text:    #f0f4ff;
+    --muted:   #7a8bb0;
+    --purple:  #7c3aed;
+    --purple2: #5b21b6;
+    --green:   #10b981;
 }
+
+/* ── Global background ── */
+html, body,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    background: radial-gradient(circle at 10% 0%, rgba(124,58,237,.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 100%, rgba(37,99,235,.10) 0%, transparent 40%),
+                var(--bg) !important;
+    color: var(--text) !important;
+}
+
+/* ── Hide Streamlit chrome ── */
+#MainMenu, footer, header { visibility: hidden; }
+
+[data-testid="stAppViewContainer"] .main .block-container {
+    padding-top: 0.8rem;
+    padding-bottom: 2rem;
+    max-width: 1400px;
+}
+
+/* ── Sidebar shell ── */
+section[data-testid="stSidebar"] {
+    border-right: 1px solid var(--border);
+    min-width: 240px !important;
+    max-width: 240px !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    background: linear-gradient(180deg,#0d1728,#07101f) !important;
+    padding: 1rem 0.75rem 1rem 0.75rem;
+}
+
+/* ── New Question button ── */
+section[data-testid="stSidebar"] .stButton > button {
+    background: linear-gradient(90deg, var(--purple), var(--purple2)) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 14px !important;
+    font-weight: 700 !important;
+    padding: 0.6rem 1rem !important;
+    width: 100% !important;
+    margin-bottom: 4px;
+    box-shadow: 0 6px 20px rgba(91,33,182,.35);
+    transition: opacity .15s;
+}
+section[data-testid="stSidebar"] .stButton > button:hover { opacity: .88; }
+
+/* ── Nav divider & labels ── */
+section[data-testid="stSidebar"] hr { border-color: var(--border) !important; }
+
+/* ── History items ── */
+.hist-item {
+    display: block;
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--muted);
+    border-left: 2px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+    cursor: pointer;
+    transition: all .12s;
+}
+.hist-item:hover { color: var(--text); border-left-color: var(--purple); background: rgba(124,58,237,.08); }
+
+/* ── Dashboard cards ── */
+.dash-card {
+    background: linear-gradient(160deg,#101c35,#0c1628);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+}
+.dash-card:hover { border-color: var(--purple); box-shadow: 0 0 0 1px rgba(124,58,237,.25); }
+.dash-card-icon { font-size: 1.6rem; margin-bottom: 8px; }
+.dash-card-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
+.dash-card-q { font-size: 14px; color: var(--text); }
+
+/* ── Chat message area ── */
+.stChatMessage { border-radius: 14px !important; }
+
+/* ── Metric chips ── */
+.mchip {
+    display: inline-block;
+    background: rgba(17,27,48,.9);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 5px 13px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+.mchip b { color: var(--text); }
 
 /* ── Intent badges ── */
 .badge {
     display: inline-block;
-    padding: 3px 12px;
-    border-radius: 12px;
+    padding: 3px 11px;
+    border-radius: 10px;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.6px;
+    letter-spacing: .5px;
     text-transform: uppercase;
     margin-right: 6px;
     margin-bottom: 10px;
 }
-.badge-new      { background:#0d2818; color:#4ade80; border:1px solid #22c55e; }
-.badge-followup { background:#0d1f3a; color:#60a5fa; border:1px solid #3b82f6; }
-.badge-schema   { background:#1e0d3a; color:#c084fc; border:1px solid #a855f7; }
-.badge-rewrite  { background:#2a1a04; color:#fbbf24; border:1px solid #f59e0b; }
+.b-new      { background:#0d2818; color:#4ade80; border:1px solid #22c55e; }
+.b-followup { background:#0d1f3a; color:#60a5fa; border:1px solid #3b82f6; }
+.b-schema   { background:#1e0d3a; color:#c084fc; border:1px solid #a855f7; }
+.b-rewrite  { background:#2a1a04; color:#fbbf24; border:1px solid #f59e0b; }
 
-/* ── Conversation history items ── */
-.history-item {
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    color: #8b949e;
-    cursor: default;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    border-left: 2px solid #30363d;
-}
-.history-item:hover { color: #c9d1d9; border-left-color: #58a6ff; }
+/* ── Schema table ── */
+.schema-table { font-size: 12px; color: var(--muted); margin-left: 12px; }
+.schema-table-name { font-weight: 700; color: var(--text); font-size: 13px; margin-top: 10px; }
 
-/* ── Welcome screen ── */
-.welcome-card {
-    background: linear-gradient(135deg, #161b22, #1c2128);
-    border: 1px solid #30363d;
-    border-radius: 12px;
-    padding: 20px 24px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: border-color 0.15s;
+/* ── Saved / Favorites cards ── */
+.saved-card {
+    background: #0e1729;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
 }
-.welcome-card:hover { border-color: #58a6ff; }
-.welcome-card h4 { margin: 0 0 4px 0; color: #c9d1d9; font-size: 14px; }
-.welcome-card p  { margin: 0; color: #8b949e; font-size: 12px; }
-
-/* ── Metric strip ── */
-.metric-strip {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-}
-.metric-chip {
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-size: 12px;
-    color: #8b949e;
-}
-.metric-chip span { color: #c9d1d9; font-weight: 600; margin-left: 4px; }
+.saved-card h4 { margin: 0 0 6px 0; font-size: 14px; color: var(--text); }
+.saved-card p  { margin: 0; font-size: 12px; color: var(--muted); }
 </style>
 """
 
+# ── Dashboard question cards ──────────────────────────────────────────────────
 
-# ── UI Helpers ────────────────────────────────────────────────────────────────
+DASHBOARD_CARDS = [
+    ("💰", "Revenue Analysis",   "What track has the most revenue?"),
+    ("👥", "Customer Ranking",   "Which customer spent the most?"),
+    ("🎵", "Music Catalog",      "List all jazz albums"),
+    ("📊", "Genre Breakdown",    "How many tracks per genre?"),
+    ("🌍", "Geographic Revenue", "What is the total revenue by country?"),
+    ("🏆", "Artist Rankings",    "Show top 5 artists by album count"),
+]
 
-def _intent_badge(intent: str) -> str:
-    mapping = {
-        "new_question": ("badge-new",      "new question"),
-        "followup":     ("badge-followup", "follow-up"),
-        "schema_question": ("badge-schema","schema lookup"),
+
+# ── Page renderers ────────────────────────────────────────────────────────────
+
+def render_dashboard():
+    st.markdown("## Welcome to Chat2DB")
+    st.caption("Your AI-powered SQL analyst. Click a card below to start — or type your own question.")
+    st.markdown("")
+
+    cols = st.columns(3)
+    for i, (icon, label, question) in enumerate(DASHBOARD_CARDS):
+        with cols[i % 3]:
+            st.markdown(
+                f'<div class="dash-card">'
+                f'<div class="dash-card-icon">{icon}</div>'
+                f'<div class="dash-card-label">{label}</div>'
+                f'<div class="dash-card-q">{question}</div>'
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+            if st.button("Ask this →", key=f"dash_{i}", use_container_width=True):
+                _new_chat()
+                st.session_state.pending_question = question
+                st.rerun()
+
+
+def render_schema_page(chat: ChatDatabase):
+    st.markdown("## 🔍 Explore Schema")
+    st.caption("Live structure of the Chinook database.")
+    if not chat.chat_db_manager:
+        st.error("Database not connected.")
+        return
+    try:
+        schema = chat.chat_db_manager.get_schema_info()
+        current_table = None
+        for line in schema.splitlines():
+            if line.startswith("Table:"):
+                current_table = line.replace("Table:", "").strip()
+                st.markdown(f'<div class="schema-table-name">📋 {current_table}</div>',
+                            unsafe_allow_html=True)
+            elif line.strip() and current_table:
+                st.markdown(f'<div class="schema-table">{line.strip()}</div>',
+                            unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Could not load schema: {e}")
+
+
+def render_saved(history: HistoryManager):
+    st.markdown("## 💾 Saved Queries")
+    saved = history.get_saved()
+    if not saved:
+        st.info("No saved queries yet. After an answer, click 'Save Query' to bookmark it.")
+        return
+    for entry in saved:
+        with st.container():
+            st.markdown(
+                f'<div class="saved-card">'
+                f'<h4>{entry["question"]}</h4>'
+                f'<p>{entry.get("answer","")[:120]}…</p>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            c1, c2 = st.columns([4, 1])
+            if entry.get("sql"):
+                with c1:
+                    with st.expander("SQL"):
+                        st.code(entry["sql"], language="sql")
+            if c2.button("Delete", key=f"del_saved_{entry['id']}"):
+                history.delete_saved(entry["id"])
+                st.rerun()
+
+
+def render_favorites(history: HistoryManager):
+    st.markdown("## ⭐ Favorites")
+    favs = history.get_favorites()
+    if not favs:
+        st.info("No favorites yet. Star a conversation from the chat.")
+        return
+    for s in favs:
+        with st.container():
+            st.markdown(
+                f'<div class="saved-card"><h4>{s["title"]}</h4>'
+                f'<p style="font-size:11px;color:#7a8bb0">{s["updated_at"][:10]}</p></div>',
+                unsafe_allow_html=True,
+            )
+            c1, c2 = st.columns([3, 1])
+            if c1.button("Load conversation", key=f"load_fav_{s['id']}"):
+                _load_session(s)
+                st.rerun()
+            if c2.button("Unstar", key=f"unfav_{s['id']}"):
+                history.remove_favorite(s["id"])
+                st.rerun()
+
+
+def render_chat(chat: ChatDatabase, history: HistoryManager,
+                interaction_method: str, llm_provider: str, temperature: float,
+                intent_filter: bool):
+    """Main chat page — processes pending questions, renders history, handles input."""
+
+    # ── Handle question from dashboard card ───────────────────────────────────
+    pending = st.session_state.pop("pending_question", None)
+    if pending:
+        _handle_query(pending, chat, history, interaction_method, llm_provider,
+                      temperature, intent_filter)
+
+    # ── Render existing messages ───────────────────────────────────────────────
+    if not st.session_state.messages:
+        st.markdown("### New conversation")
+        st.caption("Ask anything about the Chinook music-store database.")
+
+    for i, message in enumerate(st.session_state.messages):
+        with st.chat_message(message["role"]):
+            if message["role"] == "assistant" and i in st.session_state.message_meta:
+                _render_assistant(message, st.session_state.message_meta[i], history)
+            else:
+                st.write(message["content"])
+
+    # ── Chat input ─────────────────────────────────────────────────────────────
+    if query := st.chat_input("Ask a question about your database…"):
+        _handle_query(query, chat, history, interaction_method, llm_provider,
+                      temperature, intent_filter)
+        st.rerun()
+
+
+# ── Chat helpers ──────────────────────────────────────────────────────────────
+
+def _new_chat():
+    """Reset session state to start a fresh conversation."""
+    st.session_state.session_id = str(uuid.uuid4())
+    st.session_state.messages = []
+    st.session_state.message_meta = {}
+    st.session_state.previous_sql = ""
+    st.session_state.current_page = "chat"
+
+
+def _load_session(session: dict):
+    """Restore a saved session into session state."""
+    st.session_state.session_id = session["id"]
+    st.session_state.messages = session.get("messages", [])
+    st.session_state.message_meta = {
+        int(k): v for k, v in session.get("message_meta", {}).items()
     }
-    cls, label = mapping.get(intent, ("badge-new", intent))
-    return f'<span class="badge {cls}">{label}</span>'
+    st.session_state.previous_sql = session.get("previous_sql", "")
+    st.session_state.current_page = "chat"
 
 
-def render_details_tab(result: dict, scores: dict, intent: str):
-    """Content for the 'How we got this answer' tab."""
-    sql      = result.get("sql")
-    tables   = result.get("tables", [])
-    columns  = result.get("columns", [])
-    attempts = result.get("attempts", 1)
-    rewritten = result.get("rewritten_query")
+def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
+                  interaction_method: str, llm_provider: str, temperature: float,
+                  intent_filter: bool):
+    """Classify → rewrite → run pipeline → save to history."""
+    history_lines = [
+        f"{'User' if m['role']=='user' else 'Assistant'}: {m['content']}"
+        for m in st.session_state.messages[-6:]
+    ]
+    conversation_history = "\n".join(history_lines)
 
-    # Intent badge + optional rewrite badge
-    badges = _intent_badge(intent)
-    if rewritten:
-        badges += '<span class="badge badge-rewrite">rewritten</span>'
-    st.markdown(badges, unsafe_allow_html=True)
+    config = ChatConfig(
+        interaction_method=interaction_method,
+        llm_provider=llm_provider,
+        temperature=temperature,
+        conversation_history=conversation_history,
+        previous_sql=st.session_state.previous_sql,
+    )
 
-    # Rewritten query text
-    if rewritten:
-        st.caption(f'"{rewritten}"')
-        st.divider()
+    st.session_state.messages.append({"role": "user", "content": query})
 
-    # LLM-as-Judge scores
-    if scores:
-        score_cols = st.columns(len(scores))
-        for j, (name, value) in enumerate(scores.items()):
-            color = "🟢" if value >= 1.0 else "🟡" if value >= 0.8 else "🔴"
-            score_cols[j].metric(name.replace("_", " ").title(), f"{color} {value:.2f}")
-        st.divider()
+    with st.spinner("Thinking…"):
+        should_process = True
+        if intent_filter:
+            should_process = chat.classify_prompt(query)
+            if not should_process:
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": "This doesn't appear to be a database question.",
+                })
+                return
 
-    if attempts > 1:
-        st.warning(f"SQL self-corrected after {attempts} attempt(s)")
+        async def _process():
+            intent = await chat.classify_intent_llm(
+                query, conversation_history, st.session_state.previous_sql, config
+            )
+            config.intent = intent
 
-    # Generated SQL
-    if sql:
-        st.markdown("**Generated SQL**")
-        st.code(sql, language="sql")
+            if intent == "schema_question":
+                schema = chat.chat_db_manager.get_schema_info() if chat.chat_db_manager else ""
+                answer_text = "Here's the current database schema:\n\n" + schema if schema else "Schema unavailable."
+                return {"answer": answer_text, "sql": None, "tables": [], "columns": [],
+                        "attempts": 1, "raw_results": [], "rewritten_query": None}
 
-        if tables or columns:
-            c1, c2 = st.columns(2)
-            if tables:
-                c1.markdown("**Tables**")
-                c1.markdown(" ".join(f"`{t}`" for t in tables))
-            if columns:
-                c2.markdown("**Columns**")
-                c2.markdown(" ".join(f"`{c}`" for c in columns))
-    else:
-        st.info("No SQL was generated — answer came directly from the schema.")
+            rewritten = await chat.rewrite_query(
+                query, conversation_history, st.session_state.previous_sql, config
+            )
+            if interaction_method == "Standard":
+                result = await chat.rag_pipeline(rewritten, config)
+            else:
+                result = await chat.tag_pipeline(rewritten, config)
+
+            if isinstance(result, dict):
+                result["rewritten_query"] = rewritten if rewritten != query else None
+            return result
+
+        result = asyncio.run(_process())
+        answer = result.get("answer", str(result)) if isinstance(result, dict) else str(result)
+        if isinstance(result, dict) and result.get("sql"):
+            st.session_state.previous_sql = result["sql"]
+
+        msg_index = len(st.session_state.messages)
+        st.session_state.messages.append({"role": "assistant", "content": answer})
+        st.session_state.message_meta[msg_index] = {
+            "result": result,
+            "scores": {},
+            "intent": config.intent,
+        }
+
+    # Persist to history file
+    history.upsert_session(
+        session_id=st.session_state.session_id,
+        messages=st.session_state.messages,
+        message_meta=st.session_state.message_meta,
+        previous_sql=st.session_state.previous_sql,
+    )
 
 
-def render_schema_explorer(db_manager: DatabaseManager):
-    """Render a live schema browser in the sidebar."""
-    with st.sidebar.expander("🗂️ Schema Explorer", expanded=False):
-        try:
-            schema = db_manager.get_schema_info()
-            current_table = None
-            for line in schema.splitlines():
-                if line.startswith("Table:"):
-                    current_table = line.replace("Table:", "").strip()
-                    st.markdown(f"**{current_table}**")
-                elif line.strip() and not line.startswith("Table:") and current_table:
-                    st.markdown(
-                        f"<small style='color:gray;margin-left:12px'>{line.strip()}</small>",
-                        unsafe_allow_html=True,
-                    )
-        except Exception as e:
-            st.caption(f"Could not load schema: {e}")
-
-
-def _render_assistant_message(message: dict, meta: dict):
-    """Render a single assistant message with metric strip + Answer/Details tabs."""
+def _render_assistant(message: dict, meta: dict, history: HistoryManager):
+    """Render assistant message with metric strip + Answer / Details tabs."""
     result  = meta["result"]
-    scores  = meta["scores"]
+    scores  = meta.get("scores", {})
     intent  = meta.get("intent", "new_question")
     raw     = result.get("raw_results", [])
     tables  = result.get("tables", [])
     attempts = result.get("attempts", 1)
 
-    # ── Metric strip ──────────────────────────────────────────────────────────
-    chips = []
+    # Metric chips
+    chips = ""
     if raw:
-        chips.append(f'<span class="metric-chip">Rows<span>{len(raw)}</span></span>')
+        chips += f'<span class="mchip">Rows <b>{len(raw)}</b></span>'
     if tables:
-        chips.append(f'<span class="metric-chip">Tables<span>{len(tables)}</span></span>')
-    chips.append(f'<span class="metric-chip">Attempts<span>{attempts}</span></span>')
+        chips += f'<span class="mchip">Tables <b>{len(tables)}</b></span>'
+    chips += f'<span class="mchip">Attempts <b>{attempts}</b></span>'
     if scores:
         avg = sum(scores.values()) / len(scores)
-        chips.append(f'<span class="metric-chip">LLM Score<span>{avg:.2f}</span></span>')
-    if chips:
-        st.markdown(f'<div class="metric-strip">{"".join(chips)}</div>', unsafe_allow_html=True)
+        chips += f'<span class="mchip">Score <b>{avg:.2f}</b></span>'
+    st.markdown(chips, unsafe_allow_html=True)
 
-    # ── Tabs ──────────────────────────────────────────────────────────────────
-    tab_answer, tab_details = st.tabs(["Answer", "How we got this answer"])
+    # Tabs
+    t_answer, t_details = st.tabs(["Answer", "How we got this answer"])
 
-    with tab_answer:
+    with t_answer:
         st.write(message["content"])
         if raw:
             try:
                 df = pd.DataFrame(raw)
                 if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
-                    cols_list = result.get("columns", [])
-                    if cols_list:
-                        df.columns = cols_list[:len(df.columns)]
+                    col_names = result.get("columns", [])
+                    if col_names:
+                        df.columns = col_names[:len(df.columns)]
                 st.dataframe(df, use_container_width=True)
             except Exception:
                 pass
 
-    with tab_details:
-        render_details_tab(result, scores, intent)
+        # Save Query / Favorite buttons
+        c1, c2 = st.columns([1, 1])
+        sql = result.get("sql")
+        if sql and c1.button("💾 Save Query", key=f"save_{id(meta)}"):
+            history.save_query(
+                question=st.session_state.messages[
+                    max(i for i, m in enumerate(st.session_state.messages) if m["role"] == "user")
+                ]["content"],
+                sql=sql,
+                answer=message["content"],
+            )
+            st.toast("Query saved!")
+        if c2.button("⭐ Favorite chat", key=f"fav_{id(meta)}"):
+            history.add_favorite(st.session_state.session_id)
+            st.toast("Added to favorites!")
+
+    with t_details:
+        # Intent badge
+        badge_map = {
+            "new_question": ("b-new",      "new question"),
+            "followup":     ("b-followup", "follow-up"),
+            "schema_question": ("b-schema","schema lookup"),
+        }
+        cls, lbl = badge_map.get(intent, ("b-new", intent))
+        badges = f'<span class="badge {cls}">{lbl}</span>'
+        rewritten = result.get("rewritten_query")
+        if rewritten:
+            badges += '<span class="badge b-rewrite">rewritten</span>'
+        st.markdown(badges, unsafe_allow_html=True)
+
+        if rewritten:
+            st.caption(f'"{rewritten}"')
+            st.divider()
+
+        if scores:
+            sc = st.columns(len(scores))
+            for j, (name, value) in enumerate(scores.items()):
+                icon = "🟢" if value >= 1.0 else "🟡" if value >= 0.8 else "🔴"
+                sc[j].metric(name.replace("_", " ").title(), f"{icon} {value:.2f}")
+            st.divider()
+
+        if attempts > 1:
+            st.warning(f"SQL self-corrected after {attempts} attempt(s)")
+
+        if sql:
+            st.markdown("**Generated SQL**")
+            st.code(sql, language="sql")
+            col_a, col_b = st.columns(2)
+            if tables:
+                col_a.markdown("**Tables**\n" + " ".join(f"`{t}`" for t in tables))
+            cols = result.get("columns", [])
+            if cols:
+                col_b.markdown("**Columns**\n" + " ".join(f"`{c}`" for c in cols))
+        else:
+            st.info("No SQL generated — answered from schema directly.")
 
 
-# ── Main App ──────────────────────────────────────────────────────────────────
+# ── Sidebar ───────────────────────────────────────────────────────────────────
 
-SAMPLE_QUESTIONS = [
-    ("What track has the most revenue?",      "Revenue analysis"),
-    ("Which customer spent the most?",         "Customer ranking"),
-    ("How many tracks per genre?",             "Genre breakdown"),
-    ("Show top 5 artists by album count",      "Artist stats"),
-    ("What is the total revenue by country?",  "Geographic revenue"),
-    ("What tables are in the database?",       "Schema question"),
+NAV = [
+    ("dashboard", "📊", "Dashboard"),
+    ("schema",    "🔍", "Explore Schema"),
+    ("saved",     "💾", "Saved Queries"),
+    ("favorites", "⭐", "Favorites"),
 ]
 
+
+def render_sidebar(history: HistoryManager):
+    """Draw the Claude-style left panel."""
+    with st.sidebar:
+        # Logo
+        st.markdown(
+            """
+            <div style="display:flex;align-items:center;gap:10px;padding:4px 0 18px 0;">
+              <div style="width:38px;height:38px;border-radius:11px;
+                          background:linear-gradient(135deg,#7c3aed,#4f46e5);
+                          display:flex;align-items:center;justify-content:center;font-size:20px;">
+                🤖
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:700;color:#f0f4ff;line-height:1.2;">Chat2DB</div>
+                <div style="font-size:11px;color:#7a8bb0;">AI SQL Analyst</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # New Question
+        if st.button("＋  New Question", use_container_width=True):
+            _new_chat()
+            st.rerun()
+
+        st.divider()
+
+        # Nav items
+        current = st.session_state.get("current_page", "dashboard")
+        for page_id, icon, label in NAV:
+            active_mark = "▶ " if current == page_id else "     "
+            if st.button(f"{active_mark}{icon}  {label}", key=f"nav_{page_id}",
+                         use_container_width=True):
+                st.session_state.current_page = page_id
+                st.rerun()
+
+        st.divider()
+
+        # Conversation history (last 5)
+        recent = history.get_recent(5)
+        if recent:
+            st.markdown(
+                '<div style="font-size:11px;font-weight:700;color:#7a8bb0;'
+                'text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">'
+                '🕐  History</div>',
+                unsafe_allow_html=True,
+            )
+            for s in recent:
+                title = s["title"][:46] + ("…" if len(s["title"]) > 46 else "")
+                st.markdown(
+                    f'<div class="hist-item">• {title}</div>',
+                    unsafe_allow_html=True,
+                )
+                if st.button("Load", key=f"hist_{s['id']}", use_container_width=False):
+                    _load_session(s)
+                    st.rerun()
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     st.set_page_config(
@@ -436,161 +746,47 @@ def main():
     )
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-    # ── Session state init ────────────────────────────────────────────────────
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    if "message_meta" not in st.session_state:
-        st.session_state.message_meta = {}
-    if "intent_classifier_enabled" not in st.session_state:
-        st.session_state.intent_classifier_enabled = False
-    if "previous_sql" not in st.session_state:
-        st.session_state.previous_sql = ""
+    # Session state
+    if "session_id"    not in st.session_state: st.session_state.session_id    = str(uuid.uuid4())
+    if "messages"      not in st.session_state: st.session_state.messages      = []
+    if "message_meta"  not in st.session_state: st.session_state.message_meta  = {}
+    if "previous_sql"  not in st.session_state: st.session_state.previous_sql  = ""
+    if "current_page"  not in st.session_state: st.session_state.current_page  = "dashboard"
+    if "intent_filter" not in st.session_state: st.session_state.intent_filter = False
 
-    chat = ChatDatabase()
+    history = HistoryManager()
+    chat    = ChatDatabase()
 
-    # ── Sidebar ───────────────────────────────────────────────────────────────
+    # ── Sidebar ────────────────────────────────────────────────────────────────
+    render_sidebar(history)
+
+    # Config lives in sidebar Advanced section
     with st.sidebar:
-        st.markdown("## 🤖 Chat2DB")
-        st.caption("Talk to your database in plain English")
         st.divider()
-
-        if st.button("＋  New Chat", use_container_width=True, type="primary"):
-            st.session_state.messages = []
-            st.session_state.message_meta = {}
-            st.session_state.previous_sql = ""
-            st.rerun()
-
-        st.divider()
-
-        interaction_method = st.selectbox(
-            "Mode", ["Hybrid", "Standard"],
-            help="Hybrid: parallel retrieval + self-correcting SQL. Standard: schema-aware SQL generation.",
-        )
-        llm_provider = st.selectbox(
-            "LLM Provider", ["OpenAI", "Claude"],
-        )
-
-        with st.expander("Advanced"):
-            temperature = st.slider("Temperature", 0.0, 1.0, 0.1, 0.1,
-                                    help="Lower = more deterministic")
-            st.session_state.intent_classifier_enabled = st.toggle(
+        with st.expander("⚙️ Config"):
+            interaction_method = st.selectbox("Mode", ["Hybrid", "Standard"])
+            llm_provider       = st.selectbox("LLM",  ["OpenAI", "Claude"])
+            temperature        = st.slider("Temperature", 0.0, 1.0, 0.1, 0.05)
+            st.session_state.intent_filter = st.toggle(
                 "Binary intent filter",
-                value=st.session_state.intent_classifier_enabled,
-                help="Pre-filter non-database questions with a local ML classifier",
+                value=st.session_state.intent_filter,
+                help="Pre-filter non-DB questions with a local ML classifier",
             )
+    # ── Page routing ───────────────────────────────────────────────────────────
+    page = st.session_state.current_page
 
-        st.divider()
-
-        # Conversation history
-        user_msgs = [(i, m) for i, m in enumerate(st.session_state.messages) if m["role"] == "user"]
-        if user_msgs:
-            st.markdown("**💬 History**")
-            for _, m in reversed(user_msgs[-8:]):
-                truncated = m["content"][:48] + ("…" if len(m["content"]) > 48 else "")
-                st.markdown(
-                    f'<div class="history-item">• {truncated}</div>',
-                    unsafe_allow_html=True,
-                )
-            st.divider()
-
-        # Schema explorer
-        if chat.chat_db_manager:
-            render_schema_explorer(chat.chat_db_manager)
-
-    # ── Main content ──────────────────────────────────────────────────────────
-
-    # Welcome screen when conversation is empty
-    if not st.session_state.messages:
-        st.markdown("## Ask your database anything")
-        st.caption("Powered by Hybrid (parallel retrieval + self-correcting SQL) · LLM intent routing · Query rewriting")
-        st.markdown("")
-        cols = st.columns(3)
-        for idx, (question, label) in enumerate(SAMPLE_QUESTIONS):
-            with cols[idx % 3]:
-                st.markdown(
-                    f'<div class="welcome-card"><h4>{label}</h4><p>{question}</p></div>',
-                    unsafe_allow_html=True,
-                )
-
-    # Chat input
-    if query := st.chat_input("Ask a question about your database…"):
-        history_lines = []
-        for m in st.session_state.messages[-6:]:
-            role = "User" if m["role"] == "user" else "Assistant"
-            history_lines.append(f"{role}: {m['content']}")
-        conversation_history = "\n".join(history_lines)
-
-        config = ChatConfig(
-            interaction_method=interaction_method,
-            llm_provider=llm_provider,
-            temperature=temperature,
-            conversation_history=conversation_history,
-            previous_sql=st.session_state.previous_sql,
-        )
-
-        st.session_state.messages.append({"role": "user", "content": query})
-
-        with st.spinner("Thinking…"):
-            should_process = True
-            if st.session_state.intent_classifier_enabled:
-                should_process = chat.classify_prompt(query)
-                if not should_process:
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": "This question doesn't appear to be database-related.",
-                    })
-
-            if should_process:
-                async def _process():
-                    intent = await chat.classify_intent_llm(
-                        query, conversation_history, st.session_state.previous_sql, config
-                    )
-                    config.intent = intent
-
-                    if intent == "schema_question":
-                        schema = chat.chat_db_manager.get_schema_info() if chat.chat_db_manager else ""
-                        answer_text = (
-                            "Here's the current database schema:\n\n" + schema
-                            if schema else "I couldn't retrieve the schema right now."
-                        )
-                        return {"answer": answer_text, "sql": None, "tables": [], "columns": [],
-                                "attempts": 1, "raw_results": [], "rewritten_query": None}
-
-                    rewritten = await chat.rewrite_query(
-                        query, conversation_history, st.session_state.previous_sql, config
-                    )
-
-                    if interaction_method == "Standard":
-                        result = await chat.rag_pipeline(rewritten, config)
-                    else:
-                        result = await chat.tag_pipeline(rewritten, config)
-
-                    if isinstance(result, dict):
-                        result["rewritten_query"] = rewritten if rewritten != query else None
-                    return result
-
-                result = asyncio.run(_process())
-                answer = result.get("answer", str(result)) if isinstance(result, dict) else str(result)
-                if isinstance(result, dict) and result.get("sql"):
-                    st.session_state.previous_sql = result["sql"]
-                msg_index = len(st.session_state.messages)
-                st.session_state.messages.append({"role": "assistant", "content": answer})
-                st.session_state.message_meta[msg_index] = {
-                    "result": result,
-                    "scores": {},
-                    "intent": config.intent,
-                }
-
-    # Render chat history
-    for i, message in enumerate(st.session_state.messages):
-        with st.chat_message(message["role"]):
-            if message["role"] == "assistant" and i in st.session_state.message_meta:
-                _render_assistant_message(message, st.session_state.message_meta[i])
-            else:
-                st.write(message["content"])
+    if page == "dashboard":
+        render_dashboard()
+    elif page == "chat":
+        render_chat(chat, history, interaction_method, llm_provider,
+                    temperature, st.session_state.intent_filter)
+    elif page == "schema":
+        render_schema_page(chat)
+    elif page == "saved":
+        render_saved(history)
+    elif page == "favorites":
+        render_favorites(history)
 
 
 if __name__ == "__main__":
-    if "intent_classifier_enabled" not in st.session_state:
-        st.session_state.intent_classifier_enabled = False
     main()
