@@ -932,6 +932,13 @@ def inject_sidebar_css():
 [data-testid="stSidebar"] > div:first-child {
     padding: 4px 10px 12px 4px;
 }
+[data-testid="stSidebar"] > div:first-child > div:first-child {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+[data-testid="stSidebar"] section > div.block-container {
+    padding-top: 0 !important;
+}
 .sidebar-logo {
     display: flex;
     align-items: center;
