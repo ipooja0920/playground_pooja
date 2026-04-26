@@ -930,7 +930,7 @@ def inject_sidebar_css():
     border-right: 1px solid rgba(148, 163, 184, 0.18);
 }
 [data-testid="stSidebar"] > div:first-child {
-    padding: 28px 18px 24px 18px;
+    padding: 12px 10px 12px 10px;
 }
 .sidebar-logo {
     display: flex;
