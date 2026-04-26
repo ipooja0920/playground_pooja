@@ -62,6 +62,13 @@ class ChatDatabase:
         self.instrumentor = LlamaIndexInstrumentor()
         self.instrumentor.start()
 
+    def check_connections(self) -> dict:
+        """Return live connection status for the DB and vector store."""
+        return {
+            "db":    self.chat_db_manager is not None and self.chat_db_manager.test_connection(),
+            "vecdb": self.vec_db_manager  is not None and self.vec_db_manager.test_connection(),
+        }
+
     def _load_classifier(self):
         model_path = Path(__file__).parent / "classifier/combined_sql_classifier.pkl"
         if not model_path.exists():
@@ -325,6 +332,27 @@ section[data-testid="stSidebar"] hr { border-color: var(--border) !important; }
 /* ── Schema table ── */
 .schema-table { font-size: 12px; color: var(--muted); margin-left: 12px; }
 .schema-table-name { font-weight: 700; color: var(--text); font-size: 13px; margin-top: 10px; }
+
+/* ── Top bar ── */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(14,23,41,0.80);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 10px 20px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(8px);
+}
+.topbar-left  { display: flex; align-items: center; gap: 10px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.conn-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; margin-right: 4px;
+}
+.conn-dot.green { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,.7); }
+.conn-dot.red   { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,.7); }
 
 /* ── Saved / Favorites cards ── */
 .saved-card {
@@ -666,6 +694,71 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
             st.info("No SQL generated — answered from schema directly.")
 
 
+# ── Top bar ──────────────────────────────────────────────────────────────────
+
+def render_topbar(chat: ChatDatabase) -> tuple[str, str, float, bool]:
+    """
+    Renders the right-panel top bar.
+    Left: Mode selector + LLM + Temperature.
+    Right: DB connection status dot.
+    Returns (interaction_method, llm_provider, temperature, intent_filter).
+    """
+    conn = chat.check_connections()
+    db_ok    = conn["db"]
+    vec_ok   = conn["vecdb"]
+    both_ok  = db_ok and vec_ok
+
+    dot_cls  = "green" if both_ok else "red"
+    dot_text = "Connected" if both_ok else ("DB error" if not db_ok else "VecDB error")
+
+    left, right = st.columns([3, 1])
+
+    with left:
+        c1, c2, c3, c4 = st.columns([2, 2, 2, 2])
+        with c1:
+            interaction_method = st.selectbox(
+                "Mode",
+                ["Hybrid (RAG + TAG)", "Standard"],
+                key="topbar_mode",
+                label_visibility="collapsed",
+            )
+        with c2:
+            llm_provider = st.selectbox(
+                "LLM",
+                ["OpenAI", "Claude"],
+                key="topbar_llm",
+                label_visibility="collapsed",
+            )
+        with c3:
+            temperature = st.slider(
+                "Temp", 0.0, 1.0, 0.1, 0.05,
+                key="topbar_temp",
+                label_visibility="collapsed",
+            )
+        with c4:
+            intent_filter = st.toggle(
+                "Intent filter",
+                value=st.session_state.get("intent_filter", False),
+                key="topbar_intent",
+                help="Pre-filter non-DB questions with a local ML classifier",
+            )
+            st.session_state.intent_filter = intent_filter
+
+    with right:
+        st.markdown(
+            f'<div style="text-align:right;padding-top:6px;">'
+            f'<span class="conn-dot {dot_cls}"></span>'
+            f'<span style="font-size:13px;color:{"#10b981" if both_ok else "#ef4444"};font-weight:600;">'
+            f'{dot_text}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    # Normalise mode label → internal key used by pipelines
+    mode = "Standard" if interaction_method == "Standard" else "Hybrid"
+    return mode, llm_provider, temperature, intent_filter
+
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 NAV = [
@@ -760,18 +853,9 @@ def main():
     # ── Sidebar ────────────────────────────────────────────────────────────────
     render_sidebar(history)
 
-    # Config lives in sidebar Advanced section
-    with st.sidebar:
-        st.divider()
-        with st.expander("⚙️ Config"):
-            interaction_method = st.selectbox("Mode", ["Hybrid", "Standard"])
-            llm_provider       = st.selectbox("LLM",  ["OpenAI", "Claude"])
-            temperature        = st.slider("Temperature", 0.0, 1.0, 0.1, 0.05)
-            st.session_state.intent_filter = st.toggle(
-                "Binary intent filter",
-                value=st.session_state.intent_filter,
-                help="Pre-filter non-DB questions with a local ML classifier",
-            )
+    # ── Top bar (right panel) ─────────────────────────────────────────────────
+    interaction_method, llm_provider, temperature, intent_filter = render_topbar(chat)
+
     # ── Page routing ───────────────────────────────────────────────────────────
     page = st.session_state.current_page
 
