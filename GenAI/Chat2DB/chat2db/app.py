@@ -527,8 +527,13 @@ def render_chat(chat: ChatDatabase, history: HistoryManager,
     # ── Handle question from dashboard card ───────────────────────────────────
     pending = st.session_state.pop("pending_question", None)
     if pending:
-        _handle_query(pending, chat, history, interaction_method, llm_provider,
-                      temperature, intent_filter)
+        st.session_state.messages.append({"role": "user", "content": pending})
+        with st.chat_message("user"):
+            st.write(pending)
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking…"):
+                _handle_query(pending, chat, history, interaction_method, llm_provider,
+                              temperature, intent_filter)
 
     # ── Render existing messages ───────────────────────────────────────────────
     if not st.session_state.messages:
@@ -544,8 +549,16 @@ def render_chat(chat: ChatDatabase, history: HistoryManager,
 
     # ── Chat input ─────────────────────────────────────────────────────────────
     if query := st.chat_input("Ask a question about your database…"):
-        _handle_query(query, chat, history, interaction_method, llm_provider,
-                      temperature, intent_filter)
+        # Show user message immediately, before LLM starts
+        st.session_state.messages.append({"role": "user", "content": query})
+        with st.chat_message("user"):
+            st.write(query)
+
+        # Show thinking indicator while LLM processes
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking…"):
+                _handle_query(query, chat, history, interaction_method, llm_provider,
+                              temperature, intent_filter)
         st.rerun()
 
 
@@ -589,101 +602,97 @@ def _handle_query(query: str, chat: ChatDatabase, history: HistoryManager,
         previous_sql=st.session_state.previous_sql,
     )
 
-    st.session_state.messages.append({"role": "user", "content": query})
+    should_process = True
+    if intent_filter:
+        should_process = chat.classify_prompt(query)
+        if not should_process:
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": "This doesn't appear to be a database question.",
+            })
+            return
 
-    with st.spinner("Thinking…"):
-        should_process = True
-        if intent_filter:
-            should_process = chat.classify_prompt(query)
-            if not should_process:
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": "This doesn't appear to be a database question.",
-                })
-                return
+    async def _process():
+        # ── Stage 1: intent ───────────────────────────────────────────────
+        intent = await chat.classify_intent_llm(
+            query, conversation_history, st.session_state.previous_sql, config
+        )
+        config.intent = intent
 
-        async def _process():
-            # ── Stage 1: intent ───────────────────────────────────────────────
-            intent = await chat.classify_intent_llm(
-                query, conversation_history, st.session_state.previous_sql, config
-            )
-            config.intent = intent
+        if intent == "schema_question":
+            schema = chat.chat_db_manager.get_schema_info() if chat.chat_db_manager else ""
+            return {
+                "answer": "Here's the current database schema:\n\n" + schema if schema else "Schema unavailable.",
+                "sql": None, "tables": [], "columns": [], "attempts": 1,
+                "raw_results": [], "rewritten_query": None,
+                "explanation": "This answer came directly from the live database schema.",
+                "chart_info": {"chartable": False}, "chart_validation": {},
+                "joins": [], "mode": interaction_method, "query_time_ms": 0,
+            }
 
-            if intent == "schema_question":
-                schema = chat.chat_db_manager.get_schema_info() if chat.chat_db_manager else ""
-                return {
-                    "answer": "Here's the current database schema:\n\n" + schema if schema else "Schema unavailable.",
-                    "sql": None, "tables": [], "columns": [], "attempts": 1,
-                    "raw_results": [], "rewritten_query": None,
-                    "explanation": "This answer came directly from the live database schema.",
-                    "chart_info": {"chartable": False}, "chart_validation": {},
-                    "joins": [], "mode": interaction_method, "query_time_ms": 0,
-                }
+        # ── Stage 2: rewrite ──────────────────────────────────────────────
+        rewritten = await chat.rewrite_query(
+            query, conversation_history, st.session_state.previous_sql, config
+        )
 
-            # ── Stage 2: rewrite ──────────────────────────────────────────────
-            rewritten = await chat.rewrite_query(
-                query, conversation_history, st.session_state.previous_sql, config
-            )
+        # ── Stage 3: pipeline ─────────────────────────────────────────────
+        t0 = time.perf_counter()
+        if interaction_method == "Standard":
+            result = await chat.rag_pipeline(rewritten, config)
+        else:
+            result = await chat.tag_pipeline(rewritten, config)
+        query_time_ms = round((time.perf_counter() - t0) * 1000)
 
-            # ── Stage 3: pipeline ─────────────────────────────────────────────
-            t0 = time.perf_counter()
-            if interaction_method == "Standard":
-                result = await chat.rag_pipeline(rewritten, config)
-            else:
-                result = await chat.tag_pipeline(rewritten, config)
-            query_time_ms = round((time.perf_counter() - t0) * 1000)
+        if isinstance(result, dict):
+            result["rewritten_query"] = rewritten if rewritten != query else None
+            result["mode"]            = interaction_method
+            result["query_time_ms"]   = query_time_ms
+            result["joins"]           = extract_joins(result.get("sql") or "")
 
-            if isinstance(result, dict):
-                result["rewritten_query"] = rewritten if rewritten != query else None
-                result["mode"]            = interaction_method
-                result["query_time_ms"]   = query_time_ms
-                result["joins"]           = extract_joins(result.get("sql") or "")
+        # ── Stage 4: parallel enrichment — explanation + chart decision ───
+        raw     = result.get("raw_results", []) if isinstance(result, dict) else []
+        tables  = result.get("tables", [])  if isinstance(result, dict) else []
+        columns = result.get("columns", []) if isinstance(result, dict) else []
+        sql     = result.get("sql") or ""   if isinstance(result, dict) else ""
 
-            # ── Stage 4: parallel enrichment — explanation + chart decision ───
-            raw     = result.get("raw_results", []) if isinstance(result, dict) else []
-            tables  = result.get("tables", [])  if isinstance(result, dict) else []
-            columns = result.get("columns", []) if isinstance(result, dict) else []
-            sql     = result.get("sql") or ""   if isinstance(result, dict) else ""
+        explanation, chart_info = await asyncio.gather(
+            generate_explanation(query, sql, raw, tables, columns, llm_provider),
+            determine_chart(raw, query, llm_provider),
+            return_exceptions=True,
+        )
 
-            explanation, chart_info = await asyncio.gather(
-                generate_explanation(query, sql, raw, tables, columns, llm_provider),
-                determine_chart(raw, query, llm_provider),
-                return_exceptions=True,
-            )
+        if isinstance(explanation, Exception):
+            explanation = ""
+        if isinstance(chart_info, Exception):
+            chart_info = {"chartable": False}
 
-            if isinstance(explanation, Exception):
-                explanation = ""
-            if isinstance(chart_info, Exception):
-                chart_info = {"chartable": False}
+        result["explanation"] = explanation
 
-            result["explanation"] = explanation
+        # ── Stage 5: chart validation ─────────────────────────────────────
+        if chart_info.get("chartable") and raw:
+            chart_validation = await validate_chart(chart_info, raw, llm_provider)
+            if chart_validation.get("fixed"):
+                chart_info = chart_validation["fixed"]
+            result["chart_validation"] = chart_validation
+        else:
+            result["chart_validation"] = {}
 
-            # ── Stage 5: chart validation ─────────────────────────────────────
-            if chart_info.get("chartable") and raw:
-                chart_validation = await validate_chart(chart_info, raw, llm_provider)
-                # Use fixed spec if validator corrected it
-                if chart_validation.get("fixed"):
-                    chart_info = chart_validation["fixed"]
-                result["chart_validation"] = chart_validation
-            else:
-                result["chart_validation"] = {}
+        result["chart_info"] = chart_info
+        return result
 
-            result["chart_info"] = chart_info
-            return result
+    result = asyncio.run(_process())
+    answer = result.get("answer", str(result)) if isinstance(result, dict) else str(result)
+    if isinstance(result, dict) and result.get("sql"):
+        st.session_state.previous_sql = result["sql"]
 
-        result = asyncio.run(_process())
-        answer = result.get("answer", str(result)) if isinstance(result, dict) else str(result)
-        if isinstance(result, dict) and result.get("sql"):
-            st.session_state.previous_sql = result["sql"]
-
-        msg_index = len(st.session_state.messages)
-        st.session_state.messages.append({"role": "assistant", "content": answer})
-        st.session_state.message_meta[msg_index] = {
-            "result": result,
-            "scores": {},
-            "intent": config.intent,
-            "llm_provider": llm_provider,
-        }
+    msg_index = len(st.session_state.messages)
+    st.session_state.messages.append({"role": "assistant", "content": answer})
+    st.session_state.message_meta[msg_index] = {
+        "result": result,
+        "scores": {},
+        "intent": config.intent,
+        "llm_provider": llm_provider,
+    }
 
     # Persist to history
     history.upsert_session(
