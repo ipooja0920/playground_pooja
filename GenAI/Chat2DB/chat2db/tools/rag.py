@@ -11,6 +11,10 @@ Adapted from LlamaIndex's example repository:
 """
 
 import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'eval'))
+from evaltools import extract_sql_metadata
+
 from tools.ingest import VectorSearch
 from tools.db import DatabaseManager
 
@@ -54,11 +58,37 @@ class RAGSearch(VectorSearch):
         response = query_engine.query(query_text)
         return response
 
-    def sql_query(self, query_text: str) -> str:
-        """Perform a text-to-SQL query on the connected database."""
+    def sql_query(self, query_text: str) -> dict:
+        """Perform a schema-aware text-to-SQL query on the connected database.
+
+        Returns a structured dict with answer, sql, tables, columns, and raw_results.
+        """
         conn = create_engine(self.chat_db_manager.get_connection_string())
         sql_database = SQLDatabase(conn)
         table_names = self.chat_db_manager.get_table_names()
+        schema_info = self.chat_db_manager.get_schema_info()
+
+        schema_prompt = (
+            f"You are an expert SQL assistant that translates natural language to SQL.\n\n"
+            f"DATABASE SCHEMA:\n{schema_info}\n\n"
+            f"CONVERSATION HISTORY:\n{self.config.conversation_history or 'None'}\n\n"
+            f"CURRENT SQL QUERY (if any):\n{self.config.previous_sql or 'None'}\n\n"
+            f"USER MESSAGE:\n{query_text}\n\n"
+            f"INSTRUCTIONS:\n"
+            f"First, silently decide: is the user asking a NEW question or MODIFYING the previous query?\n\n"
+            f"Signs it is a MODIFICATION:\n"
+            f"- Uses pronouns like 'it', 'that', 'those', 'them'\n"
+            f"- Uses words like 'filter', 'only', 'also', 'now', 'instead', 'add', 'remove', 'exclude', 'sort', 'limit', 'top N'\n"
+            f"- The message is short and would not make sense without context\n"
+            f"- Refers to results just shown\n\n"
+            f"Signs it is a NEW question:\n"
+            f"- Introduces a completely new entity or topic not in the previous query\n"
+            f"- Does not reference anything from the conversation\n"
+            f"- Would make sense asked in isolation\n\n"
+            f"If MODIFICATION → take the CURRENT SQL QUERY and apply the change. Preserve all existing JOINs, GROUP BY, aliases, and aggregations unless explicitly changed.\n"
+            f"If NEW QUESTION → ignore the previous SQL and generate fresh.\n\n"
+            f"Using ONLY the tables and columns in the schema above, write and execute a valid PostgreSQL SELECT query."
+        )
 
         query_engine = NLSQLTableQueryEngine(
             sql_database=sql_database,
@@ -66,8 +96,22 @@ class RAGSearch(VectorSearch):
             sql_only=False,
             llm=self.llm,
         )
-        response = query_engine.query(query_text)
-        return response
+        response = query_engine.query(schema_prompt)
+
+        sql = response.metadata.get("sql_query", "") if response.metadata else ""
+        meta = extract_sql_metadata(sql)
+        raw = self.chat_db_manager.execute_query(sql) if sql else []
+        if raw is None:
+            raw = []
+
+        return {
+            "answer": str(response),
+            "sql": sql,
+            "tables": meta["tables"],
+            "columns": meta["columns"],
+            "attempts": 1,
+            "raw_results": raw,
+        }
 
 
 def run_rag_pipeline(

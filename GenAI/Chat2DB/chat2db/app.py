@@ -1,9 +1,12 @@
 """
 Chat2DB - Main Streamlit Application
 
-A web chatbot interface for database interactions using natural language.
-Supports multiple interaction methods (RAG, TAG) with different LLMs (OpenAI, Claude).
-Includes optional intent classification and comprehensive observability via Langfuse.
+Improvements over baseline:
+  - Schema Explorer in sidebar (live table/column browser)
+  - "How we got this answer" expander: SQL, tables used, columns used
+  - LLM-as-judge scores displayed inline (relevance + answer_quality)
+  - Tabular results rendered as a DataFrame when possible
+  - Both RAG and TAG pipelines return structured metadata
 """
 
 import streamlit as st
@@ -11,8 +14,8 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 from tools.db import DatabaseManager
-from tools.rag import RAGSearch  # RAG
-from tools.tag import create_tag_pipeline  # TAG
+from tools.rag import RAGSearch
+from tools.tag import create_tag_pipeline
 
 load_dotenv()
 
@@ -20,276 +23,318 @@ import asyncio
 import pickle
 from pathlib import Path
 
+import pandas as pd
+
 from langfuse.llama_index import LlamaIndexInstrumentor
 from langfuse.decorators import langfuse_context, observe
+from llama_index.llms.openai import OpenAI as OpenAILLM
+from llama_index.llms.anthropic import Anthropic as AnthropicLLM
 
 
 @dataclass
 class ChatConfig:
-    """Configuration for chat application."""
     interaction_method: str
     llm_provider: str
-    openai_model_name: str = "gpt-4"
+    openai_model_name: str = "gpt-4o-mini"
     claude_model_name: str = "claude-3-5-sonnet-20241022"
     temperature: float = 0.1
+    conversation_history: str = ""
+    previous_sql: str = ""
 
 
 class ChatDatabase:
-    """Main chat application class — manages DB connections, classifier, and query pipelines."""
-
     def __init__(self):
-        # Initialize Vector Database
         try:
             self.vec_db_manager = DatabaseManager(db_type='vecdb')
             self.vec_db_manager.test_connection()
         except Exception as e:
-            st.error(f"Error connecting to vector store: {str(e)}")
+            st.error(f"Error connecting to vector store: {e}")
             self.vec_db_manager = None
 
-        # Initialize Chat Database
         try:
             self.chat_db_manager = DatabaseManager(db_type='db')
             self.chat_db_manager.test_connection()
         except Exception as e:
-            st.error(f"Error connecting to SQL database: {str(e)}")
+            st.error(f"Error connecting to SQL database: {e}")
             self.chat_db_manager = None
 
-        # Load classifier model
-        self.classifier = self.load_classifier()
-
-        # Initialize Langfuse instrumentor
+        self.classifier = self._load_classifier()
         self.instrumentor = LlamaIndexInstrumentor()
         self.instrumentor.start()
-        print("Langfuse instrumentor checkpoint: Disregard Langfuse error messages on dev mode.")
 
-    def load_classifier(self):
-        """Load the intent classifier model from a pickle file."""
-        current_dir = Path(__file__).parent
-        model_path = current_dir / 'classifier/combined_sql_classifier.pkl'
-
+    def _load_classifier(self):
+        model_path = Path(__file__).parent / 'classifier/combined_sql_classifier.pkl'
         if not model_path.exists():
-            print(f"Classifier model not found at {model_path}. Intent classification disabled.")
             return None
-
         try:
-            with open(model_path, 'rb') as file:
-                objects = pickle.load(file)
-            return objects
-        except Exception as e:
-            print(f"Error loading classifier: {e}")
+            with open(model_path, 'rb') as f:
+                return pickle.load(f)
+        except Exception:
             return None
 
-    def classify_prompt(self, prompt):
-        """Classify the prompt using the loaded classifier."""
+    def classify_prompt(self, prompt: str) -> bool:
         if self.classifier is None:
-            # If no classifier loaded, allow all queries
             return True
-
         vectorizer = self.classifier["vectorizer"]
-        binary_classifier = self.classifier["binary_classifier"]
-        classifier_domain = self.classifier["classifier_domain"]
-        classifier_complexity = self.classifier["classifier_complexity"]
-        classifier_task_type = self.classifier["classifier_task_type"]
-        label_encoder_domain = self.classifier["label_encoder_domain"]
-        label_encoder_complexity = self.classifier["label_encoder_complexity"]
-        label_encoder_task_type = self.classifier["label_encoder_task_type"]
+        binary_clf = self.classifier["binary_classifier"]
+        is_sql = binary_clf.predict(vectorizer.transform([prompt]))[0]
+        return bool(is_sql)
 
-        # Transform the prompt using the vectorizer
-        prompt_tfidf = vectorizer.transform([prompt])
-
-        # Binary Classification (SQL vs Non-SQL)
-        is_sql = binary_classifier.predict(prompt_tfidf)[0]
-
-        # If not SQL, return early
-        if is_sql == 0:
-            print("Classification Results: Non-SQL Query")
-            return False
-
-        # Predict using the classifiers
-        domain_prediction = classifier_domain.predict(prompt_tfidf)[0]
-        complexity_prediction = classifier_complexity.predict(prompt_tfidf)[0]
-        task_type_prediction = classifier_task_type.predict(prompt_tfidf)[0]
-
-        # Decode predictions
-        domain = label_encoder_domain.inverse_transform([domain_prediction])[0]
-        complexity = label_encoder_complexity.inverse_transform([complexity_prediction])[0]
-        task_type = label_encoder_task_type.inverse_transform([task_type_prediction])[0]
-
-        print("Classification Results: SQL Query")
-        print(f"Domain: {domain}")
-        print(f"Complexity: {complexity}")
-        print(f"Task Type: {task_type}")
-
-        return True
-
-    def rag_pipeline(self, query: str, config: ChatConfig) -> str:
-        """RAG pipeline for database queries."""
+    async def _judge_response(self, query: str, response: str, config: ChatConfig) -> dict:
+        """Rate the response with a cheap LLM and push scores to Langfuse."""
+        prompt = (
+            f"Rate this database chatbot response (0.0–1.0).\n\n"
+            f"User question: {query}\n"
+            f"Response: {response}\n\n"
+            f"Reply with ONLY these two lines:\n"
+            f"relevance: <score>\n"
+            f"answer_quality: <score>\n\n"
+            f"relevance = does it directly answer the question?\n"
+            f"answer_quality = is it clear, accurate, and well-structured?"
+        )
         try:
-            rag_search = RAGSearch(
-                self.vec_db_manager, self.chat_db_manager, config=config
+            llm = (
+                OpenAILLM(model="gpt-4o-mini", temperature=0.0)
+                if config.llm_provider == "OpenAI"
+                else AnthropicLLM(model="claude-3-5-haiku-20241022", temperature=0.0)
             )
-
-            response = rag_search.query(
-                f"You are Postgres expert. Generate a SQL based on the following "
-                f"question using the additional metadata given to you: {query}"
-            )
-            print("Generated response:", response)
-
-            sql_query = str(response).strip("`sql\n").strip("`")
-            print("Generated SQL:", sql_query)
-
-            # Execute SQL query
-            sql_result = rag_search.sql_query(str(sql_query))
-            print("SQL Result:", sql_result)
-
-            return sql_result
-
+            output = await llm.acomplete(prompt)
+            scores = {}
+            for line in str(output).strip().splitlines():
+                if ":" in line:
+                    k, _, v = line.partition(":")
+                    try:
+                        scores[k.strip()] = float(v.strip())
+                    except ValueError:
+                        pass
+            for name, value in scores.items():
+                langfuse_context.score_current_trace(name=name, value=value)
+            return scores
         except Exception as e:
-            return f"Error in RAG pipeline: {str(e)}"
+            print(f"[Judge] Scoring failed (non-critical): {e}")
+            return {}
 
     @observe()
-    async def tag_pipeline(self, query: str, config: ChatConfig) -> str:
-        """TAG pipeline for database queries."""
+    async def rag_pipeline(self, query: str, config: ChatConfig) -> dict:
         try:
-            # Verify database connections
-            if not self.vec_db_manager or not self.chat_db_manager:
-                return "Error: Database connections not initialized"
+            rag = RAGSearch(self.vec_db_manager, self.chat_db_manager, config=config)
+            result = rag.sql_query(query)
+            await self._judge_response(query, result.get("answer", ""), config)
+            return result
+        except Exception as e:
+            return {"answer": f"Error in RAG pipeline: {e}", "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
 
-            # Initialize TAG workflow
-            tag_workflow = create_tag_pipeline(
+    @observe()
+    async def tag_pipeline(self, query: str, config: ChatConfig) -> dict:
+        try:
+            if not self.vec_db_manager or not self.chat_db_manager:
+                return {"answer": "Error: Database connections not initialized", "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
+
+            workflow = create_tag_pipeline(
                 vec_db_manager=self.vec_db_manager,
                 chat_db_manager=self.chat_db_manager,
                 config=config,
             )
+            trace_id = langfuse_context.get_current_trace_id()
+            obs_id = langfuse_context.get_current_observation_id()
+            with self.instrumentor.observe(trace_id=trace_id, parent_observation_id=obs_id, update_parent=False):
+                result = await workflow.run(query=query)
 
-            current_trace_id = langfuse_context.get_current_trace_id()
-            current_observation_id = langfuse_context.get_current_observation_id()
-            with self.instrumentor.observe(
-                trace_id=current_trace_id,
-                parent_observation_id=current_observation_id,
-                update_parent=False,
-            ):
-                # Execute workflow
-                handler = tag_workflow.run(query=query)
-                response = await handler
-                return str(response)
+            if isinstance(result, str):
+                result = {"answer": result, "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
 
+            await self._judge_response(query, result.get("answer", ""), config)
+            return result
         except Exception as e:
-            return f"Error in TAG pipeline: {str(e)}"
+            return {"answer": f"Error in TAG pipeline: {e}", "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
 
+
+# ── UI Helpers ────────────────────────────────────────────────────────────────
+
+def render_query_details(result: dict, scores: dict):
+    """Render the 'How we got this answer' expander."""
+    sql = result.get("sql")
+    tables = result.get("tables", [])
+    columns = result.get("columns", [])
+    attempts = result.get("attempts", 1)
+    raw = result.get("raw_results", [])
+
+    with st.expander("🔍 How we got this answer", expanded=False):
+        # Judge scores
+        if scores:
+            cols = st.columns(len(scores))
+            score_colors = {1.0: "🟢", 0.8: "🟡", 0.0: "🔴"}
+            for i, (name, value) in enumerate(scores.items()):
+                color = next(c for threshold, c in sorted(score_colors.items(), reverse=True) if value >= threshold)
+                cols[i].metric(label=name.replace("_", " ").title(), value=f"{color} {value:.2f}")
+
+        if attempts > 1:
+            st.warning(f"⚡ SQL self-corrected after {attempts} attempt(s)")
+
+        # SQL
+        if sql:
+            st.markdown("**Generated SQL**")
+            st.code(sql, language="sql")
+
+            # Tables used
+            if tables:
+                st.markdown("**Tables referenced**")
+                st.markdown(" ".join(f"`{t}`" for t in tables))
+
+            # Columns used
+            if columns:
+                st.markdown("**Columns used**")
+                st.markdown(" ".join(f"`{c}`" for c in columns))
+        else:
+            st.info("No SQL was generated for this response.")
+
+        # Raw results as DataFrame
+        if raw:
+            try:
+                df = pd.DataFrame(raw)
+                # If columns are integers (tuples, not dicts), use SQL column names
+                if df.columns.dtype == int or all(isinstance(c, int) for c in df.columns):
+                    if columns:
+                        df.columns = columns[:len(df.columns)]
+                st.markdown("**Raw query results**")
+                st.dataframe(df, use_container_width=True)
+            except Exception:
+                pass
+
+
+def render_schema_explorer(db_manager: DatabaseManager):
+    """Render a live schema browser in the sidebar."""
+    with st.sidebar.expander("🗂️ Schema Explorer", expanded=False):
+        try:
+            schema = db_manager.get_schema_info()
+            current_table = None
+            for line in schema.splitlines():
+                if line.startswith("Table:"):
+                    current_table = line.replace("Table:", "").strip()
+                    st.markdown(f"**{current_table}**")
+                elif line.strip().startswith(("album_", "artist_", "customer_", "employee_", "genre_",
+                                              "invoice_", "media_", "playlist_", "track_")) or (
+                    line.strip() and not line.startswith("Table:") and current_table
+                ):
+                    st.markdown(f"<small style='color:gray;margin-left:12px'>{line.strip()}</small>",
+                                unsafe_allow_html=True)
+        except Exception as e:
+            st.caption(f"Could not load schema: {e}")
+
+
+# ── Main App ──────────────────────────────────────────────────────────────────
 
 def main():
-    """Main Streamlit application entry point."""
-
-    # Session state initialization
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "message_meta" not in st.session_state:
+        st.session_state.message_meta = {}  # index → {result, scores}
     if "intent_classifier_enabled" not in st.session_state:
         st.session_state.intent_classifier_enabled = False
+    if "previous_sql" not in st.session_state:
+        st.session_state.previous_sql = ""
 
-    # Page config
     st.set_page_config(
         page_title="Chat2DB — Talk to Your Database",
         page_icon="🤖",
         layout="wide",
     )
 
-    # Streamlit UI
-    st.title("🤖 Chat To Your Database 🤖")
+    st.title("🤖 Chat To Your Database")
     st.caption("Ask questions about your database in plain English")
+
+    chat = ChatDatabase()
 
     with st.sidebar:
         st.header("⚙️ Configuration")
 
         interaction_method = st.selectbox(
-            "Interaction Method",
-            ["RAG", "TAG"],
-            key="interaction_method",
-            help="RAG: Vector-augmented SQL generation. TAG: Direct table-augmented generation.",
+            "Interaction Method", ["RAG", "TAG"],
+            help="RAG: Schema-aware SQL generation. TAG: Self-correcting multi-step pipeline.",
         )
-
         llm_provider = st.selectbox(
-            "LLM Provider",
-            ["OpenAI", "Claude"],
-            key="llm_provider",
+            "LLM Provider", ["OpenAI", "Claude"],
             help="Choose which LLM to use for query generation.",
         )
 
         with st.expander("Advanced Settings"):
-            temperature = st.slider(
-                "Temperature",
-                min_value=0.0,
-                max_value=1.0,
-                value=0.1,
-                step=0.1,
-                help="Lower = more deterministic, Higher = more creative",
-            )
+            temperature = st.slider("Temperature", 0.0, 1.0, 0.1, 0.1,
+                                    help="Lower = more deterministic")
             st.session_state.intent_classifier_enabled = st.toggle(
                 "Intent Classifier",
                 value=st.session_state.intent_classifier_enabled,
-                help="Enable/disable intent classification to filter non-database questions",
             )
 
         st.divider()
         st.markdown("### 📊 Sample Questions")
-        st.markdown(
-            """
-            - What track has the most revenue?
-            - Which customer spent the most?
-            - List all jazz albums
-            - How many tracks per genre?
-            - Show top 5 artists by album count
-            """
-        )
+        st.markdown("""
+- What track has the most revenue?
+- Which customer spent the most?
+- List all jazz albums
+- How many tracks per genre?
+- Show top 5 artists by album count
+- What is the total revenue by country?
+        """)
 
-    # Initialize chat interface
-    chat = ChatDatabase()
+        # Live schema explorer
+        if chat.chat_db_manager:
+            render_schema_explorer(chat.chat_db_manager)
 
-    # Chat interface
+    # Chat input
     if query := st.chat_input("Ask a question about your database"):
+        # Build conversation history from last 6 messages (3 turns)
+        history_lines = []
+        recent = st.session_state.messages[-6:]
+        for m in recent:
+            role = "User" if m["role"] == "user" else "Assistant"
+            history_lines.append(f"{role}: {m['content']}")
+        conversation_history = "\n".join(history_lines)
+
         config = ChatConfig(
             interaction_method=interaction_method,
             llm_provider=llm_provider,
             temperature=temperature,
+            conversation_history=conversation_history,
+            previous_sql=st.session_state.previous_sql,
         )
 
-        # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": query})
 
-        with st.spinner("Processing your question..."):
-            # Check intent first
-            should_process_llm = True
+        with st.spinner("Thinking..."):
+            should_process = True
             if st.session_state.intent_classifier_enabled:
-                should_process_llm = chat.classify_prompt(query)
-                if not should_process_llm:
-                    st.session_state.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": "Message from Classifier: This question doesn't appear to be database-related.",
-                        }
-                    )
+                should_process = chat.classify_prompt(query)
+                if not should_process:
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": "This question doesn't appear to be database-related.",
+                    })
 
-            if should_process_llm:
-                # Process query based on selected method
-                response = (
+            if should_process:
+                run = (
                     chat.rag_pipeline(query, config)
                     if interaction_method == "RAG"
-                    else asyncio.run(chat.tag_pipeline(query, config))
+                    else chat.tag_pipeline(query, config)
                 )
-                # Add assistant response to chat history
-                if isinstance(response, str):
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": response}
-                    )
-                else:
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": response.response}
-                    )
+                result = asyncio.run(run)
+                scores = {}  # scores are pushed to Langfuse inside _judge_response
 
-    # Display the entire chat history
-    for message in st.session_state.messages:
+                answer = result.get("answer", str(result)) if isinstance(result, dict) else str(result)
+                # Track the SQL for next turn
+                if isinstance(result, dict) and result.get("sql"):
+                    st.session_state.previous_sql = result["sql"]
+                msg_index = len(st.session_state.messages)
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+                st.session_state.message_meta[msg_index] = {"result": result, "scores": scores}
+
+    # Render chat history
+    for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
             st.write(message["content"])
+            # Show query details expander for assistant messages that have metadata
+            if message["role"] == "assistant" and i in st.session_state.message_meta:
+                meta = st.session_state.message_meta[i]
+                render_query_details(meta["result"], meta["scores"])
 
 
 if __name__ == "__main__":

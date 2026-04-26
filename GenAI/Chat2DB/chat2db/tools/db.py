@@ -94,7 +94,8 @@ class DatabaseManager:
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 if cur.description:  # Check if query returns results
-                    return cur.fetchall()
+                    col_names = [desc[0] for desc in cur.description]
+                    return [dict(zip(col_names, row)) for row in cur.fetchall()]
                 conn.commit()
                 return []
         except Exception as e:
@@ -102,6 +103,53 @@ class DatabaseManager:
             if conn:
                 conn.rollback()
             return None
+        finally:
+            if conn:
+                conn.close()
+
+    def get_schema_info(self) -> str:
+        """Return full schema as a formatted string: tables, columns, types, and FK relationships."""
+        conn = None
+        try:
+            conn = psycopg2.connect(**self.config)
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT table_name, column_name, data_type
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                ORDER BY table_name, ordinal_position
+            """)
+            columns = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT tc.table_name, kcu.column_name,
+                       ccu.table_name AS foreign_table, ccu.column_name AS foreign_column
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                JOIN information_schema.constraint_column_usage ccu
+                  ON ccu.constraint_name = tc.constraint_name
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+            """)
+            fks = {f"{t}.{c}": f"{ft}.{fc}" for t, c, ft, fc in cursor.fetchall()}
+
+            tables = {}
+            for table, col, dtype in columns:
+                tables.setdefault(table, []).append((col, dtype))
+
+            lines = []
+            for table, cols in tables.items():
+                lines.append(f"Table: {table}")
+                for col, dtype in cols:
+                    fk = fks.get(f"{table}.{col}", "")
+                    fk_note = f"  → FK to {fk}" if fk else ""
+                    lines.append(f"  {col} ({dtype}){fk_note}")
+                lines.append("")
+            return "\n".join(lines)
+        except Exception as e:
+            print(f"Error fetching schema: {e}")
+            return ""
         finally:
             if conn:
                 conn.close()

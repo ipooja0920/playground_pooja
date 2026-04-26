@@ -95,6 +95,25 @@ def extract_sql_from_response(text: str) -> Optional[str]:
     return text.strip()
 
 
+def extract_sql_metadata(sql: str) -> dict:
+    """Extract tables and columns referenced in a SQL query using sqlglot.
+
+    Returns:
+        Dict with 'tables' and 'columns' lists
+    """
+    if not sql:
+        return {"tables": [], "columns": []}
+    try:
+        import sqlglot
+        import sqlglot.expressions as exp
+        ast = sqlglot.parse_one(sql, dialect="postgres")
+        tables = sorted({t.name for t in ast.find_all(exp.Table) if t.name})
+        columns = sorted({c.name for c in ast.find_all(exp.Column) if c.name})
+        return {"tables": tables, "columns": columns}
+    except Exception:
+        return {"tables": [], "columns": []}
+
+
 def calculate_metrics(results: list) -> dict:
     """Calculate aggregate metrics from evaluation results.
     
