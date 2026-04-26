@@ -1032,6 +1032,39 @@ def inject_sidebar_css():
     box-shadow: none !important;
     outline: none !important;
 }
+/* ── History item buttons — look like cards, not buttons ── */
+[data-testid="stSidebar"] button[kind="secondary"][data-testid^="stBaseButton"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #cbd5e1 !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    white-space: pre-line !important;
+    line-height: 1.45 !important;
+    padding: 10px 8px !important;
+    margin-bottom: 2px !important;
+    border-radius: 10px !important;
+}
+[data-testid="stSidebar"] button[kind="secondary"][data-testid^="stBaseButton"]:hover {
+    background: rgba(139, 92, 246, 0.12) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(139, 92, 246, 0.30) !important;
+}
+/* Most-recent history item gets the purple card treatment */
+.hist-btn-active button[kind="secondary"] {
+    background: linear-gradient(135deg, rgba(124,58,237,0.40), rgba(67,56,202,0.25)) !important;
+    border: 1px solid rgba(139, 92, 246, 0.65) !important;
+    border-radius: 13px !important;
+    color: white !important;
+    padding: 13px 14px !important;
+    margin-bottom: 12px !important;
+}
+.hist-btn-active button[kind="secondary"]:hover {
+    background: linear-gradient(135deg, rgba(124,58,237,0.55), rgba(67,56,202,0.40)) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1076,15 +1109,17 @@ def render_sidebar(history: HistoryManager):
             for i, s in enumerate(recent):
                 title = s["title"][:50] + ("…" if len(s["title"]) > 50 else "")
                 updated = s.get("updated_at", "")[:16].replace("T", " ") if s.get("updated_at") else ""
-                card_cls = "history-card-active" if i == 0 else "history-card"
-                st.markdown(
-                    f'<div class="{card_cls}">💬 &nbsp;{title}'
-                    f'<div class="history-time">{updated}</div></div>',
-                    unsafe_allow_html=True,
-                )
-                if st.button("↩ Load", key=f"hist_{s['id']}", use_container_width=True):
+                active = i == 0
+                btn_label = f"💬  {title}\n{updated}"
+                btn_key = f"hist_{s['id']}"
+                # Apply active class via a wrapper div
+                if active:
+                    st.markdown('<div class="hist-btn-active">', unsafe_allow_html=True)
+                if st.button(btn_label, key=btn_key, use_container_width=True):
                     _load_session(s)
                     st.rerun()
+                if active:
+                    st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown("""
 <div class="history-card">
