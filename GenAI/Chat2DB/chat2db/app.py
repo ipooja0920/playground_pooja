@@ -242,57 +242,10 @@ html, body,
     max-width: 1400px;
 }
 
-/* ── Sidebar shell ── */
+/* ── Sidebar shell width ── */
 section[data-testid="stSidebar"] {
-    border-right: 1px solid var(--border);
-    min-width: 240px !important;
-    max-width: 240px !important;
-}
-section[data-testid="stSidebar"] > div:first-child {
-    background: linear-gradient(180deg,#0d1728,#07101f) !important;
-    padding: 1rem 0.75rem 1rem 0.75rem;
-}
-
-/* ── New Question button ── */
-section[data-testid="stSidebar"] .stButton > button {
-    background: linear-gradient(90deg, var(--purple), var(--purple2)) !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 14px !important;
-    font-weight: 700 !important;
-    padding: 0.6rem 1rem !important;
-    width: 100% !important;
-    margin-bottom: 4px;
-    box-shadow: 0 6px 20px rgba(91,33,182,.35);
-    transition: opacity .15s;
-}
-section[data-testid="stSidebar"] .stButton > button:hover { opacity: .88; }
-
-/* ── Nav divider & labels ── */
-section[data-testid="stSidebar"] hr { border-color: var(--border) !important; }
-
-/* ── History buttons (look like nav items, not action buttons) ── */
-section[data-testid="stSidebar"] [data-testid="stButton"][class*="hist_"] > button,
-section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: var(--muted) !important;
-    font-size: 12.5px !important;
-    font-weight: 400 !important;
-    text-align: left !important;
-    justify-content: flex-start !important;
-    padding: 6px 10px !important;
-    min-height: unset !important;
-    border-left: 2px solid transparent !important;
-    border-radius: 8px !important;
-    margin-bottom: 2px;
-    transition: all .12s;
-}
-section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button:hover {
-    color: var(--text) !important;
-    border-left-color: var(--purple) !important;
-    background: rgba(124,58,237,.08) !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
 }
 
 /* ── Dashboard cards ── */
@@ -962,79 +915,183 @@ def render_topbar(chat: ChatDatabase) -> tuple[str, str, float, bool]:
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 NAV = [
-    ("dashboard", "📊", "Dashboard"),
-    ("schema",    "🔍", "Explore Schema"),
-    ("saved",     "💾", "Saved Queries"),
-    ("favorites", "⭐", "Favorites"),
+    ("🏠  Dashboard",      "dashboard"),
+    ("🔎  Explore Schema", "schema"),
+    ("💾  Saved Queries",  "saved"),
+    ("⭐  Favorites",      "favorites"),
 ]
 
 
+def inject_sidebar_css():
+    st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #07111f 0%, #050b16 100%);
+    border-right: 1px solid rgba(148, 163, 184, 0.18);
+}
+[data-testid="stSidebar"] > div:first-child {
+    padding: 28px 18px 24px 18px;
+}
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.45);
+}
+.logo-title {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.logo-subtitle {
+    color: #94a3b8;
+    font-size: 15px;
+    margin-top: 4px;
+}
+[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: #dbeafe;
+    font-weight: 650;
+    font-size: 15px;
+    text-align: left;
+    justify-content: flex-start;
+    padding: 13px 16px;
+    margin: 3px 0;
+    transition: all 0.2s ease;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: rgba(139, 92, 246, 0.18);
+    color: #ffffff;
+    border: 1px solid rgba(139, 92, 246, 0.35);
+}
+[data-testid="stSidebar"] .stButton:first-of-type > button {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white;
+    text-align: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 750;
+    padding: 15px 18px;
+    margin-bottom: 24px;
+    box-shadow: 0 0 26px rgba(139, 92, 246, 0.42);
+}
+[data-testid="stSidebar"] hr {
+    border: none;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    margin: 24px 0 18px 0;
+}
+.sidebar-section-title {
+    color: #e5e7eb;
+    font-size: 16px;
+    font-weight: 750;
+    margin: 10px 0 14px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.history-card-active {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.40), rgba(67, 56, 202, 0.25));
+    border: 1px solid rgba(139, 92, 246, 0.65);
+    border-radius: 13px;
+    padding: 13px 14px;
+    margin-bottom: 12px;
+    color: white;
+    line-height: 1.4;
+    cursor: pointer;
+}
+.history-card {
+    padding: 10px 8px;
+    margin-bottom: 8px;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.4;
+    cursor: pointer;
+}
+.history-time {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 5px;
+    margin-left: 24px;
+}
+[data-testid="stSidebar"] button:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 def render_sidebar(history: HistoryManager):
-    """Draw the Claude-style left panel."""
+    """Draw the sidebar: logo, New Question, nav, and conversation history."""
     with st.sidebar:
         # Logo
-        st.markdown(
-            """
-            <div style="display:flex;align-items:center;gap:10px;padding:4px 0 18px 0;">
-              <div style="width:38px;height:38px;border-radius:11px;
-                          background:linear-gradient(135deg,#7c3aed,#4f46e5);
-                          display:flex;align-items:center;justify-content:center;font-size:20px;">
-                🤖
-              </div>
-              <div>
-                <div style="font-size:16px;font-weight:700;color:#f0f4ff;line-height:1.2;">Chat2DB</div>
-                <div style="font-size:11px;color:#7a8bb0;">AI SQL Analyst</div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown("""
+<div class="sidebar-logo">
+    <div class="logo-icon">🤖</div>
+    <div>
+        <div class="logo-title">Chat2DB</div>
+        <div class="logo-subtitle">AI SQL Analyst</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
         # New Question
-        if st.button("＋  New Question", use_container_width=True):
+        if st.button("＋  New Question", key="new_question", use_container_width=True):
             _new_chat()
             st.rerun()
 
-        st.divider()
-
         # Nav items
-        current = st.session_state.get("current_page", "dashboard")
-        for page_id, icon, label in NAV:
-            active_mark = "▶ " if current == page_id else "     "
-            if st.button(f"{active_mark}{icon}  {label}", key=f"nav_{page_id}",
-                         use_container_width=True):
+        for label, page_id in NAV:
+            if st.button(label, key=f"nav_{page_id}", use_container_width=True):
                 st.session_state.current_page = page_id
                 st.rerun()
 
-        st.divider()
+        st.markdown("<hr>", unsafe_allow_html=True)
 
-        # Conversation history (last 5) — rendered as a placecard
+        # Conversation history
+        st.markdown("""
+<div class="sidebar-section-title">
+    <span>Conversation History</span>
+    <span>🔍</span>
+</div>
+""", unsafe_allow_html=True)
+
         recent = history.get_recent(5)
         if recent:
-            # Card header
-            st.markdown(
-                '<div style="background:linear-gradient(160deg,rgba(18,28,49,0.90),rgba(11,18,32,0.90));'
-                'border:1px solid rgba(149,167,209,0.16);border-radius:14px 14px 0 0;'
-                'padding:12px 12px 8px 12px;margin-top:4px;">'
-                '<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;'
-                'color:#7a8bb0;text-transform:uppercase;letter-spacing:.8px;">'
-                '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" '
-                'stroke="#7a8bb0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
-                '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'
-                '</svg>Conversation History</div></div>',
-                unsafe_allow_html=True,
-            )
-            # Card body — buttons styled as list items via CSS class .hist-btn
-            st.markdown(
-                '<div class="hist-card-body">',
-                unsafe_allow_html=True,
-            )
-            for s in recent:
-                title = s["title"][:44] + ("…" if len(s["title"]) > 44 else "")
-                if st.button(f"• {title}", key=f"hist_{s['id']}", use_container_width=True):
+            for i, s in enumerate(recent):
+                title = s["title"][:50] + ("…" if len(s["title"]) > 50 else "")
+                updated = s.get("updated_at", "")[:16].replace("T", " ") if s.get("updated_at") else ""
+                card_cls = "history-card-active" if i == 0 else "history-card"
+                st.markdown(
+                    f'<div class="{card_cls}">💬 &nbsp;{title}'
+                    f'<div class="history-time">{updated}</div></div>',
+                    unsafe_allow_html=True,
+                )
+                if st.button("↩ Load", key=f"hist_{s['id']}", use_container_width=True):
                     _load_session(s)
                     st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.markdown("""
+<div class="history-card">
+    No questions yet.
+    <div class="history-time">Start a new query</div>
+</div>
+""", unsafe_allow_html=True)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -1060,6 +1117,7 @@ def main():
     chat    = ChatDatabase()
 
     # ── Sidebar ────────────────────────────────────────────────────────────────
+    inject_sidebar_css()
     render_sidebar(history)
 
     # ── Top bar (right panel) ─────────────────────────────────────────────────
