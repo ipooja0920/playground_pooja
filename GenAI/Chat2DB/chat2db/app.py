@@ -993,8 +993,8 @@ def inject_sidebar_css():
     color: #ffffff;
     border: 1px solid rgba(139, 92, 246, 0.35);
 }
-/* New Question button: purple solid button */
-[data-testid="stSidebar"] .new-question-btn .stButton > button {
+/* New Question button: first .stButton in sidebar gets solid purple */
+[data-testid="stSidebar"] .stButton:first-of-type > button {
     background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
     color: white !important;
     font-size: 15px !important;
@@ -1005,7 +1005,7 @@ def inject_sidebar_css():
     border: none !important;
     border-radius: 12px !important;
 }
-[data-testid="stSidebar"] .new-question-btn .stButton > button:hover {
+[data-testid="stSidebar"] .stButton:first-of-type > button:hover {
     opacity: 0.9 !important;
     background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
     border: none !important;
@@ -1104,12 +1104,10 @@ def render_sidebar(history: HistoryManager):
 </div>
 """, unsafe_allow_html=True)
 
-        # New Question — purple button, left-aligned
-        st.markdown('<div class="new-question-btn">', unsafe_allow_html=True)
+        # New Question — purple solid button (styled via :first-of-type CSS)
         if st.button("＋  New Question", key="new_question", use_container_width=True):
             _new_chat()
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
         # Nav items
         for label, page_id in NAV:
