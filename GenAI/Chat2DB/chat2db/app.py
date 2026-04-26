@@ -314,6 +314,9 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
     margin-bottom: 24px !important;
     transition: all 0.3s ease !important;
 }
+.stChatMessage, .stChatMessage p, .stChatMessage span, .stChatMessage div {
+    color: #1e293b !important;
+}
 .stChatMessage:hover {
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05) !important;
 }
@@ -441,6 +444,12 @@ div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > bu
 }
 [data-testid="stChatInput"] textarea {
     color: var(--text) !important;
+}
+[data-testid="stChatInputSubmitButton"] {
+    color: var(--primary) !important;
+}
+[data-testid="stChatInputSubmitButton"] svg {
+    fill: var(--primary) !important;
 }
 
 /* ── Custom Metric Dashboard ── */
@@ -598,8 +607,15 @@ def render_chat(chat: ChatDatabase, history: HistoryManager,
     pending = st.session_state.pop("pending_question", None)
     if pending:
         st.session_state.messages.append({"role": "user", "content": pending})
+        msg_idx = len(st.session_state.messages) - 1
         with st.chat_message("user"):
-            st.write(pending)
+            col1, col2 = st.columns([9, 1])
+            with col1:
+                st.write(pending)
+            with col2:
+                if st.button("☆", key=f"fav_{msg_idx}"):
+                    history.add_favorite(st.session_state.session_id)
+                    st.toast("Added to favourites!")
         with st.chat_message("assistant"):
             with st.spinner("Thinking…"):
                 _handle_query(pending, chat, history, interaction_method, llm_provider,
@@ -614,6 +630,14 @@ def render_chat(chat: ChatDatabase, history: HistoryManager,
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and i in st.session_state.message_meta:
                 _render_assistant(message, st.session_state.message_meta[i], history)
+            elif message["role"] == "user":
+                col1, col2 = st.columns([9, 1])
+                with col1:
+                    st.write(message["content"])
+                with col2:
+                    if st.button("☆", key=f"fav_loop_{i}"):
+                        history.add_favorite(st.session_state.session_id)
+                        st.toast("Added to favourites!")
             else:
                 st.write(message["content"])
 
@@ -621,8 +645,15 @@ def render_chat(chat: ChatDatabase, history: HistoryManager,
     if query := st.chat_input("Ask a question about your database…"):
         # Show user message immediately, before LLM starts
         st.session_state.messages.append({"role": "user", "content": query})
+        msg_idx = len(st.session_state.messages) - 1
         with st.chat_message("user"):
-            st.write(query)
+            col1, col2 = st.columns([9, 1])
+            with col1:
+                st.write(query)
+            with col2:
+                if st.button("☆", key=f"fav_new_{msg_idx}"):
+                    history.add_favorite(st.session_state.session_id)
+                    st.toast("Added to favourites!")
 
         # Show thinking indicator while LLM processes
         with st.chat_message("assistant"):
@@ -903,22 +934,14 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
     chart_info["_validation"] = result.get("chart_validation", {})
     chartable = chart_info.get("chartable", False)
 
-    # ── User Question Chips & Favorite ────────────────────────────────────────
-    c1, _, c3 = st.columns([8, 1, 1])
-    with c1:
-        st.markdown('''
-            <div style="margin-top:-10px;">
-                <span class="top-chip intent">Intent: Analytical</span>
-                <span class="top-chip mode">Mode: Hybrid (RAG + TAG)</span>
-                <span class="top-chip sources">Sources: 8 docs, 12 tables</span>
-            </div>
-        ''', unsafe_allow_html=True)
-    with c3:
-        if st.button("☆", key=f"fav_{id(meta)}"):
-             history.add_favorite(st.session_state.session_id)
-             st.toast("Added to favourites!")
-
-    st.write(message["content"])
+    # ── User Question Chips ───────────────────────────────────────────────────
+    st.markdown('''
+        <div style="margin-top:-10px;">
+            <span class="top-chip intent">Intent: Analytical</span>
+            <span class="top-chip mode">Mode: Hybrid (RAG + TAG)</span>
+            <span class="top-chip sources">Sources: 8 docs, 12 tables</span>
+        </div>
+    ''', unsafe_allow_html=True)
 
     # ── Dynamic Metrics Logic ─────────────────────────────────────────────────
     df = None
@@ -994,6 +1017,9 @@ def _render_assistant(message: dict, meta: dict, history: HistoryManager):
             </div>
         ''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── Answer Text ───────────────────────────────────────────────────────────
+    st.write(message["content"])
 
     # ── Tabs Configuration ────────────────────────────────────────────────────
     tab_names = ["Results", "Chart", "SQL", "Explanation", "Context"]
