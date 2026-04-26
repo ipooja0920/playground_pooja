@@ -1041,7 +1041,6 @@ NAV = [
 
 
 def inject_sidebar_css():
-def inject_sidebar_css():
     st.markdown("""
 <style>
 /* ── Sidebar styling ── */
