@@ -111,7 +111,7 @@ class VectorSearch:
         try:
             result = self.db_manager.execute_query(query)
 
-            if not (isinstance(result, list) and result[0][0]):
+            if not (isinstance(result, list) and result and result[0].get('exists', False)):
                 return False
 
             # If table exists, check if it has records
@@ -121,7 +121,7 @@ class VectorSearch:
                 );
             """
             records_result = self.db_manager.execute_query(records_query)
-            return isinstance(records_result, list) and records_result[0][0]
+            return isinstance(records_result, list) and bool(records_result) and records_result[0].get('exists', False)
 
         except Exception as e:
             print(f"Error checking vector store: {e}")

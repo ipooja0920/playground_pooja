@@ -14,8 +14,10 @@ Flow:
     → StopEvent
 """
 
+import asyncio
 import os
 import sys
+from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'eval'))
 from evaltools import extract_sql_metadata
 
@@ -88,6 +90,19 @@ class TAGWorkflow(Workflow):
             s.startswith('CREATE TABLE') and 'AS SELECT' in s
         )
 
+    async def _get_schema_async(self) -> str:
+        """Fetch live DB schema in a thread executor so it can run concurrently."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.chat_db_manager.get_schema_info)
+
+    async def _get_business_rules_async(self) -> str:
+        """Load curated Chinook business rules from disk concurrently."""
+        loop = asyncio.get_event_loop()
+        def _read():
+            rules_path = Path(__file__).parent.parent.parent / "db" / "chinook_business_rules.md"
+            return rules_path.read_text() if rules_path.exists() else ""
+        return await loop.run_in_executor(None, _read)
+
     # ── Step 1: Query Synthesis ───────────────────────────────────────────────
 
     def _make_error_result(self, message: str) -> dict:
@@ -106,9 +121,20 @@ class TAGWorkflow(Workflow):
             conversation_history = getattr(config, 'conversation_history', '') if config else ''
             previous_sql = getattr(config, 'previous_sql', '') if config else ''
 
+            # Parallel retrieval: schema (live DB) and business rules (vector store doc) concurrently
+            schema_info, business_rules = await asyncio.gather(
+                self._get_schema_async(),
+                self._get_business_rules_async(),
+            )
+
+            business_rules_section = (
+                f"DOMAIN BUSINESS RULES:\n{business_rules}\n\n" if business_rules else ""
+            )
+
             schema_prompt = (
                 f"You are an expert SQL assistant that translates natural language to SQL.\n\n"
-                f"DATABASE SCHEMA:\n{self.schema_info}\n\n"
+                f"DATABASE SCHEMA:\n{schema_info}\n\n"
+                f"{business_rules_section}"
                 f"CONVERSATION HISTORY:\n{conversation_history or 'None'}\n\n"
                 f"CURRENT SQL QUERY (if any):\n{previous_sql or 'None'}\n\n"
                 f"USER MESSAGE:\n{ev.query}\n\n"

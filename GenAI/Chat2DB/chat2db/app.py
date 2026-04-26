@@ -40,6 +40,7 @@ class ChatConfig:
     temperature: float = 0.1
     conversation_history: str = ""
     previous_sql: str = ""
+    intent: str = "new_question"   # schema_question | followup | new_question
 
 
 class ChatDatabase:
@@ -79,6 +80,34 @@ class ChatDatabase:
         binary_clf = self.classifier["binary_classifier"]
         is_sql = binary_clf.predict(vectorizer.transform([prompt]))[0]
         return bool(is_sql)
+
+    async def classify_intent_llm(self, query: str, conversation_history: str, previous_sql: str, config: ChatConfig) -> str:
+        """Use a lightweight LLM call to classify query intent into one of three categories."""
+        prompt = (
+            f"Classify this database chatbot query into exactly one category.\n\n"
+            f"CONVERSATION HISTORY:\n{conversation_history or 'None'}\n\n"
+            f"PREVIOUS SQL:\n{previous_sql or 'None'}\n\n"
+            f"USER QUERY: {query}\n\n"
+            f"Categories:\n"
+            f"- schema_question: user asks about database structure, tables, columns, or what data is available\n"
+            f"- followup: user modifies or references the previous query/results (pronouns like it/that/those, words like filter/sort/limit/only/also/top N/add/exclude)\n"
+            f"- new_question: completely new independent question about the data\n\n"
+            f"Reply with ONLY one word: schema_question, followup, or new_question"
+        )
+        try:
+            llm = (
+                OpenAILLM(model="gpt-4o-mini", temperature=0.0)
+                if config.llm_provider == "OpenAI"
+                else AnthropicLLM(model="claude-3-5-haiku-20241022", temperature=0.0)
+            )
+            response_obj = await llm.acomplete(prompt)
+            intent = str(response_obj).strip().lower().split()[0]
+            if intent in ("schema_question", "followup", "new_question"):
+                return intent
+            return "new_question"
+        except Exception as e:
+            print(f"[Intent] LLM classification failed: {e}")
+            return "new_question"
 
     async def _judge_response(self, query: str, response: str, config: ChatConfig) -> dict:
         """Rate the response with a cheap LLM and push scores to Langfuse."""
@@ -249,8 +278,8 @@ def main():
         st.header("⚙️ Configuration")
 
         interaction_method = st.selectbox(
-            "Interaction Method", ["RAG", "TAG"],
-            help="RAG: Schema-aware SQL generation. TAG: Self-correcting multi-step pipeline.",
+            "Mode", ["Standard", "Hybrid"],
+            help="Standard: Schema-aware SQL generation. Hybrid: Self-correcting agentic pipeline with parallel context retrieval.",
         )
         llm_provider = st.selectbox(
             "LLM Provider", ["OpenAI", "Claude"],
@@ -311,12 +340,30 @@ def main():
                     })
 
             if should_process:
-                run = (
-                    chat.rag_pipeline(query, config)
-                    if interaction_method == "RAG"
-                    else chat.tag_pipeline(query, config)
-                )
-                result = asyncio.run(run)
+                async def _process():
+                    # LLM intent classification runs first
+                    intent = await chat.classify_intent_llm(
+                        query, conversation_history, st.session_state.previous_sql, config
+                    )
+                    config.intent = intent
+
+                    if intent == "schema_question":
+                        # Answer directly from live schema — no SQL needed
+                        schema = chat.chat_db_manager.get_schema_info() if chat.chat_db_manager else ""
+                        answer_text = (
+                            "Here's the current database schema:\n\n"
+                            + schema
+                            if schema
+                            else "I couldn't retrieve the schema right now."
+                        )
+                        return {"answer": answer_text, "sql": None, "tables": [], "columns": [], "attempts": 1, "raw_results": []}
+
+                    if interaction_method == "Standard":
+                        return await chat.rag_pipeline(query, config)
+                    else:
+                        return await chat.tag_pipeline(query, config)
+
+                result = asyncio.run(_process())
                 scores = {}  # scores are pushed to Langfuse inside _judge_response
 
                 answer = result.get("answer", str(result)) if isinstance(result, dict) else str(result)
