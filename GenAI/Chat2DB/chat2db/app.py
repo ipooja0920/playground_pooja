@@ -379,6 +379,16 @@ section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div:has(bu
 }
 .saved-card h4 { margin: 0 0 6px 0; font-size: 14px; color: var(--text); }
 .saved-card p  { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* ── History placecard body ── */
+.hist-card-body {
+    background: linear-gradient(160deg,rgba(18,28,49,0.90),rgba(11,18,32,0.90));
+    border: 1px solid rgba(149,167,209,0.16);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    padding: 6px 6px 10px 6px;
+    margin-bottom: 8px;
+}
 </style>
 """
 
@@ -998,23 +1008,33 @@ def render_sidebar(history: HistoryManager):
 
         st.divider()
 
-        # Conversation history (last 5)
+        # Conversation history (last 5) — rendered as a placecard
         recent = history.get_recent(5)
         if recent:
+            # Card header
             st.markdown(
-                '<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#7a8bb0;'
-                'text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">'
+                '<div style="background:linear-gradient(160deg,rgba(18,28,49,0.90),rgba(11,18,32,0.90));'
+                'border:1px solid rgba(149,167,209,0.16);border-radius:14px 14px 0 0;'
+                'padding:12px 12px 8px 12px;margin-top:4px;">'
+                '<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;'
+                'color:#7a8bb0;text-transform:uppercase;letter-spacing:.8px;">'
                 '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" '
                 'stroke="#7a8bb0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
                 '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'
-                '</svg>Conversation History</div>',
+                '</svg>Conversation History</div></div>',
+                unsafe_allow_html=True,
+            )
+            # Card body — buttons styled as list items via CSS class .hist-btn
+            st.markdown(
+                '<div class="hist-card-body">',
                 unsafe_allow_html=True,
             )
             for s in recent:
-                title = s["title"][:46] + ("…" if len(s["title"]) > 46 else "")
+                title = s["title"][:44] + ("…" if len(s["title"]) > 44 else "")
                 if st.button(f"• {title}", key=f"hist_{s['id']}", use_container_width=True):
                     _load_session(s)
                     st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
