@@ -1047,6 +1047,103 @@ def main():
         initial_sidebar_state="expanded",
     )
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+    st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #07111f 0%, #090f1d 100%);
+    border-right: 1px solid rgba(139, 92, 246, 0.25);
+}
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+.logo-box {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+.app-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.1;
+}
+.app-subtitle {
+    font-size: 14px;
+    color: #94a3b8;
+}
+.nav-item {
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: #dbeafe;
+    font-weight: 600;
+    margin: 6px 0;
+}
+.nav-item:hover {
+    background: rgba(124, 58, 237, 0.18);
+}
+.nav-active {
+    background: linear-gradient(135deg, rgba(124,58,237,.45), rgba(91,33,182,.35));
+    border: 1px solid rgba(167, 139, 250, 0.4);
+}
+.section-title {
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 30px;
+    margin-bottom: 12px;
+    border-top: 1px solid rgba(148,163,184,.18);
+    padding-top: 18px;
+}
+.history-card {
+    background: rgba(124, 58, 237, 0.18);
+    border: 1px solid rgba(124, 58, 237, 0.45);
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    margin-bottom: 10px;
+}
+.history-item {
+    color: #cbd5e1;
+    font-size: 14px;
+    padding: 9px 4px;
+}
+/* Style "Load" history buttons to look like plain text links */
+section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] button[kind="secondary"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #7c3aed !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 2px 0 10px 4px !important;
+    min-height: unset !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] button[kind="secondary"]:hover {
+    color: #a78bfa !important;
+}
+/* New Question button stays purple */
+section[data-testid="stSidebar"] .stButton:first-of-type > button {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    padding: 14px 18px !important;
+    box-shadow: 0 0 24px rgba(124, 58, 237, 0.35) !important;
+    margin-bottom: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
     # Session state
     if "session_id"    not in st.session_state: st.session_state.session_id    = str(uuid.uuid4())
@@ -1060,7 +1157,58 @@ def main():
     chat    = ChatDatabase()
 
     # ── Sidebar ────────────────────────────────────────────────────────────────
-    render_sidebar(history)
+    with st.sidebar:
+        # Logo
+        st.markdown(
+            """
+            <div class="sidebar-logo">
+                <div class="logo-box">🤖</div>
+                <div>
+                    <div class="app-title">Chat2DB</div>
+                    <div class="app-subtitle">AI SQL Analyst</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # New Question button
+        if st.button("＋  New Question", use_container_width=True):
+            _new_chat()
+            st.rerun()
+
+        st.divider()
+
+        # Nav items
+        current = st.session_state.get("current_page", "dashboard")
+        for page_id, icon, label in NAV:
+            active_cls = "nav-active" if current == page_id else ""
+            st.markdown(
+                f'<div class="nav-item {active_cls}">{icon} &nbsp; {label}</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button(label, key=f"nav_{page_id}", use_container_width=True,
+                         label_visibility="collapsed"):
+                st.session_state.current_page = page_id
+                st.rerun()
+
+        # Conversation History
+        recent = history.get_recent(5)
+        if recent:
+            st.markdown(
+                '<div class="section-title">Conversation History 🔍</div>',
+                unsafe_allow_html=True,
+            )
+            for i, s in enumerate(recent):
+                title = s["title"][:44] + ("…" if len(s["title"]) > 44 else "")
+                card_cls = "history-card" if i == 0 else "history-item"
+                st.markdown(
+                    f'<div class="{card_cls}">💬 {title}</div>',
+                    unsafe_allow_html=True,
+                )
+                if st.button("Load", key=f"hist_{s['id']}", use_container_width=True):
+                    _load_session(s)
+                    st.rerun()
 
     # ── Top bar (right panel) ─────────────────────────────────────────────────
     interaction_method, llm_provider, temperature, intent_filter = render_topbar(chat)
