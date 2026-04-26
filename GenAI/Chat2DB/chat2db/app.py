@@ -248,20 +248,31 @@ section[data-testid="stSidebar"] {
     max-width: 260px !important;
 }
 
-/* ── Dashboard cards ── */
-.dash-card {
-    background: linear-gradient(160deg,#101c35,#0c1628);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 20px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: border-color .15s, box-shadow .15s;
+/* ── Dashboard cards (now st.button styled as cards) ── */
+div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button,
+.dash-card-btn button {
+    background: linear-gradient(160deg,#101c35,#0c1628) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 18px 20px !important;
+    margin-bottom: 4px !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    white-space: pre-line !important;
+    line-height: 1.6 !important;
+    font-size: 14px !important;
+    color: var(--text) !important;
+    height: auto !important;
+    min-height: 110px !important;
+    transition: border-color .15s, box-shadow .15s !important;
+    box-shadow: none !important;
 }
-.dash-card:hover { border-color: var(--purple); box-shadow: 0 0 0 1px rgba(124,58,237,.25); }
-.dash-card-icon { font-size: 1.6rem; margin-bottom: 8px; }
-.dash-card-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
-.dash-card-q { font-size: 14px; color: var(--text); }
+div[data-testid="stVerticalBlock"] div[data-testid="stButton"][id*="dash_"] > button:hover,
+.dash-card-btn button:hover {
+    border-color: var(--purple) !important;
+    box-shadow: 0 0 0 1px rgba(124,58,237,.25) !important;
+    background: linear-gradient(160deg,#121f3d,#0e1a30) !important;
+}
 
 /* ── Chat message area — Glassmorphism ── */
 .stChatMessage {
@@ -437,15 +448,11 @@ def render_dashboard():
     cols = st.columns(3)
     for i, (icon, label, question) in enumerate(DASHBOARD_CARDS):
         with cols[i % 3]:
-            st.markdown(
-                f'<div class="dash-card">'
-                f'<div class="dash-card-icon">{icon}</div>'
-                f'<div class="dash-card-label">{label}</div>'
-                f'<div class="dash-card-q">{question}</div>'
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-            if st.button("Ask this →", key=f"dash_{i}", use_container_width=True):
+            if st.button(
+                f"{icon}\n{label}\n{question}",
+                key=f"dash_{i}",
+                use_container_width=True,
+            ):
                 _new_chat()
                 st.session_state.pending_question = question
                 st.rerun()
