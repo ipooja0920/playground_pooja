@@ -271,22 +271,29 @@ section[data-testid="stSidebar"] .stButton > button:hover { opacity: .88; }
 /* ── Nav divider & labels ── */
 section[data-testid="stSidebar"] hr { border-color: var(--border) !important; }
 
-/* ── History items ── */
-.hist-item {
-    display: block;
-    padding: 7px 10px;
-    border-radius: 10px;
-    font-size: 12.5px;
-    color: var(--muted);
-    border-left: 2px solid transparent;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 3px;
-    cursor: pointer;
+/* ── History buttons (look like nav items, not action buttons) ── */
+section[data-testid="stSidebar"] [data-testid="stButton"][class*="hist_"] > button,
+section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--muted) !important;
+    font-size: 12.5px !important;
+    font-weight: 400 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    padding: 6px 10px !important;
+    min-height: unset !important;
+    border-left: 2px solid transparent !important;
+    border-radius: 8px !important;
+    margin-bottom: 2px;
     transition: all .12s;
 }
-.hist-item:hover { color: var(--text); border-left-color: var(--purple); background: rgba(124,58,237,.08); }
+section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button:hover {
+    color: var(--text) !important;
+    border-left-color: var(--purple) !important;
+    background: rgba(124,58,237,.08) !important;
+}
 
 /* ── Dashboard cards ── */
 .dash-card {
@@ -1002,11 +1009,7 @@ def render_sidebar(history: HistoryManager):
             )
             for s in recent:
                 title = s["title"][:46] + ("…" if len(s["title"]) > 46 else "")
-                st.markdown(
-                    f'<div class="hist-item">• {title}</div>',
-                    unsafe_allow_html=True,
-                )
-                if st.button("Load", key=f"hist_{s['id']}", use_container_width=False):
+                if st.button(f"• {title}", key=f"hist_{s['id']}", use_container_width=True):
                     _load_session(s)
                     st.rerun()
 

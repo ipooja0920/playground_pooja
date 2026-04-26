@@ -1,0 +1,429 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - navigation [ref=e7]:
+        - generic [ref=e8]:
+          - list [ref=e9]:
+            - link "LeetCode Logo" [ref=e10] [cursor=pointer]:
+              - /url: /
+              - img "LeetCode Logo" [ref=e13]
+            - listitem [ref=e14]
+          - generic [ref=e15]:
+            - button "Expand Panel" [ref=e16] [cursor=pointer]:
+              - img [ref=e18]
+              - generic [ref=e21]: Problem List
+            - link "Prev Question" [ref=e560] [cursor=pointer]:
+              - /url: /problems/string-to-integer-atoi
+              - img [ref=e25]
+            - link "Next Question" [ref=e561] [cursor=pointer]:
+              - /url: /problems/regular-expression-matching
+              - img [ref=e30]
+            - link "Pick one" [ref=e562] [cursor=pointer]:
+              - /url: /problems/brace-expansion-ii
+              - img [ref=e564]
+        - generic [ref=e34]:
+          - generic [ref=e39]:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - generic: Debugging...
+                  - generic:
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+            - generic [ref=e41]:
+              - button "You need to log in / sign up to debug" [ref=e43] [cursor=pointer]:
+                - img [ref=e44]
+              - generic [ref=e47]:
+                - button "Run" [ref=e50] [cursor=pointer]:
+                  - img [ref=e52]
+                - button "Submit" [ref=e57] [cursor=pointer]:
+                  - img [ref=e59]
+                  - generic [ref=e61]: Submit
+          - button "More" [ref=e65] [cursor=pointer]:
+            - img [ref=e67]
+        - generic [ref=e71]:
+          - button "Layouts" [ref=e72] [cursor=pointer]:
+            - button "Layouts" [ref=e73]:
+              - img [ref=e75]
+          - button "Settings" [ref=e77] [cursor=pointer]:
+            - img [ref=e79]
+          - generic [ref=e83]:
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: 00:00:00
+                - button:
+                  - generic:
+                    - img
+            - button "Stopwatch" [ref=e86] [cursor=pointer]:
+              - img [ref=e89]
+          - link "Log in" [ref=e92] [cursor=pointer]:
+            - /url: /accounts/login/?next=%2Fproblems%2Fpalindrome-number%2Fdescription%2F
+      - generic [ref=e95]:
+        - generic [ref=e99] [cursor=pointer]:
+          - generic [ref=e102]:
+            - img [ref=e104]
+            - generic [ref=e107]: Description
+          - generic [ref=e111]:
+            - img [ref=e113]
+            - generic [ref=e115]:
+              - generic [ref=e116]: Editorial
+              - generic [ref=e117]: Editorial
+          - generic [ref=e121]:
+            - img [ref=e123]
+            - generic [ref=e125]:
+              - generic [ref=e126]: Solutions
+              - generic [ref=e127]: Solutions
+          - generic [ref=e131]:
+            - img [ref=e133]
+            - generic [ref=e135]:
+              - generic [ref=e136]: Submissions
+              - generic [ref=e137]: Submissions
+        - generic [ref=e140] [cursor=pointer]:
+          - generic [ref=e145]:
+            - img [ref=e147]
+            - generic [ref=e150]: Code
+          - generic [ref=e152]:
+            - button [ref=e154]:
+              - img [ref=e156]
+            - button [ref=e159]:
+              - img [ref=e161]
+        - generic [ref=e167] [cursor=pointer]:
+          - generic [ref=e170]:
+            - img [ref=e172]
+            - generic [ref=e175]: Testcase
+          - generic [ref=e179]:
+            - img [ref=e181]
+            - generic [ref=e183]:
+              - generic [ref=e184]: Test Result
+              - generic [ref=e185]: Test Result
+        - generic [ref=e187]:
+          - generic [ref=e188]:
+            - link "9. Palindrome Number" [ref=e192]:
+              - /url: /problems/palindrome-number/
+            - generic [ref=e193]:
+              - generic [ref=e194]: Easy
+              - generic [ref=e195] [cursor=pointer]:
+                - img [ref=e197]
+                - text: Topics
+              - generic [ref=e199] [cursor=pointer]:
+                - img "premium lock icon" [ref=e200]
+                - generic [ref=e201]: Companies
+              - generic [ref=e202] [cursor=pointer]:
+                - img [ref=e204]
+                - text: Hint
+            - generic [ref=e208]:
+              - paragraph [ref=e209]:
+                - text: Given an integer
+                - code [ref=e210]: x
+                - text: ", return"
+                - code [ref=e211]: "true"
+                - emphasis [ref=e212]: if
+                - code [ref=e213]: x
+                - emphasis [ref=e214]: is a
+                - button "palindrome" [ref=e216] [cursor=pointer]:
+                  - emphasis [ref=e217]:
+                    - strong [ref=e218]: palindrome
+                - emphasis [ref=e219]: ", and"
+                - code [ref=e220]: "false"
+                - emphasis [ref=e221]: otherwise
+                - text: .
+              - paragraph [ref=e222]
+              - paragraph [ref=e223]:
+                - strong [ref=e224]: "Example 1:"
+              - generic [ref=e225]:
+                - strong [ref=e226]: "Input:"
+                - text: x = 121
+                - strong [ref=e227]: "Output:"
+                - text: "true"
+                - strong [ref=e228]: "Explanation:"
+                - text: 121 reads as 121 from left to right and from right to left.
+              - paragraph [ref=e229]:
+                - strong [ref=e230]: "Example 2:"
+              - generic [ref=e231]:
+                - strong [ref=e232]: "Input:"
+                - text: x = -121
+                - strong [ref=e233]: "Output:"
+                - text: "false"
+                - strong [ref=e234]: "Explanation:"
+                - text: From left to right, it reads -121. From right to left, it becomes 121-. Therefore it is not a palindrome.
+              - paragraph [ref=e235]:
+                - strong [ref=e236]: "Example 3:"
+              - generic [ref=e237]:
+                - strong [ref=e238]: "Input:"
+                - text: x = 10
+                - strong [ref=e239]: "Output:"
+                - text: "false"
+                - strong [ref=e240]: "Explanation:"
+                - text: Reads 01 from right to left. Therefore it is not a palindrome.
+              - paragraph [ref=e241]
+              - paragraph [ref=e242]:
+                - strong [ref=e243]: "Constraints:"
+              - list [ref=e244]:
+                - listitem [ref=e245]:
+                  - code [ref=e246]:
+                    - text: "-2"
+                    - superscript [ref=e247]: "31"
+                    - text: <= x <= 2
+                    - superscript [ref=e248]: "31"
+                    - text: "- 1"
+              - paragraph [ref=e249]
+              - strong [ref=e250]: "Follow up:"
+              - text: Could you solve it without converting the integer to a string?
+            - generic [ref=e251]:
+              - generic [ref=e566]:
+                - generic [ref=e567]: Advertisement
+                - img [ref=e571] [cursor=pointer]
+              - generic [ref=e252]:
+                - generic [ref=e253]:
+                  - generic [ref=e254]: Accepted
+                  - generic [ref=e255]:
+                    - text: 8,009,032
+                    - generic [ref=e256]: /13.2M
+                - generic [ref=e258]:
+                  - generic [ref=e259]: Acceptance Rate
+                  - generic [ref=e260]: 60.5%
+              - separator [ref=e261]
+              - generic [ref=e263]:
+                - generic [ref=e264] [cursor=pointer]:
+                  - generic [ref=e266]:
+                    - img [ref=e268]
+                    - generic [ref=e270]: Topics
+                  - img [ref=e272]
+                - link "Math" [ref=e275] [cursor=pointer]:
+                  - /url: /tag/math/
+              - separator [ref=e276]
+              - generic [ref=e279] [cursor=pointer]:
+                - generic [ref=e281]:
+                  - img "icon" [ref=e283]
+                  - generic [ref=e284]: Companies
+                - img [ref=e286]
+              - separator [ref=e288]
+              - generic [ref=e290]:
+                - generic [ref=e291] [cursor=pointer]:
+                  - generic [ref=e293]:
+                    - img [ref=e295]
+                    - generic [ref=e297]: Hint 1
+                  - img [ref=e299]
+                - generic [ref=e301]: Beware of overflow when you reverse the integer.
+              - separator [ref=e302]
+              - generic [ref=e303]:
+                - generic [ref=e304] [cursor=pointer]:
+                  - generic [ref=e306]:
+                    - img [ref=e308]
+                    - generic [ref=e310]: Similar Questions
+                  - img [ref=e312]
+                - generic [ref=e314]:
+                  - generic [ref=e315]:
+                    - link "Palindrome Linked List" [ref=e319] [cursor=pointer]:
+                      - /url: /problems/palindrome-linked-list/
+                    - generic [ref=e321]: Easy
+                  - generic [ref=e322]:
+                    - link "Find Palindrome With Fixed Length" [ref=e326] [cursor=pointer]:
+                      - /url: /problems/find-palindrome-with-fixed-length/
+                    - generic [ref=e328]: Medium
+                  - generic [ref=e329]:
+                    - link "Strictly Palindromic Number" [ref=e333] [cursor=pointer]:
+                      - /url: /problems/strictly-palindromic-number/
+                    - generic [ref=e335]: Medium
+                  - generic [ref=e336]:
+                    - link "Count Symmetric Integers" [ref=e340] [cursor=pointer]:
+                      - /url: /problems/count-symmetric-integers/
+                    - generic [ref=e342]: Easy
+                  - generic [ref=e343]:
+                    - link "Find the Count of Good Integers" [ref=e347] [cursor=pointer]:
+                      - /url: /problems/find-the-count-of-good-integers/
+                    - generic [ref=e349]: Hard
+                  - generic [ref=e350]:
+                    - link "Find the Largest Palindrome Divisible by K" [ref=e354] [cursor=pointer]:
+                      - /url: /problems/find-the-largest-palindrome-divisible-by-k/
+                    - generic [ref=e356]: Hard
+              - separator [ref=e357]
+              - generic [ref=e359]:
+                - generic [ref=e360] [cursor=pointer]:
+                  - generic [ref=e362]:
+                    - img [ref=e364]
+                    - generic [ref=e366]: Discussion (715)
+                  - img [ref=e368]
+                - generic [ref=e371]:
+                  - generic [ref=e375]:
+                    - textbox "Type comment here..." [ref=e376]
+                    - generic [ref=e377]:
+                      - generic [ref=e378]:
+                        - button "Choose a type" [ref=e382] [cursor=pointer]:
+                          - generic [ref=e383]: Choose a type
+                          - generic:
+                            - generic:
+                              - img
+                        - generic [ref=e384]:
+                          - img [ref=e386] [cursor=pointer]
+                          - img [ref=e389] [cursor=pointer]
+                          - img [ref=e392] [cursor=pointer]
+                          - img [ref=e395] [cursor=pointer]
+                      - button "Comment" [disabled] [ref=e398] [cursor=pointer]
+                  - generic [ref=e399]:
+                    - generic [ref=e401]:
+                      - generic [ref=e402]:
+                        - generic [ref=e403]: 💡 Discussion Rules
+                        - img [ref=e405] [cursor=pointer]
+                      - generic [ref=e407]:
+                        - paragraph [ref=e408]: 1. Please don't post any solutions in this discussion.
+                        - paragraph [ref=e409]: 2. The problem discussion is for asking questions about the problem or for sharing tips - anything except for solutions.
+                        - paragraph [ref=e410]: 3. If you'd like to share your solution for feedback and ideas, please head to the solutions tab and post it there.
+                    - button "Sort by:Best" [ref=e414] [cursor=pointer]:
+                      - generic [ref=e415]:
+                        - generic [ref=e416]: "Sort by:"
+                        - text: Best
+                      - generic:
+                        - img
+                  - generic [ref=e418]: No comments yet.
+                  - navigation [ref=e420]:
+                    - button "prev" [disabled]:
+                      - img
+                    - button "1"
+                    - button "2" [ref=e421] [cursor=pointer]
+                    - button "3" [ref=e422] [cursor=pointer]
+                    - button "4" [ref=e423] [cursor=pointer]
+                    - button "gap" [disabled]:
+                      - img
+                    - button "72" [ref=e424] [cursor=pointer]
+                    - button "next" [ref=e425] [cursor=pointer]:
+                      - img [ref=e426]
+            - generic [ref=e429]: Copyright © 2026 LeetCode. All rights reserved.
+          - generic [ref=e431]:
+            - generic [ref=e432]:
+              - generic [ref=e433]:
+                - generic [ref=e434]:
+                  - button "15.9K" [ref=e435] [cursor=pointer]:
+                    - img [ref=e437]
+                    - generic [ref=e439]: 15.9K
+                  - button [ref=e441] [cursor=pointer]:
+                    - img [ref=e443]
+                - button "715" [ref=e445] [cursor=pointer]:
+                  - img [ref=e447]
+                  - generic [ref=e449]: "715"
+              - generic [ref=e451]:
+                - img [ref=e454] [cursor=pointer]
+                - button [ref=e456] [cursor=pointer]:
+                  - img [ref=e458]
+                - button [ref=e460] [cursor=pointer]:
+                  - img [ref=e462]
+            - generic [ref=e466]: 214 Online
+        - generic [ref=e468]:
+          - generic [ref=e573]:
+            - generic [ref=e574]:
+              - button "C++" [ref=e576] [cursor=pointer]:
+                - text: C++
+                - img [ref=e578]
+              - button "Auto" [ref=e582] [cursor=pointer]: Auto
+            - generic [ref=e585]:
+              - button [ref=e586] [cursor=pointer]:
+                - img [ref=e588]
+              - button [ref=e590] [cursor=pointer]:
+                - img [ref=e592]
+              - button [ref=e594] [cursor=pointer]:
+                - img [ref=e596]
+              - button [ref=e598] [cursor=pointer]:
+                - img [ref=e599]
+          - code [ref=e604]:
+            - generic [ref=e605]:
+              - generic [ref=e608]:
+                - generic [ref=e611]: "1"
+                - generic [ref=e612]:
+                  - generic [ref=e613] [cursor=pointer]: 
+                  - generic [ref=e614]: "2"
+                - generic [ref=e616]: "3"
+                - generic [ref=e618]: "4"
+                - generic [ref=e620]: "5"
+                - generic [ref=e622]: "6"
+              - generic [ref=e634]:
+                - generic [ref=e636]: "class Solution {"
+                - generic [ref=e638]: "public:"
+                - generic [ref=e640]: "bool isPalindrome(int x) {"
+                - generic [ref=e644]: "}"
+                - generic [ref=e646]: "};"
+              - textbox "Editor content;Press Alt+F1 for Accessibility Options." [ref=e648]: "class Solution { public: bool isPalindrome(int x) { } };"
+          - generic [ref=e481]:
+            - generic [ref=e649]: Saved
+            - generic [ref=e482]: Ln 1, Col 1
+          - generic [ref=e484]:
+            - text: You need to
+            - link "log in / sign up" [ref=e485] [cursor=pointer]:
+              - /url: /accounts/login/?next=%2Fproblems%2Fpalindrome-number%2Fdescription%2F
+            - text: to run or submit
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e487]:
+                - generic [ref=e489]:
+                  - button "Case 1" [ref=e490] [cursor=pointer]
+                  - button "Case 2" [ref=e491] [cursor=pointer]
+                  - button "Case 3" [ref=e492] [cursor=pointer]
+                  - button [ref=e493] [cursor=pointer]:
+                    - img [ref=e494]
+                - generic [ref=e498]:
+                  - generic [ref=e499]: x =
+                  - generic [ref=e501]: "121"
+              - generic [ref=e502]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic [ref=e504]:
+                            - generic [ref=e505]: "1"
+                            - generic [ref=e506]: "2"
+                            - generic [ref=e507]: "3"
+                          - textbox [ref=e510]:
+                            - generic [ref=e511]: "121"
+                            - generic [ref=e512]: "-121"
+                            - generic [ref=e513]: "10"
+            - generic [ref=e515]:
+              - generic [ref=e517] [cursor=pointer]:
+                - img [ref=e519]
+                - generic [ref=e521]: Source
+              - link [ref=e522] [cursor=pointer]:
+                - /url: https://support.leetcode.com/hc/en-us/articles/32442719377939-How-to-create-test-cases-on-LeetCode
+                - img [ref=e524]
+    - region "Notifications (F8)":
+      - list
+  - alert [ref=e528]
+  - generic [ref=e529]:
+    - link [ref=e533] [cursor=pointer]:
+      - /url: /problemset/
+      - img [ref=e534]
+    - img [ref=e537] [cursor=pointer]
+    - generic [ref=e541]:
+      - generic [ref=e542]:
+        - textbox "Search questions" [ref=e543]
+        - img [ref=e545]
+      - button [ref=e548] [cursor=pointer]:
+        - img [ref=e550]
+      - button [ref=e554] [cursor=pointer]:
+        - img [ref=e557]
+  - generic [ref=e650]:
+    - alert
+    - alert
+    - complementary
+    - complementary

@@ -1,0 +1,1429 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e8]:
+      - link "Skip to main content" [ref=e9] [cursor=pointer]:
+        - /url: javascript:void(0)
+      - banner [ref=e10]:
+        - generic [ref=e12]:
+          - text:  
+          - link "Microsoft" [ref=e13] [cursor=pointer]:
+            - /url: https://www.microsoft.com
+            - img [ref=e14]
+            - generic [ref=e15]: Microsoft
+          - text:  
+          - button "Microsoft 365" [ref=e17] [cursor=pointer]: Microsoft 365 
+          - text:    
+          - generic [ref=e18]:
+            - search:
+              - button "Search Microsoft 365" [ref=e20] [cursor=pointer]: 
+            - generic:       
+    - main [ref=e22]:
+      - generic [ref=e25]:
+        - generic:
+          - generic:  
+        - generic:
+          - generic:  
+        - generic: 
+        - generic: 
+        - generic [ref=e37]:
+          - heading "Your inbox, organized. Your day, planned." [level=1] [ref=e40]
+          - generic [ref=e41]: Stay on top of multiple accounts with email, calendars, and contacts in one place. Available on desktop, mobile, and web.
+          - generic [ref=e43]:
+            - link "Sign in to Outlook" [ref=e44] [cursor=pointer]:
+              - /url: https://go.microsoft.com/fwlink/p/?LinkID=2125442&deeplink=mail%2F
+              - generic [ref=e45]: Sign in
+            - link "Download" [ref=e46] [cursor=pointer]:
+              - /url: https://go.microsoft.com/fwlink/?linkid=2338856&clcid=0x409&culture=en-us&country=us
+              - generic [ref=e47]: Download
+          - link "Create free account on Outlook" [ref=e50] [cursor=pointer]:
+            - /url: https://go.microsoft.com/fwlink/p/?linkid=2125440&clcid=0x409&culture=en-us&country=us
+            - generic [ref=e52]: 
+            - generic [ref=e53]: Create free account
+        - generic [ref=e65]:
+          - heading "Your inbox, organized. Your day, planned." [level=1] [ref=e68]
+          - generic [ref=e69]: Stay on top of multiple accounts with email, calendars, and contacts in one place. Available on desktop, mobile, and web.
+          - generic [ref=e71]:
+            - link "Sign in to Outlook" [ref=e72] [cursor=pointer]:
+              - /url: https://go.microsoft.com/fwlink/p/?LinkID=2125442&deeplink=mail%2F
+              - generic [ref=e73]: Sign in
+            - link "Download" [ref=e74] [cursor=pointer]:
+              - /url: https://go.microsoft.com/fwlink/?linkid=2312717&clcid=0x409&culture=en-us&country=us
+              - generic [ref=e75]: Download
+          - link "Create free account on Outlook" [ref=e78] [cursor=pointer]:
+            - /url: https://go.microsoft.com/fwlink/p/?linkid=2125440&clcid=0x409&culture=en-us&country=us
+            - generic [ref=e80]: 
+            - generic [ref=e81]: Create free account
+        - generic [ref=e82]:
+          - navigation "In Page quick links" [ref=e84]:
+            - button "Overview" [ref=e86] [cursor=pointer]:
+              - generic [ref=e88]:
+                - generic [ref=e91]: Overview
+                - generic [ref=e94]: 
+            - link "See Outlook email plans and pricing" [ref=e97] [cursor=pointer]:
+              - /url: https://www.microsoft.com/en-us/microsoft-365/outlook/outlook-email-plan
+              - generic [ref=e98]: See plans and pricing
+          - generic [ref=e99]:
+            - generic [ref=e103]:
+              - generic [ref=e109]:
+                - generic [ref=e111]:
+                  - superscript
+                  - text: Overview
+                - heading "Your Outlook can change everything" [level=2] [ref=e114]
+              - generic [ref=e118]:
+                - generic [ref=e120]:
+                  - tablist [ref=e123]:
+                    - tab "Key benefits" [selected] [ref=e124] [cursor=pointer]
+                    - tab "Get more from Outlook" [ref=e125] [cursor=pointer]
+                    - tab "Copilot in Outlook" [ref=e126] [cursor=pointer]
+                  - text:  
+                - generic [ref=e129]:
+                  - tabpanel [ref=e130]:
+                    - list [ref=e135]:
+                      - listitem [ref=e136]:
+                        - generic [ref=e137]:
+                          - button " Together in one place" [expanded] [ref=e139] [cursor=pointer]:
+                            - text: 
+                            - heading "Together in one place" [level=3] [ref=e140]
+                          - generic [ref=e142]:
+                            - generic [ref=e143]: See everything you need to manage your day in one view. Easily stay on top of emails, calendars, contacts, and to-do lists—at home or on the go.
+                            - img "Screenshots of desktop and mobile screens displaying an Outlook inbox" [ref=e147]
+                      - listitem [ref=e148]:
+                        - button " Connect your accounts" [ref=e151] [cursor=pointer]:
+                          - text: 
+                          - heading "Connect your accounts" [level=3] [ref=e152]
+                      - listitem [ref=e153]:
+                        - button " Write more effective emails" [ref=e156] [cursor=pointer]:
+                          - text: 
+                          - heading "Write more effective emails" [level=3] [ref=e157]
+                      - listitem [ref=e158]:
+                        - button " Easily access your files" [ref=e161] [cursor=pointer]:
+                          - text: 
+                          - heading "Easily access your files" [level=3] [ref=e162]
+                  - text:       
+                  - link "Back to tabs" [ref=e163] [cursor=pointer]:
+                    - /url: "#tabs-pill-bar-oc8375_tab0-tab"
+            - generic [ref=e173]:
+              - generic [ref=e178]:
+                - generic [ref=e179]: Take the tour
+                - heading "See Outlook in Action" [level=2] [ref=e182]
+                - generic [ref=e183]: Manage what’s important with Outlook. Whether it’s different email accounts, multiple calendars, or signing that form, Outlook has you covered - at home, for work, or on-the-go.
+              - generic [ref=e188]:
+                - generic [ref=e189]:
+                  - tablist [ref=e193]:
+                    - tab "Connect your accounts" [selected] [ref=e194] [cursor=pointer]:
+                      - generic [ref=e201]: Connect your accounts
+                    - tab "Write better emails" [ref=e203] [cursor=pointer]:
+                      - generic [ref=e210]: Write better emails
+                    - tab "Use free Microsoft 365 apps" [ref=e212] [cursor=pointer]:
+                      - generic [ref=e219]: Use free Microsoft 365 apps
+                  - text:  
+                - generic [ref=e221]:
+                  - tabpanel [ref=e222]:
+                    - generic [ref=e224]:
+                      - heading "Streamline your different accounts in one place" [level=3] [ref=e230]:
+                        - generic [ref=e231]: Streamline your different accounts in one place
+                      - generic [ref=e233]:
+                        - generic [ref=e234]:
+                          - img "A computer screen with a mail"
+                        - button "Video about how to Connect Microsoft Outlook account" [ref=e237] [cursor=pointer]:
+                          - generic [ref=e239]: 
+                  - text:  
+                  - link "Back to tabs" [ref=e240] [cursor=pointer]:
+                    - /url: "#tabs-ocbb5d_tab0-tab"
+            - generic:
+              - generic: 
+            - generic:
+              - generic: 
+            - generic:
+              - generic: 
+            - generic:
+              - generic: 
+            - generic:
+              - generic: 
+            - generic:
+              - generic: 
+            - generic:
+              - generic: 
+            - generic:
+              - generic: 
+            - generic [ref=e241]:
+              - generic [ref=e251]: Featured resources
+              - region "carousel" [ref=e256]:
+                - generic [ref=e257]: Showing 1-2 of 5 slides
+                - generic [ref=e258]:
+                  - button "Previous Slide" [disabled] [ref=e259]:
+                    - generic [ref=e260]: Previous Slide
+                    - generic [ref=e261]: 
+                  - button "Next Slide" [ref=e262] [cursor=pointer]:
+                    - generic [ref=e263]: Next Slide
+                    - generic [ref=e264]: 
+                - generic [ref=e266]:
+                  - group "1 of 5" [ref=e267]:
+                    - generic [ref=e271]:
+                      - generic [ref=e273]:
+                        - generic [ref=e274]:
+                          - generic [ref=e275]: Summarize
+                          - heading "Get up to speed faster" [level=3] [ref=e278]:
+                            - generic [ref=e279]: Get up to speed faster
+                        - generic [ref=e280]: Get your message right the first time with Microsoft Copilot in Outlook. Let Microsoft Copilot in Outlook summarize long email threads so you can get to the point quickly.
+                      - button "Watch video" [ref=e283] [cursor=pointer]:
+                        - generic [ref=e285]: 
+                        - generic [ref=e286]: Watch video
+                  - group "2 of 5" [ref=e287]:
+                    - generic [ref=e291]:
+                      - generic [ref=e293]:
+                        - generic [ref=e294]:
+                          - generic [ref=e295]: Draft
+                          - heading "Faster emails, fewer errors" [level=3] [ref=e298]:
+                            - generic [ref=e299]: Faster emails, fewer errors
+                        - generic [ref=e300]: Get your message right the first time with Microsoft Copilot in Outlook.
+                      - button "Watch video" [ref=e303] [cursor=pointer]:
+                        - generic [ref=e305]: 
+                        - generic [ref=e306]: Watch video
+                  - group [ref=e307]:
+                    - generic [ref=e311]:
+                      - generic [ref=e313]:
+                        - generic [ref=e314]:
+                          - generic [ref=e315]: Coach
+                          - heading [level=3] [ref=e318]:
+                            - generic [ref=e319]: Write with confidence
+                        - generic [ref=e320]: Your personal style, Microsoft Copilot’s professional polish.
+                      - button [ref=e323] [cursor=pointer]:
+                        - generic [ref=e325]: 
+                        - generic [ref=e326]: Watch video
+                  - group [ref=e327]:
+                    - generic [ref=e331]:
+                      - generic [ref=e333]:
+                        - generic [ref=e334]:
+                          - generic [ref=e335]: Organization
+                          - heading [level=3] [ref=e338]:
+                            - generic [ref=e339]: Link your emails in one place
+                        - generic [ref=e340]: Link Gmail, Yahoo, iCloud, and more to your Outlook apps.
+                      - button [ref=e343] [cursor=pointer]:
+                        - generic [ref=e345]: 
+                        - generic [ref=e346]: Watch video
+                  - group [ref=e347]:
+                    - generic [ref=e351]:
+                      - generic [ref=e353]:
+                        - generic [ref=e354]:
+                          - generic [ref=e355]: Stay safe
+                          - heading [level=3] [ref=e358]:
+                            - generic [ref=e359]: Safeguard your inbox
+                        - generic [ref=e360]: Outlook is on the lookout so you don’t have to be
+                      - button [ref=e363] [cursor=pointer]:
+                        - generic [ref=e365]: 
+                        - generic [ref=e366]: Watch video
+                - link "Back to carousel navigation controls" [ref=e368] [cursor=pointer]:
+                  - /url: javascript:void(0);
+            - generic [ref=e372]:
+              - generic [ref=e378]:
+                - generic [ref=e379]: Download the app
+                - heading "Outlook wherever you are" [level=2] [ref=e382]
+              - generic [ref=e385]:
+                - generic [ref=e388]:
+                  - generic [ref=e389]:
+                    - generic [ref=e392]:
+                      - generic:
+                        - img "Windows icon"
+                    - generic [ref=e393]:
+                      - heading "On Windows" [level=3] [ref=e397]:
+                        - generic [ref=e398]: On Windows
+                      - generic [ref=e399]: Now included for free in Windows for personal use.
+                  - link "Download link of Outlook for Windows" [ref=e402] [cursor=pointer]:
+                    - /url: https://go.microsoft.com/fwlink/?linkid=2260557&clcid=0x409&culture=en-us&country=us
+                    - generic [ref=e403]: Download
+                - generic [ref=e406]:
+                  - generic [ref=e407]:
+                    - generic [ref=e410]:
+                      - generic:
+                        - img "MAC icon"
+                    - generic [ref=e411]:
+                      - heading "On Mac" [level=3] [ref=e415]:
+                        - generic [ref=e416]: On Mac
+                      - generic [ref=e417]: Redesigned for macOS, enhanced for Apple Silicon, and free for personal use.
+                  - link "Download Microsoft Outlook Email and calendar for Mac" [ref=e420] [cursor=pointer]:
+                    - /url: https://go.microsoft.com/fwlink/?linkid=2260803&clcid=0x409&culture=en-us&country=us
+                    - generic [ref=e421]: Download
+                - generic [ref=e424]:
+                  - generic [ref=e429]:
+                    - heading "On iOS" [level=3] [ref=e433]:
+                      - generic [ref=e434]: On iOS
+                    - generic [ref=e435]: Works with iPhone, iPad, and Apple Watch.
+                  - link "Download the mobile app for iOS" [ref=e438] [cursor=pointer]:
+                    - /url: https://go.microsoft.com/fwlink/?linkid=2334958&clcid=0x409&culture=en-us&country=us
+                    - generic [ref=e439]: Download
+                - generic [ref=e442]:
+                  - generic [ref=e443]:
+                    - generic [ref=e446]:
+                      - generic:
+                        - img "Android icon"
+                    - generic [ref=e447]:
+                      - heading "On Android" [level=3] [ref=e451]:
+                        - generic [ref=e452]: On Android
+                      - generic [ref=e453]: Stay connected across phones, tablets, and smart devices.
+                  - link "Download the mobile app for android" [ref=e456] [cursor=pointer]:
+                    - /url: https://go.microsoft.com/fwlink/?linkid=2335148&clcid=0x409&culture=en-us&country=us
+                    - generic [ref=e457]: Download
+            - generic [ref=e462]:
+              - generic [ref=e468]:
+                - generic [ref=e469]: PLANS AND PRICING
+                - heading "Outlook is better with Microsoft 365" [level=2] [ref=e472]
+              - generic [ref=e476]:
+                - generic [ref=e478]:
+                  - tablist [ref=e481]:
+                    - tab "For individuals" [selected] [ref=e482] [cursor=pointer]
+                    - tab "For business" [ref=e483] [cursor=pointer]
+                  - text:  
+                - generic [ref=e486]:
+                  - tabpanel [ref=e487]:
+                    - generic [ref=e490]:
+                      - tablist "Monthly or Yearly Plans" [ref=e492]:
+                        - tab "Yearly" [selected] [ref=e493] [cursor=pointer]:
+                          - generic [ref=e495]: Yearly
+                        - tab "Monthly" [ref=e496] [cursor=pointer]:
+                          - generic [ref=e498]: Monthly
+                      - generic [ref=e501]:
+                        - tabpanel [ref=e502]:
+                          - generic [ref=e504]:
+                            - generic [ref=e505]:
+                              - generic [ref=e508]:
+                                - heading "Outlook" [level=3] [ref=e510]
+                                - generic [ref=e512]: Free
+                                - link "Create a free Outlook account" [ref=e515] [cursor=pointer]:
+                                  - /url: https://go.microsoft.com/fwlink/p/?linkid=2125440&clcid=0x409&culture=en-us&country=us
+                                  - generic [ref=e516]: Create a free account
+                              - list [ref=e519]:
+                                - listitem [ref=e520]:
+                                  - generic [ref=e522]:
+                                    - generic [ref=e525]: 
+                                    - generic [ref=e528]: For 1 person
+                                - listitem [ref=e529]:
+                                  - generic [ref=e531]:
+                                    - generic [ref=e534]: 
+                                    - generic [ref=e537]: Outlook email and calendar on web, desktop, and mobile apps
+                                - listitem [ref=e538]:
+                                  - generic [ref=e540]:
+                                    - generic [ref=e543]: 
+                                    - generic [ref=e546]: Core Outlook security features like spam filters
+                                - listitem [ref=e547]:
+                                  - generic [ref=e549]:
+                                    - generic [ref=e552]: 
+                                    - generic [ref=e556]:
+                                      - text: 15 GB of mailbox storage
+                                      - generic [ref=e557]:
+                                        - button "More information" [ref=e558] [cursor=pointer]:
+                                          - img [ref=e560]
+                                        - text: 
+                                - listitem [ref=e563]:
+                                  - generic [ref=e565]:
+                                    - generic [ref=e568]: 
+                                    - generic [ref=e572]:
+                                      - text: 5 GB of
+                                      - link "cloud storage" [ref=e573] [cursor=pointer]:
+                                        - /url: https://go.microsoft.com/fwlink/?linkid=2255629
+                                - listitem [ref=e574]:
+                                  - generic [ref=e576]:
+                                    - generic [ref=e579]: 
+                                    - generic [ref=e582]: Web and mobile versions of Word, Excel, PowerPoint, OneNote, OneDrive and more apps
+                              - list [ref=e584]:
+                                - listitem [ref=e585]:
+                                  - generic [ref=e590]:
+                                    - button "outlook icon" [ref=e591] [cursor=pointer]
+                                    - text: 
+                            - generic [ref=e595]:
+                              - generic [ref=e598]:
+                                - heading "Microsoft 365 Basic" [level=3] [ref=e600]
+                                - generic [ref=e602]: $19.99
+                                - generic [ref=e603]: /year
+                                - generic [ref=e605]:
+                                  - text: Subscription automatically renews unless canceled in Microsoft account.
+                                  - 'link "See terms: Microsoft 365 Basic" [ref=e606] [cursor=pointer]':
+                                    - /url: https://go.microsoft.com/fwlink/?linkid=2265909
+                                    - text: See terms
+                                  - text: .
+                                - link "Buy now Microsoft 365 Basic" [ref=e609] [cursor=pointer]:
+                                  - /url: https://go.microsoft.com/fwlink/p/?LinkID=2186361&clcid=0x409&culture=en-us&country=us
+                                  - generic [ref=e610]: Buy now
+                              - list [ref=e613]:
+                                - listitem [ref=e614]:
+                                  - generic [ref=e616]:
+                                    - generic [ref=e619]: 
+                                    - generic [ref=e622]: For 1 person
+                                - listitem [ref=e623]:
+                                  - generic [ref=e625]:
+                                    - generic [ref=e628]: 
+                                    - generic [ref=e631]: Use on multiple devices at the same time
+                                - listitem [ref=e632]:
+                                  - generic [ref=e634]:
+                                    - generic [ref=e637]: 
+                                    - generic [ref=e640]: Ad-free Outlook email and calendar on web, mobile, and desktop apps
+                                - listitem [ref=e641]:
+                                  - generic [ref=e643]:
+                                    - generic [ref=e646]: 
+                                    - generic [ref=e650]:
+                                      - text: Advanced Outlook security features
+                                      - generic [ref=e651]:
+                                        - button "More information" [ref=e652] [cursor=pointer]:
+                                          - img [ref=e654]
+                                        - text: 
+                                - listitem [ref=e657]:
+                                  - generic [ref=e659]:
+                                    - generic [ref=e662]: 
+                                    - generic [ref=e666]:
+                                      - text: 100 GB of mailbox storage
+                                      - generic [ref=e667]:
+                                        - button "More information" [ref=e668] [cursor=pointer]:
+                                          - img [ref=e670]
+                                        - text: 
+                                - listitem [ref=e673]:
+                                  - generic [ref=e675]:
+                                    - generic [ref=e678]: 
+                                    - generic [ref=e682]:
+                                      - text: 100 GB of secure
+                                      - link "cloud storage" [ref=e683] [cursor=pointer]:
+                                        - /url: https://go.microsoft.com/fwlink/?linkid=2255629
+                                - listitem [ref=e684]:
+                                  - generic [ref=e686]:
+                                    - generic [ref=e689]: 
+                                    - generic [ref=e692]: OneDrive ransomware protection for your photos and files
+                                - listitem [ref=e693]:
+                                  - generic [ref=e695]:
+                                    - generic [ref=e698]: 
+                                    - generic [ref=e701]: Ongoing support for help when you need it
+                              - generic [ref=e702]:
+                                - heading "Apps with subscription value" [level=6] [ref=e704]
+                                - list [ref=e705]:
+                                  - listitem [ref=e706]:
+                                    - generic [ref=e711]:
+                                      - button "Outlook" [ref=e712] [cursor=pointer]:
+                                        - img "Outlook" [ref=e716]
+                                      - text: 
+                                  - listitem [ref=e717]:
+                                    - generic [ref=e722]:
+                                      - button "OneDrive" [ref=e723] [cursor=pointer]:
+                                        - img "OneDrive" [ref=e727]
+                                      - text: 
+                            - generic [ref=e728]:
+                              - generic [ref=e731]:
+                                - heading "Microsoft 365 Personal" [level=3] [ref=e733]
+                                - generic [ref=e735]: $99.99
+                                - generic [ref=e736]: /year
+                                - generic [ref=e738]:
+                                  - text: Subscription automatically renews unless canceled in Microsoft account.
+                                  - 'link "See terms: Microsoft 365 Personal." [ref=e739] [cursor=pointer]':
+                                    - /url: https://go.microsoft.com/fwlink/?linkid=2265909
+                                    - text: See terms
+                                  - text: .
+                                - generic [ref=e741]:
+                                  - link "Buy now Microsoft 365 Personal" [ref=e742] [cursor=pointer]:
+                                    - /url: https://go.microsoft.com/fwlink/?linkid=2234515&clcid=0x409&culture=en-us&country=us
+                                    - generic [ref=e743]: Buy now
+                                  - link "Try for free Microsoft 365 Premium" [ref=e744] [cursor=pointer]:
+                                    - /url: https://www.microsoft.com/en-us/microsoft-365/try-prs
+                                    - generic [ref=e745]: Try for free
+                              - list [ref=e748]:
+                                - listitem [ref=e749]:
+                                  - generic [ref=e751]:
+                                    - generic [ref=e754]: 
+                                    - generic [ref=e757]: For 1 person
+                                - listitem [ref=e758]:
+                                  - generic [ref=e760]:
+                                    - generic [ref=e763]: 
+                                    - generic [ref=e766]: Use on up to 5 devices simultaneously
+                                - listitem [ref=e767]:
+                                  - generic [ref=e769]:
+                                    - generic [ref=e772]: 
+                                    - generic [ref=e776]:
+                                      - text: Works on PC, Mac, iPhone, iPad, and Android phones and tablets
+                                      - generic [ref=e777]:
+                                        - button "More information" [ref=e778] [cursor=pointer]:
+                                          - img [ref=e780]
+                                        - text: 
+                                - listitem [ref=e783]:
+                                  - generic [ref=e785]:
+                                    - generic [ref=e788]: 
+                                    - generic [ref=e791]: 1 TB (1000 GB) of secure cloud storage
+                                - listitem [ref=e792]:
+                                  - generic [ref=e794]:
+                                    - generic [ref=e797]: 
+                                    - generic [ref=e801]:
+                                      - text: Word, Excel,
+                                      - generic [ref=e802]:
+                                        - button "More information" [ref=e803] [cursor=pointer]:
+                                          - img [ref=e805]
+                                        - text: 
+                                      - text: PowerPoint, Outlook and OneNote desktop apps with Microsoft Copilot
+                                      - generic [ref=e808]:
+                                        - button "More information" [ref=e809] [cursor=pointer]:
+                                          - img [ref=e811]
+                                        - text: 
+                                - listitem [ref=e814]:
+                                  - generic [ref=e816]:
+                                    - generic [ref=e819]: 
+                                    - generic [ref=e823]:
+                                      - text: Higher usage than free for select Copilot features
+                                      - generic [ref=e824]:
+                                        - button "More information" [ref=e825] [cursor=pointer]:
+                                          - img [ref=e827]
+                                        - text: 
+                                - listitem [ref=e830]:
+                                  - generic [ref=e832]:
+                                    - generic [ref=e835]: 
+                                    - generic [ref=e839]:
+                                      - text: Use Copilot in select apps with work files in a secure way
+                                      - generic [ref=e840]:
+                                        - button "More information" [ref=e841] [cursor=pointer]:
+                                          - img [ref=e843]
+                                        - text: 
+                                - listitem [ref=e846]:
+                                  - generic [ref=e848]:
+                                    - generic [ref=e851]: 
+                                    - generic [ref=e855]:
+                                      - text: Higher usage for AI image creation and editing in Microsoft Designer, Photos, and Copilot chat
+                                      - generic [ref=e856]:
+                                        - button "More information" [ref=e857] [cursor=pointer]:
+                                          - img [ref=e859]
+                                        - text: 
+                                - listitem [ref=e862]:
+                                  - generic [ref=e864]:
+                                    - generic [ref=e867]: 
+                                    - generic [ref=e871]:
+                                      - text: Microsoft Defender advanced security for your identity, personal data, and devices
+                                      - generic [ref=e872]:
+                                        - button "More information" [ref=e873] [cursor=pointer]:
+                                          - img [ref=e875]
+                                        - text: 
+                                - listitem [ref=e878]:
+                                  - generic [ref=e880]:
+                                    - generic [ref=e883]: 
+                                    - generic [ref=e886]: OneDrive ransomware protection for your photos and files
+                                - listitem [ref=e887]:
+                                  - generic [ref=e889]:
+                                    - generic [ref=e892]: 
+                                    - generic [ref=e896]:
+                                      - text: Microsoft Teams with Copilot
+                                      - generic [ref=e897]:
+                                        - button "More information" [ref=e898] [cursor=pointer]:
+                                          - img [ref=e900]
+                                        - text: 
+                                      - text: to call, chat, and collaborate
+                                - listitem [ref=e903]:
+                                  - generic [ref=e905]:
+                                    - generic [ref=e908]: 
+                                    - generic [ref=e911]: Ongoing support for help when you need it
+                              - generic [ref=e912]:
+                                - heading "Apps with subscription value" [level=6] [ref=e914]
+                                - list [ref=e915]:
+                                  - listitem [ref=e916]:
+                                    - generic [ref=e921]:
+                                      - button "Microsoft Copilot" [ref=e922] [cursor=pointer]:
+                                        - img "Microsoft Copilot" [ref=e926]
+                                      - text: 
+                                  - listitem [ref=e927]:
+                                    - generic [ref=e932]:
+                                      - button "Word" [ref=e933] [cursor=pointer]:
+                                        - img "Word" [ref=e937]
+                                      - text: 
+                                  - listitem [ref=e938]:
+                                    - generic [ref=e943]:
+                                      - button "Excel" [ref=e944] [cursor=pointer]:
+                                        - img "Excel" [ref=e948]
+                                      - text: 
+                                  - listitem [ref=e949]:
+                                    - generic [ref=e954]:
+                                      - button "PowerPoint" [ref=e955] [cursor=pointer]:
+                                        - img "PowerPoint" [ref=e959]
+                                      - text: 
+                                  - listitem [ref=e960]:
+                                    - generic [ref=e965]:
+                                      - button "Outlook" [ref=e966] [cursor=pointer]:
+                                        - img "Outlook" [ref=e970]
+                                      - text: 
+                                  - listitem [ref=e971]:
+                                    - generic [ref=e976]:
+                                      - button "OneNote" [ref=e977] [cursor=pointer]:
+                                        - img "OneNote" [ref=e981]
+                                      - text: 
+                                  - listitem [ref=e982]:
+                                    - generic [ref=e987]:
+                                      - button "OneDrive" [ref=e988] [cursor=pointer]:
+                                        - img "OneDrive" [ref=e992]
+                                      - text: 
+                                  - listitem [ref=e993]:
+                                    - generic [ref=e998]:
+                                      - button "Microsoft Defender" [ref=e999] [cursor=pointer]:
+                                        - img "Microsoft Defender" [ref=e1003]
+                                      - text: 
+                                  - listitem [ref=e1004]:
+                                    - generic [ref=e1009]:
+                                      - button "Microsoft Teams" [ref=e1010] [cursor=pointer]:
+                                        - img "Microsoft Teams" [ref=e1014]
+                                      - text: 
+                                  - listitem [ref=e1015]:
+                                    - generic [ref=e1020]:
+                                      - button "Designer" [ref=e1021] [cursor=pointer]:
+                                        - img "Designer" [ref=e1025]
+                                      - text: 
+                                  - listitem [ref=e1026]:
+                                    - generic [ref=e1031]:
+                                      - button "Clipchamp" [ref=e1032] [cursor=pointer]:
+                                        - img "Clipchamp" [ref=e1036]
+                                      - text: 
+                            - generic [ref=e1037]:
+                              - generic [ref=e1040]:
+                                - heading "Microsoft 365 Family" [level=3] [ref=e1042]
+                                - generic [ref=e1044]: $129.99
+                                - generic [ref=e1045]: /year
+                                - generic [ref=e1047]:
+                                  - text: Subscription automatically renews unless canceled in Microsoft account.
+                                  - 'link "See terms: Microsoft 365 Family." [ref=e1048] [cursor=pointer]':
+                                    - /url: https://go.microsoft.com/fwlink/?linkid=2265909
+                                    - text: See terms
+                                  - text: .
+                                - generic [ref=e1050]:
+                                  - link "Buy now Microsoft 365 Family" [ref=e1051] [cursor=pointer]:
+                                    - /url: https://go.microsoft.com/fwlink/?linkid=2234616&clcid=0x409&culture=en-us&country=us
+                                    - generic [ref=e1052]: Buy now
+                                  - link "Try for free Microsoft 365 Family" [ref=e1053] [cursor=pointer]:
+                                    - /url: https://www.microsoft.com/en-us/microsoft-365/try
+                                    - generic [ref=e1054]: Try for free
+                              - list [ref=e1057]:
+                                - listitem [ref=e1058]:
+                                  - generic [ref=e1060]:
+                                    - generic [ref=e1063]: 
+                                    - generic [ref=e1066]: For 1 to 6 people (AI features for subscription owner only)
+                                - listitem [ref=e1067]:
+                                  - generic [ref=e1069]:
+                                    - generic [ref=e1072]: 
+                                    - generic [ref=e1075]: Each person can use on up to 5 devices simultaneously
+                                - listitem [ref=e1076]:
+                                  - generic [ref=e1078]:
+                                    - generic [ref=e1081]: 
+                                    - generic [ref=e1085]:
+                                      - text: Works on PC, Mac, iPhone, iPad, and Android phones and tablets
+                                      - generic [ref=e1086]:
+                                        - button "More information" [ref=e1087] [cursor=pointer]:
+                                          - img [ref=e1089]
+                                        - text: 
+                                - listitem [ref=e1092]:
+                                  - generic [ref=e1094]:
+                                    - generic [ref=e1097]: 
+                                    - generic [ref=e1100]: Up to 6 TB of secure cloud storage (1 TB per person)
+                                - listitem [ref=e1101]:
+                                  - generic [ref=e1103]:
+                                    - generic [ref=e1106]: 
+                                    - generic [ref=e1110]:
+                                      - text: Word, Excel,
+                                      - generic [ref=e1111]:
+                                        - button "More information" [ref=e1112] [cursor=pointer]:
+                                          - img [ref=e1114]
+                                        - text: 
+                                      - text: PowerPoint, Outlook and OneNote desktop apps with Microsoft Copilot
+                                      - generic [ref=e1117]:
+                                        - button "More information" [ref=e1118] [cursor=pointer]:
+                                          - img [ref=e1120]
+                                        - text: 
+                                - listitem [ref=e1123]:
+                                  - generic [ref=e1125]:
+                                    - generic [ref=e1128]: 
+                                    - generic [ref=e1132]:
+                                      - text: Higher usage than free for select Copilot features
+                                      - generic [ref=e1133]:
+                                        - button "More information" [ref=e1134] [cursor=pointer]:
+                                          - img [ref=e1136]
+                                        - text: 
+                                - listitem [ref=e1139]:
+                                  - generic [ref=e1141]:
+                                    - generic [ref=e1144]: 
+                                    - generic [ref=e1148]:
+                                      - text: Use Copilot in select apps with work files in a secure way
+                                      - generic [ref=e1149]:
+                                        - button "More information" [ref=e1150] [cursor=pointer]:
+                                          - img [ref=e1152]
+                                        - text: 
+                                - listitem [ref=e1155]:
+                                  - generic [ref=e1157]:
+                                    - generic [ref=e1160]: 
+                                    - generic [ref=e1164]:
+                                      - text: Higher usage for AI image creation and editing in Microsoft Designer, Photos, and Copilot chat
+                                      - generic [ref=e1165]:
+                                        - button "More information" [ref=e1166] [cursor=pointer]:
+                                          - img [ref=e1168]
+                                        - text: 
+                                - listitem [ref=e1171]:
+                                  - generic [ref=e1173]:
+                                    - generic [ref=e1176]: 
+                                    - generic [ref=e1180]:
+                                      - text: Microsoft Defender advanced security for your family’s identity, personal data, and devices
+                                      - generic [ref=e1181]:
+                                        - button "More information" [ref=e1182] [cursor=pointer]:
+                                          - img [ref=e1184]
+                                        - text: 
+                                - listitem [ref=e1187]:
+                                  - generic [ref=e1189]:
+                                    - generic [ref=e1192]: 
+                                    - generic [ref=e1195]: OneDrive ransomware protection for your family’s photos and files
+                                - listitem [ref=e1196]:
+                                  - generic [ref=e1198]:
+                                    - generic [ref=e1201]: 
+                                    - generic [ref=e1205]:
+                                      - text: Microsoft Teams with Copilot
+                                      - generic [ref=e1206]:
+                                        - button "More information" [ref=e1207] [cursor=pointer]:
+                                          - img [ref=e1209]
+                                        - text: 
+                                      - text: to call, chat, and collaborate
+                                - listitem [ref=e1212]:
+                                  - generic [ref=e1214]:
+                                    - generic [ref=e1217]: 
+                                    - generic [ref=e1220]: Ongoing support for help when you and your family need it
+                              - generic [ref=e1221]:
+                                - heading "Apps with subscription value" [level=6] [ref=e1223]
+                                - list [ref=e1224]:
+                                  - listitem [ref=e1225]:
+                                    - generic [ref=e1230]:
+                                      - button "Microsoft Copilot" [ref=e1231] [cursor=pointer]:
+                                        - img "Microsoft Copilot" [ref=e1235]
+                                      - text: 
+                                  - listitem [ref=e1236]:
+                                    - generic [ref=e1241]:
+                                      - button "Word" [ref=e1242] [cursor=pointer]:
+                                        - img "Word" [ref=e1246]
+                                      - text: 
+                                  - listitem [ref=e1247]:
+                                    - generic [ref=e1252]:
+                                      - button "Excel" [ref=e1253] [cursor=pointer]:
+                                        - img "Excel" [ref=e1257]
+                                      - text: 
+                                  - listitem [ref=e1258]:
+                                    - generic [ref=e1263]:
+                                      - button "PowerPoint" [ref=e1264] [cursor=pointer]:
+                                        - img "PowerPoint" [ref=e1268]
+                                      - text: 
+                                  - listitem [ref=e1269]:
+                                    - generic [ref=e1274]:
+                                      - button "Outlook" [ref=e1275] [cursor=pointer]:
+                                        - img "Outlook" [ref=e1279]
+                                      - text: 
+                                  - listitem [ref=e1280]:
+                                    - generic [ref=e1285]:
+                                      - button "OneNote" [ref=e1286] [cursor=pointer]:
+                                        - img "OneNote" [ref=e1290]
+                                      - text: 
+                                  - listitem [ref=e1291]:
+                                    - generic [ref=e1296]:
+                                      - button "OneDrive" [ref=e1297] [cursor=pointer]:
+                                        - img "OneDrive" [ref=e1301]
+                                      - text: 
+                                  - listitem [ref=e1302]:
+                                    - generic [ref=e1307]:
+                                      - button "Microsoft Defender" [ref=e1308] [cursor=pointer]:
+                                        - img "Microsoft Defender" [ref=e1312]
+                                      - text: 
+                                  - listitem [ref=e1313]:
+                                    - generic [ref=e1318]:
+                                      - button "Microsoft Teams" [ref=e1319] [cursor=pointer]:
+                                        - img "Microsoft Teams" [ref=e1323]
+                                      - text: 
+                                  - listitem [ref=e1324]:
+                                    - generic [ref=e1329]:
+                                      - button "Designer" [ref=e1330] [cursor=pointer]:
+                                        - img "Designer" [ref=e1334]
+                                      - text: 
+                                  - listitem [ref=e1335]:
+                                    - generic [ref=e1340]:
+                                      - button "Clipchamp" [ref=e1341] [cursor=pointer]:
+                                        - img "Clipchamp" [ref=e1345]
+                                      - text: 
+                        - text:                                                                                  
+                        - link "Back to tabs" [ref=e1346] [cursor=pointer]:
+                          - /url: "#tabs-pill-bar-oc4495-new2_tab0-tab"
+                  - text:                                                                                                                        
+                  - link "Back to tabs" [ref=e1347] [cursor=pointer]:
+                    - /url: "#plans-and-pricing4_tab0-tab"
+            - generic [ref=e1353]:
+              - generic [ref=e1359]:
+                - heading "Get the Outlook mobile app" [level=2] [ref=e1362]:
+                  - generic [ref=e1363]: Get the Outlook mobile app
+                - generic [ref=e1364]: Download today for iOS or Android using the QR code below. Having trouble? Click the link below
+              - generic [ref=e1366]:
+                - generic:
+                  - generic:
+                    - img "Screenshot of the Outlook mobile app available for download today on iOS and Android"
+                - paragraph [ref=e1370]:
+                  - text: Click here if you're having trouble with the QR code
+                  - generic [ref=e1371]:
+                    - button "More information" [ref=e1372] [cursor=pointer]:
+                      - img [ref=e1374]
+                    - text: 
+            - generic [ref=e1377]:
+              - generic [ref=e1383]:
+                - generic [ref=e1386]:
+                  - generic [ref=e1387]: Microsoft 365 apps
+                  - heading "Learn more about Microsoft 365 products" [level=2] [ref=e1390]
+                - link "View all Microsoft 365 - Subscription for productivity Apps" [ref=e1394] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/microsoft-365
+                  - generic [ref=e1396]: 
+                  - generic [ref=e1397]: View all
+              - region "MICROSOFT 365 APPS" [ref=e1402]:
+                - generic [ref=e1403]: Showing 1-2 of 9 slides
+                - generic [ref=e1404]:
+                  - button "Previous Slide" [disabled] [ref=e1405]:
+                    - generic [ref=e1406]: Previous Slide
+                    - generic [ref=e1407]: 
+                  - button "Next Slide" [ref=e1408] [cursor=pointer]:
+                    - generic [ref=e1409]: Next Slide
+                    - generic [ref=e1410]: 
+                - generic [ref=e1412]:
+                  - group "1 of 9" [ref=e1413]:
+                    - generic [ref=e1415]:
+                      - generic [ref=e1422]:
+                        - generic [ref=e1423]: Word
+                        - heading "Create impressive documents and improve your writing with built-in intelligent features." [level=3] [ref=e1426]:
+                          - generic [ref=e1427]: Create impressive documents and improve your writing with built-in intelligent features.
+                      - 'link "Learn more about Word: Document Editing with Microsoft Word" [ref=e1430] [cursor=pointer]':
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/word
+                        - generic [ref=e1432]: 
+                        - generic [ref=e1433]: Learn more about Word
+                  - group "2 of 9" [ref=e1434]:
+                    - generic [ref=e1436]:
+                      - generic [ref=e1443]:
+                        - generic [ref=e1444]: Excel
+                        - heading "Simplify complex data and create compelling spreadsheets with formatting, sparklines, and tables." [level=3] [ref=e1447]:
+                          - generic [ref=e1448]: Simplify complex data and create compelling spreadsheets with formatting, sparklines, and tables.
+                      - 'link "Learn more about Excel: Spreadsheet Software: Microsoft Excel" [ref=e1451] [cursor=pointer]':
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/excel
+                        - generic [ref=e1453]: 
+                        - generic [ref=e1454]: Learn more about Excel
+                  - group [ref=e1455]:
+                    - generic [ref=e1457]:
+                      - generic [ref=e1464]:
+                        - generic [ref=e1465]: PowerPoint
+                        - heading [level=3] [ref=e1468]:
+                          - generic [ref=e1469]: Create well-designed, impactful presentations using intelligent design tools and features.
+                      - link [ref=e1472] [cursor=pointer]:
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/powerpoint
+                        - generic [ref=e1474]: 
+                        - generic [ref=e1475]: Learn more about PowerPoint
+                  - group [ref=e1476]:
+                    - generic [ref=e1478]:
+                      - generic [ref=e1479]:
+                        - img [ref=e1484]
+                        - generic [ref=e1486]:
+                          - generic [ref=e1487]: Microsoft Defender
+                          - heading [level=3] [ref=e1490]:
+                            - generic [ref=e1491]: Enjoy personal device and data protection with one easy-to-use app.
+                      - link [ref=e1494] [cursor=pointer]:
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/microsoft-defender-for-individuals
+                        - generic [ref=e1496]: 
+                        - generic [ref=e1497]: Learn more about Defender
+                  - group [ref=e1498]:
+                    - generic [ref=e1500]:
+                      - generic [ref=e1507]:
+                        - generic [ref=e1508]: OneDrive
+                        - heading [level=3] [ref=e1511]:
+                          - generic [ref=e1512]: Save, access, edit, and share files and photos wherever you are.
+                      - link [ref=e1515] [cursor=pointer]:
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/onedrive/online-cloud-storage/
+                        - generic [ref=e1517]: 
+                        - generic [ref=e1518]: Learn more about OneDrive
+                  - group [ref=e1519]:
+                    - generic [ref=e1521]:
+                      - generic [ref=e1522]:
+                        - img [ref=e1527]
+                        - generic [ref=e1529]:
+                          - generic [ref=e1530]: Microsoft Teams
+                          - heading [level=3] [ref=e1533]:
+                            - generic [ref=e1534]: Bring everyone together in one place to meet, chat, call, and collaborate.
+                      - link [ref=e1537] [cursor=pointer]:
+                        - /url: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
+                        - generic [ref=e1539]: 
+                        - generic [ref=e1540]: Learn more about Teams
+                  - group [ref=e1541]:
+                    - generic [ref=e1543]:
+                      - generic [ref=e1544]:
+                        - img [ref=e1549]
+                        - generic [ref=e1551]:
+                          - generic [ref=e1552]: Microsoft Editor
+                          - heading [level=3] [ref=e1555]:
+                            - generic [ref=e1556]: Write more clearly and concisely, anywhere you write.
+                      - link [ref=e1559] [cursor=pointer]:
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/microsoft-editor?activetab=tabs%3afaqheaderregion3
+                        - generic [ref=e1561]: 
+                        - generic [ref=e1562]: Learn more about Editor
+                  - group [ref=e1563]:
+                    - generic [ref=e1565]:
+                      - generic [ref=e1566]:
+                        - img [ref=e1571]
+                        - generic [ref=e1573]:
+                          - generic [ref=e1574]: Clipchamp
+                          - heading [level=3] [ref=e1577]:
+                            - generic [ref=e1578]: Create and edit beautiful videos quickly and easily.
+                      - link [ref=e1581] [cursor=pointer]:
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/clipchamp
+                        - generic [ref=e1583]: 
+                        - generic [ref=e1584]: Learn more about Clipchamp
+                  - group [ref=e1585]:
+                    - generic [ref=e1587]:
+                      - generic [ref=e1588]:
+                        - img [ref=e1593]
+                        - generic [ref=e1595]:
+                          - generic [ref=e1596]: Microsoft Designer
+                          - heading [level=3] [ref=e1599]:
+                            - generic [ref=e1600]: Create designs and edit photos in seconds with the power of AI.
+                      - link [ref=e1603] [cursor=pointer]:
+                        - /url: https://www.microsoft.com/en-us/microsoft-365/microsoft-designer
+                        - generic [ref=e1605]: 
+                        - generic [ref=e1606]: Learn more
+                - link "Back to MICROSOFT 365 APPS carousel section" [ref=e1608] [cursor=pointer]:
+                  - /url: javascript:void(0);
+            - generic [ref=e1612]:
+              - generic [ref=e1618]:
+                - generic [ref=e1619]: Partner Solutions
+                - heading "Apps for Outlook" [level=2] [ref=e1622]
+                - generic [ref=e1623]: Work smarter in Outlook with apps tailored to help you communicate, manage your schedule, and find what you need—simply and fast.
+              - generic [ref=e1625]:
+                - generic [ref=e1629]:
+                  - generic [ref=e1633]:
+                    - generic [ref=e1634]:
+                      - generic [ref=e1640]:
+                        - generic [ref=e1642]: Microsoft Corporation
+                        - heading "Power BI" [level=3] [ref=e1643]
+                      - paragraph [ref=e1645]: Collaborate better with your data.
+                    - generic [ref=e1646]:
+                      - generic [ref=e1648]:
+                        - generic [ref=e1650]: 
+                        - generic [ref=e1651]: "4.5"
+                        - generic [ref=e1652]: (212783)
+                        - generic [ref=e1653]: Rated (#=ratingAverage#) stars out of 5 stars, by 212783 users.
+                      - link "Learn More about Power BI " [ref=e1654] [cursor=pointer]:
+                        - /url: https://appsource.microsoft.com/en-US/product/office/WA200001273?tab=Overview
+                        - generic "Learn More about Power BI" [ref=e1655]
+                        - text: Learn More 
+                  - generic [ref=e1659]:
+                    - generic [ref=e1660]:
+                      - generic [ref=e1666]:
+                        - generic [ref=e1668]: Microsoft Corporation
+                        - heading "Copilot" [level=3] [ref=e1669]
+                      - paragraph [ref=e1671]: Your copilot for work
+                    - generic [ref=e1672]:
+                      - generic [ref=e1674]:
+                        - generic [ref=e1676]: 
+                        - generic [ref=e1677]: "4.3"
+                        - generic [ref=e1678]: (160769)
+                        - generic [ref=e1679]: Rated (#=ratingAverage#) stars out of 5 stars, by 160769 users.
+                      - link "Learn More about Copilot " [ref=e1680] [cursor=pointer]:
+                        - /url: https://appsource.microsoft.com/en-US/product/office/WA200007767?tab=Overview
+                        - generic "Learn More about Copilot" [ref=e1681]
+                        - text: Learn More 
+                  - generic [ref=e1685]:
+                    - generic [ref=e1686]:
+                      - generic [ref=e1692]:
+                        - generic [ref=e1694]: ADOBE INC.
+                        - heading "Adobe Acrobat for Microsoft Teams and Outlook" [level=3] [ref=e1695]
+                      - paragraph [ref=e1697]: Gain insights, edit, convert, and collaborate on PDFs
+                    - generic [ref=e1698]:
+                      - generic [ref=e1700]:
+                        - generic [ref=e1702]: 
+                        - generic [ref=e1703]: "4.1"
+                        - generic [ref=e1704]: (65327)
+                        - generic [ref=e1705]: Rated (#=ratingAverage#) stars out of 5 stars, by 65327 users.
+                      - link "Learn More about Adobe Acrobat for Microsoft Teams and Outlook " [ref=e1706] [cursor=pointer]:
+                        - /url: https://appsource.microsoft.com/en-US/product/office/WA200002564?tab=Overview
+                        - generic "Learn More about Adobe Acrobat for Microsoft Teams and Outlook" [ref=e1707]
+                        - text: Learn More 
+                - link "View all Outlook apps" [ref=e1709] [cursor=pointer]:
+                  - /url: https://go.microsoft.com/fwlink/?linkid=2300518&clcid=0x409&culture=en-us&country=us
+                  - generic [ref=e1712]: 
+                  - generic [ref=e1713]: View all apps
+            - generic [ref=e1714]:
+              - generic [ref=e1723]:
+                - generic [ref=e1724]: News and tips
+                - heading "Get the latest on Microsoft Outlook" [level=2] [ref=e1727]
+              - generic [ref=e1731]:
+                - generic [ref=e1733]:
+                  - tablist "News and tips" [ref=e1736]:
+                    - tab "What’s new" [selected] [ref=e1737] [cursor=pointer]
+                    - tab "For individuals" [ref=e1738] [cursor=pointer]
+                    - tab "For work" [ref=e1739] [cursor=pointer]
+                    - tab "Tips & tricks" [ref=e1740] [cursor=pointer]
+                  - text:  
+                - generic [ref=e1743]:
+                  - tabpanel [ref=e1744]:
+                    - region "NEWS AND TIPS-What's new tab section" [ref=e1748]:
+                      - generic [ref=e1749]: Showing 1-2 of 3 slides
+                      - generic [ref=e1750]:
+                        - button "Previous Slide" [disabled] [ref=e1751]:
+                          - generic [ref=e1752]: Previous Slide
+                          - generic [ref=e1753]: 
+                        - button "Next Slide" [ref=e1754] [cursor=pointer]:
+                          - generic [ref=e1755]: Next Slide
+                          - generic [ref=e1756]: 
+                      - generic [ref=e1758]:
+                        - group "1 of 3" [ref=e1759]:
+                          - generic [ref=e1760]:
+                            - generic [ref=e1762]:
+                              - generic:
+                                - img "A screenshot of a computer displaying various lines of text."
+                            - generic [ref=e1763]:
+                              - generic [ref=e1764]:
+                                - generic [ref=e1768]: Copilot in Outlook
+                                - generic [ref=e1772]: Prioritize your inbox by using Copilot to mark high and low-priority emails based on your role, manager, and preferences.
+                              - link "Learn more about Microsoft Copilot in Outlook" [ref=e1775] [cursor=pointer]:
+                                - /url: https://go.microsoft.com/fwlink/?linkid=2316502&clcid=0x409&culture=en-us&country=us
+                                - generic [ref=e1777]: 
+                                - generic [ref=e1778]: Learn more
+                        - group "2 of 3" [ref=e1779]:
+                          - generic [ref=e1780]:
+                            - generic [ref=e1782]:
+                              - generic:
+                                - img "A computer screen of mail with copilot message"
+                            - generic [ref=e1783]:
+                              - generic [ref=e1784]:
+                                - generic [ref=e1788]: Copilot in Outlook
+                                - generic [ref=e1792]: See how Copilot in Outlook does email and time management
+                              - link "Learn more about Copilot in outlook" [ref=e1795] [cursor=pointer]:
+                                - /url: https://go.microsoft.com/fwlink/?linkid=2260452&clcid=0x409&culture=en-us&country=us
+                                - generic [ref=e1797]: 
+                                - generic [ref=e1798]: Learn more
+                        - group [ref=e1799]:
+                          - generic [ref=e1803]:
+                            - generic [ref=e1804]:
+                              - generic [ref=e1808]: Blog
+                              - generic [ref=e1812]: Stay up to date with Outlook news on Tech Community
+                            - link [ref=e1815] [cursor=pointer]:
+                              - /url: https://go.microsoft.com/fwlink/?linkid=2260453&clcid=0x409&culture=en-us&country=us
+                              - generic [ref=e1817]: 
+                              - generic [ref=e1818]: Learn more
+                      - link "Back to NEWS AND TIPS-What's new tab section" [ref=e1820] [cursor=pointer]:
+                        - /url: javascript:void(0);
+                  - text:                 
+                  - link "back to tabs" [ref=e1821] [cursor=pointer]:
+                    - /url: "#tabs-pill-bar-oc44a7_tab0-tab"
+                    - text: Back to tabs
+            - generic [ref=e1828]:
+              - generic [ref=e1829]:
+                - heading "FREQUENTLY ASKED QUESTIONS" [level=2] [ref=e1831]
+                - group [ref=e1832]:
+                  - generic [ref=e1833]:
+                    - button "Expand all" [ref=e1834] [cursor=pointer]:
+                      - generic [ref=e1836]: Expand all
+                    - button "Collapse all" [disabled] [pressed] [ref=e1837]:
+                      - generic [ref=e1839]: Collapse all
+              - list [ref=e1840]:
+                - listitem [ref=e1841]:
+                  - button "01/ How do I create an Outlook.com account? " [ref=e1844] [cursor=pointer]:
+                    - generic [ref=e1846]: 01/
+                    - heading "How do I create an Outlook.com account?" [level=3] [ref=e1850]:
+                      - generic [ref=e1851]: How do I create an Outlook.com account?
+                    - text: 
+                - listitem [ref=e1852]:
+                  - button "02/ I have a Hotmail.com, Live.com, or MSN.com email account. Is that the same as Outlook? " [ref=e1855] [cursor=pointer]:
+                    - generic [ref=e1857]: 02/
+                    - heading "I have a Hotmail.com, Live.com, or MSN.com email account. Is that the same as Outlook?" [level=3] [ref=e1861]:
+                      - generic [ref=e1862]: I have a Hotmail.com, Live.com, or MSN.com email account. Is that the same as Outlook?
+                    - text: 
+                - listitem [ref=e1863]:
+                  - button "03/ I don’t have an Outlook.com account. Can I still use Outlook apps? " [ref=e1866] [cursor=pointer]:
+                    - generic [ref=e1868]: 03/
+                    - heading "I don’t have an Outlook.com account. Can I still use Outlook apps?" [level=3] [ref=e1872]:
+                      - generic [ref=e1873]: I don’t have an Outlook.com account. Can I still use Outlook apps?
+                    - text: 
+                - listitem [ref=e1874]:
+                  - button "04/ How does mailbox storage and Microsoft storage work for Outlook? " [ref=e1877] [cursor=pointer]:
+                    - generic [ref=e1879]: 04/
+                    - heading "How does mailbox storage and Microsoft storage work for Outlook?" [level=3] [ref=e1883]:
+                      - generic [ref=e1884]: How does mailbox storage and Microsoft storage work for Outlook?
+                    - text: 
+                - listitem [ref=e1885]:
+                  - button "05/ Why do I see ads in my Outlook inbox? " [ref=e1888] [cursor=pointer]:
+                    - generic [ref=e1890]: 05/
+                    - heading "Why do I see ads in my Outlook inbox?" [level=3] [ref=e1894]:
+                      - generic [ref=e1895]: Why do I see ads in my Outlook inbox?
+                    - text: 
+                - listitem [ref=e1896]:
+                  - button "06/ What do I get for Outlook with a Microsoft 365 subscription? " [ref=e1899] [cursor=pointer]:
+                    - generic [ref=e1901]: 06/
+                    - heading "What do I get for Outlook with a Microsoft 365 subscription?" [level=3] [ref=e1905]:
+                      - generic [ref=e1906]: What do I get for Outlook with a Microsoft 365 subscription?
+                    - text: 
+                - listitem [ref=e1907]:
+                  - button "07/ If I have a personal Office (one-time) license, will I be able to access desktop apps and have an ad-free Outlook experience? " [ref=e1910] [cursor=pointer]:
+                    - generic [ref=e1912]: 07/
+                    - heading "If I have a personal Office (one-time) license, will I be able to access desktop apps and have an ad-free Outlook experience?" [level=3] [ref=e1916]:
+                      - generic [ref=e1917]: If I have a personal Office (one-time) license, will I be able to access desktop apps and have an ad-free Outlook experience?
+                    - text: 
+            - generic [ref=e1925]:
+              - generic [ref=e1931]:
+                - img "A person sitting on a couch looking at a tablet" [ref=e1935]
+                - generic [ref=e1936]:
+                  - generic [ref=e1942]: Get started
+                  - generic [ref=e1943]:
+                    - heading "What happened to Hotmail?" [level=2] [ref=e1948]
+                    - generic [ref=e1950]: Outlook.com replaced Hotmail years ago, but your Hotmail account will continue to work across Outlook apps.
+                  - link "Sign in to Outlook" [ref=e1953] [cursor=pointer]:
+                    - /url: https://go.microsoft.com/fwlink/p/?LinkID=2125442&deeplink=mail%2F
+                    - generic [ref=e1954]: Sign in
+              - generic [ref=e1955]:
+                - generic [ref=e1958]:
+                  - generic [ref=e1959]:
+                    - img [ref=e1964]
+                    - generic [ref=e1965]:
+                      - heading "Create free account" [level=3] [ref=e1969]:
+                        - generic [ref=e1970]: Create free account
+                      - generic [ref=e1971]: Don’t have an account? Get started with a free Outlook.com email today.
+                  - link "Create account on Outlook" [ref=e1974] [cursor=pointer]:
+                    - /url: https://go.microsoft.com/fwlink/p/?linkid=2125440&clcid=0x409&culture=en-us&country=us
+                    - generic [ref=e1976]: 
+                    - generic [ref=e1977]: Create account
+                - generic [ref=e1980]:
+                  - generic [ref=e1981]:
+                    - img [ref=e1986]
+                    - generic [ref=e1987]:
+                      - heading "Try Microsoft 365" [level=3] [ref=e1991]:
+                        - generic [ref=e1992]: Try Microsoft 365
+                      - generic [ref=e1993]: Get the best Outlook experience with a Microsoft 365 subscription.
+                  - link "Explore plans to Get the best Outlook experience with Microsoft 365" [ref=e1996] [cursor=pointer]:
+                    - /url: https://www.microsoft.com/en-us/microsoft-365/outlook/outlook-email-plan?ocid=cmmhk3ktunq
+                    - generic [ref=e1998]: 
+                    - generic [ref=e1999]: Explore plans
+            - region [ref=e2007]:
+              - list [ref=e2008]:
+                - listitem [ref=e2009]:
+                  - generic [ref=e2011]:
+                    - link "Back to Footnote1" [ref=e2012] [cursor=pointer]:
+                      - /url: "#footnote-1"
+                      - text: "[1]"
+                    - generic [ref=e2013]:
+                      - text: Once your paid subscription begins, you have a 7-day cancellation window to receive a prorated refund, only paying for what you use. You may cancel your subscription at any time in the Microsoft 365 admin center.
+                      - link "Learn how to cancel your Microsoft 365 subscription" [ref=e2014] [cursor=pointer]:
+                        - /url: https://go.microsoft.com/fwlink/?linkid=2300084
+                      - text: . When a subscription is canceled, all associated data will be deleted.
+                      - link "Learn more about data retention, deletion, and destruction in Microsoft 365" [ref=e2015] [cursor=pointer]:
+                        - /url: https://go.microsoft.com/fwlink/?linkid=2299985
+                      - text: .
+                - listitem [ref=e2016]:
+                  - generic [ref=e2018]:
+                    - link "Back to Footnote2" [ref=e2019] [cursor=pointer]:
+                      - /url: "#footnote-2"
+                      - text: "[2]"
+                    - generic [ref=e2020]:
+                      - text: After your one-month free trial ends, your subscription will automatically convert to a paid subscription and you’ll be charged the applicable subscription fee based on the subscription term and billing plan you select. Cancel anytime during your free trial to stop future charges. A credit card is required to sign up. Storage for trials will be limited. Microsoft reserves the right to suspend access to its products and services if payment is not received after your one-month free trial ends.
+                      - link "Learn more" [ref=e2021] [cursor=pointer]:
+                        - /url: https://go.microsoft.com/fwlink/?linkid=2213940
+                      - text: .
+                - listitem [ref=e2022]:
+                  - generic [ref=e2024]:
+                    - link "Back to Footnote3" [ref=e2025] [cursor=pointer]:
+                      - /url: "#footnote-3"
+                      - text: "[3]"
+                    - generic [ref=e2026]:
+                      - text: App availability varies by device/language. Features vary by platform. Minimum age limits may apply to use of AI features.
+                      - link "Details" [ref=e2027] [cursor=pointer]:
+                        - /url: https://go.microsoft.com/fwlink/?linkid=2280902
+                      - text: .
+                - listitem [ref=e2028]:
+                  - generic [ref=e2030]:
+                    - link "Back to Footnote4" [ref=e2031] [cursor=pointer]:
+                      - /url: "#footnote-4"
+                      - text: "[4]"
+                    - generic [ref=e2032]: Features apply to customers who have an @outlook.com, @hotmail.com, @live.com, or @msn.com account. Copilot features are available in Outlook.com, Outlook built into Windows, Outlook on Mac, and iOS and Android apps.
+                - listitem [ref=e2033]:
+                  - generic [ref=e2035]:
+                    - link "Back to Footnote5" [ref=e2036] [cursor=pointer]:
+                      - /url: "#footnote-5"
+                      - text: "[5]"
+                    - generic [ref=e2037]: Available with a Microsoft 365 subscription.
+                - listitem [ref=e2038]:
+                  - generic [ref=e2040]:
+                    - link "Back to Footnote6" [ref=e2041] [cursor=pointer]:
+                      - /url: "#footnote-6"
+                      - text: "[6]"
+                    - generic [ref=e2042]:
+                      - text: AI features only available to subscription owner and cannot be shared; usage limits apply.
+                      - link "Learn more about usage limits" [ref=e2043] [cursor=pointer]:
+                        - /url: https://go.microsoft.com/fwlink/?linkid=2280151
+                        - text: Learn more
+                      - text: .
+                - listitem [ref=e2044]:
+                  - generic [ref=e2046]:
+                    - link "Back to footnote 7" [ref=e2047] [cursor=pointer]:
+                      - /url: "#footnote-7"
+                      - text: "[7]"
+                    - generic [ref=e2048]: Copilot in Excel requires AutoSave to be enabled, meaning the file must be saved to OneDrive; it doesn't function with unsaved files.
+        - region "Microsoft Follow links" [ref=e2064]:
+          - heading "Follow Microsoft 365" [level=2] [ref=e2065]
+          - list [ref=e2066]:
+            - listitem [ref=e2067]:
+              - link "Follow Microsoft 365 on Linkedin" [ref=e2068] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?linkid=2144764
+                - img "linkedin logo" [ref=e2069]
+            - listitem [ref=e2070]:
+              - link "Follow Microsoft 365 on Twitter" [ref=e2071] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/p/?LinkId=2000804
+                - img "Twitter logo" [ref=e2072]
+            - listitem [ref=e2073]:
+              - link "Follow Microsoft 365 on YouTube" [ref=e2074] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?linkid=2331970
+                - img "YouTube logo" [ref=e2075]
+            - listitem [ref=e2076]:
+              - link "Follow Microsoft 365 on Instagram" [ref=e2077] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?linkid=2066294
+                - img "Instagram logo" [ref=e2078]
+            - listitem [ref=e2079]:
+              - link "Follow Microsoft 365 on TikTok" [ref=e2080] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?linkid=2331663
+                - img "TikTok" [ref=e2081]
+    - contentinfo [ref=e2086]:
+      - navigation "Footer Resource links" [ref=e2087]:
+        - generic [ref=e2088]:
+          - generic [ref=e2089]:
+            - heading "What's new" [level=2] [ref=e2090]
+            - list [ref=e2091]:
+              - listitem [ref=e2092]:
+                - link "Surface Pro What's new" [ref=e2093] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/surface/devices/surface-pro
+                  - text: Surface Pro
+              - listitem [ref=e2094]:
+                - link "Surface Laptop What's new" [ref=e2095] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/surface/devices/surface-laptop
+                  - text: Surface Laptop
+              - listitem [ref=e2096]:
+                - link "Surface Laptop Studio 2 What's new" [ref=e2097] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/d/Surface-Laptop-Studio-2/8rqr54krf1dz
+                  - text: Surface Laptop Studio 2
+              - listitem [ref=e2098]:
+                - link "Copilot for organizations What's new" [ref=e2099] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/microsoft-copilot/organizations?icid=DSM_Footer_CopilotOrganizations
+                  - text: Copilot for organizations
+              - listitem [ref=e2100]:
+                - link "Copilot for personal use What's new" [ref=e2101] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/microsoft-copilot/for-individuals?form=MY02PT&OCID=GE_web_Copilot_Free_868g3t5nj
+                  - text: Copilot for personal use
+              - listitem [ref=e2102]:
+                - link "AI in Windows What's new" [ref=e2103] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/windows/ai-features?icid=DSM_Footer_WhatsNew_AIinWindows
+                  - text: AI in Windows
+              - listitem [ref=e2104]:
+                - link "Explore Microsoft products What's new" [ref=e2105] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/microsoft-products-and-apps
+                  - text: Explore Microsoft products
+              - listitem [ref=e2106]:
+                - link "Windows 11 apps What's new" [ref=e2107] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/windows/apps-for-windows?icid=DSM_Footer_WhatsNew_Windows11apps
+                  - text: Windows 11 apps
+          - generic [ref=e2108]:
+            - heading "Microsoft Store" [level=2] [ref=e2109]
+            - list [ref=e2110]:
+              - listitem [ref=e2111]:
+                - link "Account profile Microsoft Store" [ref=e2112] [cursor=pointer]:
+                  - /url: https://account.microsoft.com/
+                  - text: Account profile
+              - listitem [ref=e2113]:
+                - link "Download Center Microsoft Store" [ref=e2114] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/download
+                  - text: Download Center
+              - listitem [ref=e2115]:
+                - link "Microsoft Store support Microsoft Store" [ref=e2116] [cursor=pointer]:
+                  - /url: https://go.microsoft.com/fwlink/?linkid=2139749
+                  - text: Microsoft Store support
+              - listitem [ref=e2117]:
+                - link "Returns Microsoft Store" [ref=e2118] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/store/b/returns
+                  - text: Returns
+              - listitem [ref=e2119]:
+                - link "Order tracking Microsoft Store" [ref=e2120] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/store/b/order-tracking
+                  - text: Order tracking
+              - listitem [ref=e2121]:
+                - link "Certified Refurbished Microsoft Store" [ref=e2122] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/store/b/certified-refurbished-products
+                  - text: Certified Refurbished
+              - listitem [ref=e2123]:
+                - link "Microsoft Store Promise Microsoft Store" [ref=e2124] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/store/b/why-microsoft-store?icid=footer_why-msft-store_7102020
+                  - text: Microsoft Store Promise
+              - listitem [ref=e2125]:
+                - link "Flexible Payments Microsoft Store" [ref=e2126] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/store/b/payment-financing-options?icid=footer_financing_vcc
+                  - text: Flexible Payments
+          - generic [ref=e2127]:
+            - heading "Education" [level=2] [ref=e2128]
+            - list [ref=e2129]:
+              - listitem [ref=e2130]:
+                - link "Microsoft in education Education" [ref=e2131] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/education
+                  - text: Microsoft in education
+              - listitem [ref=e2132]:
+                - link "Devices for education Education" [ref=e2133] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/education/devices/overview
+                  - text: Devices for education
+              - listitem [ref=e2134]:
+                - link "Microsoft Teams for Education Education" [ref=e2135] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/education/products/teams
+                  - text: Microsoft Teams for Education
+              - listitem [ref=e2136]:
+                - link "Microsoft 365 Education Education" [ref=e2137] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/education/products/microsoft-365
+                  - text: Microsoft 365 Education
+              - listitem [ref=e2138]:
+                - link "How to buy for your school Education" [ref=e2139] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/education/how-to-buy
+                  - text: How to buy for your school
+              - listitem [ref=e2140]:
+                - link "Educator training and development Education" [ref=e2141] [cursor=pointer]:
+                  - /url: https://education.microsoft.com/
+                  - text: Educator training and development
+              - listitem [ref=e2142]:
+                - link "Deals for students and parents Education" [ref=e2143] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/store/b/education
+                  - text: Deals for students and parents
+              - listitem [ref=e2144]:
+                - link "AI for education Education" [ref=e2145] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/education/ai-in-education
+                  - text: AI for education
+        - generic [ref=e2146]:
+          - generic [ref=e2147]:
+            - heading "Business" [level=2] [ref=e2148]
+            - list [ref=e2149]:
+              - listitem [ref=e2150]:
+                - link "Microsoft AI Business" [ref=e2151] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/ai?icid=DSM_Footer_AI
+                  - text: Microsoft AI
+              - listitem [ref=e2152]:
+                - link "Microsoft Security Business" [ref=e2153] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/security
+                  - text: Microsoft Security
+              - listitem [ref=e2154]:
+                - link "Dynamics 365 Business" [ref=e2155] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/dynamics-365
+                  - text: Dynamics 365
+              - listitem [ref=e2156]:
+                - link "Microsoft 365 Business" [ref=e2157] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/microsoft-365/business
+                  - text: Microsoft 365
+              - listitem [ref=e2158]:
+                - link "Microsoft Power Platform Business" [ref=e2159] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/power-platform
+                  - text: Microsoft Power Platform
+              - listitem [ref=e2160]:
+                - link "Microsoft Teams Business" [ref=e2161] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
+                  - text: Microsoft Teams
+              - listitem [ref=e2162]:
+                - link "Microsoft 365 Copilot Business" [ref=e2163] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/microsoft-365-copilot?icid=DSM_Footer_Microsoft365Copilot
+                  - text: Microsoft 365 Copilot
+              - listitem [ref=e2164]:
+                - link "Small Business Business" [ref=e2165] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/store/b/business?icid=CNavBusinessStore
+                  - text: Small Business
+          - generic [ref=e2166]:
+            - heading "Developer & IT" [level=2] [ref=e2167]
+            - list [ref=e2168]:
+              - listitem [ref=e2169]:
+                - link "Azure Developer & IT" [ref=e2170] [cursor=pointer]:
+                  - /url: https://azure.microsoft.com/en-us/
+                  - text: Azure
+              - listitem [ref=e2171]:
+                - link "Microsoft Developer Developer & IT" [ref=e2172] [cursor=pointer]:
+                  - /url: https://developer.microsoft.com/en-us/
+                  - text: Microsoft Developer
+              - listitem [ref=e2173]:
+                - link "Microsoft Learn Developer & IT" [ref=e2174] [cursor=pointer]:
+                  - /url: https://learn.microsoft.com/
+                  - text: Microsoft Learn
+              - listitem [ref=e2175]:
+                - link "Support for AI marketplace apps Developer & IT" [ref=e2176] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/software-development-companies/offers-benefits/isv-success?icid=DSM_Footer_SupportAIMarketplace&ocid=cmm3atxvn98
+                  - text: Support for AI marketplace apps
+              - listitem [ref=e2177]:
+                - link "Microsoft Tech Community Developer & IT" [ref=e2178] [cursor=pointer]:
+                  - /url: https://techcommunity.microsoft.com/
+                  - text: Microsoft Tech Community
+              - listitem [ref=e2179]:
+                - link "Microsoft Marketplace Developer & IT" [ref=e2180] [cursor=pointer]:
+                  - /url: https://marketplace.microsoft.com?icid=DSM_Footer_Marketplace&ocid=cmm3atxvn98
+                  - text: Microsoft Marketplace
+              - listitem [ref=e2181]:
+                - link "Marketplace Rewards Developer & IT" [ref=e2182] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/software-development-companies/offers-benefits/marketplace-rewards?icid=DSM_Footer_MarketplaceRewards&ocid=cmm3atxvn98
+                  - text: Marketplace Rewards
+              - listitem [ref=e2183]:
+                - link "Visual Studio Developer & IT" [ref=e2184] [cursor=pointer]:
+                  - /url: https://visualstudio.microsoft.com/
+                  - text: Visual Studio
+          - generic [ref=e2185]:
+            - heading "Company" [level=2] [ref=e2186]
+            - list [ref=e2187]:
+              - listitem [ref=e2188]:
+                - link "Careers Company" [ref=e2189] [cursor=pointer]:
+                  - /url: https://careers.microsoft.com/
+                  - text: Careers
+              - listitem [ref=e2190]:
+                - link "About Microsoft Company" [ref=e2191] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/about
+                  - text: About Microsoft
+              - listitem [ref=e2192]:
+                - link "Company news Company" [ref=e2193] [cursor=pointer]:
+                  - /url: https://news.microsoft.com/source/?icid=DSM_Footer_Company_CompanyNews
+                  - text: Company news
+              - listitem [ref=e2194]:
+                - link "Privacy at Microsoft Company" [ref=e2195] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/privacy?icid=DSM_Footer_Company_Privacy
+                  - text: Privacy at Microsoft
+              - listitem [ref=e2196]:
+                - link "Investors Company" [ref=e2197] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/investor/default.aspx
+                  - text: Investors
+              - listitem [ref=e2198]:
+                - link "Diversity and inclusion Company" [ref=e2199] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/diversity/default?icid=DSM_Footer_Company_Diversity
+                  - text: Diversity and inclusion
+              - listitem [ref=e2200]:
+                - link "Accessibility Company" [ref=e2201] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/accessibility
+                  - text: Accessibility
+              - listitem [ref=e2202]:
+                - link "Sustainability Company" [ref=e2203] [cursor=pointer]:
+                  - /url: https://www.microsoft.com/en-us/sustainability/
+                  - text: Sustainability
+      - generic [ref=e2204]:
+        - link "Content Language Selector. Currently set to English (United States)" [ref=e2205] [cursor=pointer]:
+          - /url: https://www.microsoft.com/en-US/microsoft-365/locale
+          - text:  English (United States)
+        - link "Your Privacy Choices Opt-Out Icon Your Privacy Choices" [ref=e2206] [cursor=pointer]:
+          - /url: https://aka.ms/yourcaliforniaprivacychoices
+          - img "Your Privacy Choices Opt-Out Icon" [ref=e2207]
+          - generic [ref=e2212]: Your Privacy Choices
+        - link "Consumer Health Privacy" [ref=e2213] [cursor=pointer]:
+          - /url: https://go.microsoft.com/fwlink/?linkid=2259814
+          - generic [ref=e2214]: Consumer Health Privacy
+        - navigation "Microsoft corporate links" [ref=e2215]:
+          - list [ref=e2216]:
+            - listitem [ref=e2217]:
+              - link "Sitemap" [ref=e2218] [cursor=pointer]:
+                - /url: https://www.microsoft.com/en-us/sitemap1.aspx
+            - listitem [ref=e2219]:
+              - link "Contact Microsoft" [ref=e2220] [cursor=pointer]:
+                - /url: https://support.microsoft.com/contactus
+            - listitem [ref=e2221]:
+              - link "Privacy" [ref=e2222] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?LinkId=521839
+            - listitem [ref=e2223]:
+              - link "Terms of use" [ref=e2224] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?LinkID=206977
+            - listitem [ref=e2225]:
+              - link "Trademarks" [ref=e2226] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?linkid=2196228
+            - listitem [ref=e2227]:
+              - link "Safety & eco" [ref=e2228] [cursor=pointer]:
+                - /url: https://go.microsoft.com/fwlink/?linkid=2196227
+            - listitem [ref=e2229]:
+              - link "Recycling" [ref=e2230] [cursor=pointer]:
+                - /url: https://www.microsoft.com/en-us/legal/compliance/recycling
+            - listitem [ref=e2231]:
+              - link "About our ads" [ref=e2232] [cursor=pointer]:
+                - /url: https://choice.microsoft.com
+            - listitem [ref=e2233]: © Microsoft 2026
+  - button "Feedback" [ref=e2234] [cursor=pointer]

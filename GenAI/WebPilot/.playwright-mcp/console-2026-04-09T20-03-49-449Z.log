@@ -1,0 +1,177 @@
+[    1152ms] Identifier 'LocalStorageUtil' has already been declared
+[    1152ms] Identifier 'LocalStorageUtil' has already been declared
+[    1155ms] Identifier 'LocalStorageUtil' has already been declared
+[    1174ms] Identifier 'LocalStorageUtil' has already been declared
+[    1175ms] Identifier 'LocalStorageUtil' has already been declared
+[    1177ms] Identifier 'LocalStorageUtil' has already been declared
+[    1206ms] [LOG] 1DS Initialized.. @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/components/structure/page/clientlibs/custom-oneds.ACSHASHbf880242325f20f5b8644293f4586135.min.js:0
+[    1208ms] [LOG] [] @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-market-layer.ACSHASHfa7ef0087a55d700bf6dc4a7849436a2.min.js:1
+[    1662ms] [LOG] MWF v2.8.1 @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-mwf-new/main-light.ACSHASHfe9d5283cc0a38f995b64bf0f39192eb.min.js:13154
+[    2074ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[    2074ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[    2200ms] [LOG] gpc opt-in @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[    2200ms] [LOG] Clarity consent conditions not met @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[    2222ms] [INFO] [WC Visibility Fix] None of the target tags were found in the DOM. @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:730
+[    2343ms] [LOG] KIF-9a6a4551-d7ca-492e-83b8-a679497175ba: Launcher Rule Fired @ :1
+[    2345ms] [LOG] new condition found @ https://assets.adobedtm.com/launch-ENc0cbffaf0f8248c3a934a56818d7737e.min.js:7
+[    2351ms] [LOG] KIF-472b86e4-85d2-424d-a035-610fe2345c81: Launcher Rule Fired @ :1
+[    2356ms] [LOG] KIF-c66597f3-7752-4a26-9b1e-69987139d5e3: Launcher Rule Fired @ :1
+[    2359ms] [LOG] KIF-d5d407cb-9e1e-454a-b1f6-7ae14cf3b9e4: Launcher Rule Fired @ :1
+[    2364ms] [LOG] KIF-1d1be977-a70b-46a7-b9fd-0cdc192dd6de: Launcher Rule Fired @ :1
+[    2364ms] [LOG] KIF M365 Demo 1DS starts @ :1
+[    2437ms] [LOG] Clarity loaded @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:702
+[    2600ms] [LOG] Clarity consent granted @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[    5368ms] [LOG] M365 munchkin starts @ :1
+[    5369ms] [LOG] munchkin end @ :1
+[    5369ms] [LOG] Not a zh-cn page @ :1
+[    5369ms] [LOG] Pixels starts @ :1
+[    5370ms] [LOG] Pixels end - after old logic @ :1
+[    7771ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://res.public.onecdn.static.microsoft/owamail/hashed-v1/scripts/owa.94868.m.66d0b4eb.js:6
+[    7968ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://outlook.live.com/mail/oauthRedirect.html#error=login_required&error_description=Silent+authentication+was+denied.+The+user+must+first+sign+in+and+if+needed+grant+the+client+application+access+to+the+scope+'service::outlook.office.com::MBI_SSL+openid+profile+offline_access'.&state=eyJpZCI6IjAxOWQ3M2Q4LTIwYTEtNzEyNS1hYTBhLTQ3ZmFjZGYxZTM4NyIsIm1ldGEiOnsiaW50ZXJhY3Rpb25UeXBlIjoic2lsZW50In19%7caHR0cHM6Ly9vdXRsb29rLmxpdmUuY29tL21haWwv:0
+[    9062ms] Identifier 'LocalStorageUtil' has already been declared
+[    9062ms] Identifier 'LocalStorageUtil' has already been declared
+[    9063ms] Identifier 'LocalStorageUtil' has already been declared
+[    9065ms] Identifier 'LocalStorageUtil' has already been declared
+[    9067ms] Identifier 'LocalStorageUtil' has already been declared
+[    9082ms] Identifier 'LocalStorageUtil' has already been declared
+[    9116ms] [LOG] 1DS Initialized.. @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/components/structure/page/clientlibs/custom-oneds.ACSHASHbf880242325f20f5b8644293f4586135.min.js:0
+[    9126ms] [LOG] [] @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-market-layer.ACSHASHfa7ef0087a55d700bf6dc4a7849436a2.min.js:1
+[    9501ms] [LOG] MWF v2.8.1 @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-mwf-new/main-light.ACSHASHfe9d5283cc0a38f995b64bf0f39192eb.min.js:13154
+[    9920ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[    9920ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[   10034ms] [LOG] gpc opt-in @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[   10034ms] [LOG] Clarity consent conditions not met @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[   10042ms] [INFO] [WC Visibility Fix] None of the target tags were found in the DOM. @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:730
+[   10169ms] [LOG] KIF-9a6a4551-d7ca-492e-83b8-a679497175ba: Launcher Rule Fired @ :1
+[   10173ms] [LOG] new condition found @ https://assets.adobedtm.com/launch-ENc0cbffaf0f8248c3a934a56818d7737e.min.js:7
+[   10177ms] [LOG] KIF-472b86e4-85d2-424d-a035-610fe2345c81: Launcher Rule Fired @ :1
+[   10181ms] [LOG] KIF-c66597f3-7752-4a26-9b1e-69987139d5e3: Launcher Rule Fired @ :1
+[   10184ms] [LOG] KIF-d5d407cb-9e1e-454a-b1f6-7ae14cf3b9e4: Launcher Rule Fired @ :1
+[   10188ms] [LOG] KIF-1d1be977-a70b-46a7-b9fd-0cdc192dd6de: Launcher Rule Fired @ :1
+[   10188ms] [LOG] KIF M365 Demo 1DS starts @ :1
+[   10279ms] [LOG] Clarity loaded @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:702
+[   10294ms] [LOG] Clarity consent granted @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[   13092ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://res.public.onecdn.static.microsoft/owamail/hashed-v1/scripts/owa.57554.m.f3ec0b78.js:6
+[   13303ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://outlook.live.com/mail/oauthRedirect.html#error=login_required&error_description=Silent+authentication+was+denied.+The+user+must+first+sign+in+and+if+needed+grant+the+client+application+access+to+the+scope+'service::outlook.office.com::MBI_SSL+openid+profile+offline_access'.&state=eyJpZCI6IjAxOWQ3M2Q4LTM1NjktNzg5Ni05NjgxLWNjZDhiZThiY2EyMCIsIm1ldGEiOnsiaW50ZXJhY3Rpb25UeXBlIjoic2lsZW50In19%7ceyJtc2FsVmVyc2lvbiI6IjQuMjguMiJ9%7caHR0cHM6Ly9vdXRsb29rLmxpdmUuY29tL21haWwv:0
+[   14392ms] Identifier 'LocalStorageUtil' has already been declared
+[   14393ms] Identifier 'LocalStorageUtil' has already been declared
+[   14394ms] Identifier 'LocalStorageUtil' has already been declared
+[   14396ms] Identifier 'LocalStorageUtil' has already been declared
+[   14413ms] Identifier 'LocalStorageUtil' has already been declared
+[   14415ms] Identifier 'LocalStorageUtil' has already been declared
+[   14445ms] [LOG] 1DS Initialized.. @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/components/structure/page/clientlibs/custom-oneds.ACSHASHbf880242325f20f5b8644293f4586135.min.js:0
+[   14456ms] [LOG] [] @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-market-layer.ACSHASHfa7ef0087a55d700bf6dc4a7849436a2.min.js:1
+[   14835ms] [LOG] MWF v2.8.1 @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-mwf-new/main-light.ACSHASHfe9d5283cc0a38f995b64bf0f39192eb.min.js:13154
+[   15255ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[   15255ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[   15369ms] [LOG] gpc opt-in @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[   15370ms] [LOG] Clarity consent conditions not met @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[   15391ms] [INFO] [WC Visibility Fix] None of the target tags were found in the DOM. @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:730
+[   15503ms] [LOG] KIF-9a6a4551-d7ca-492e-83b8-a679497175ba: Launcher Rule Fired @ :1
+[   15506ms] [LOG] new condition found @ https://assets.adobedtm.com/launch-ENc0cbffaf0f8248c3a934a56818d7737e.min.js:7
+[   15510ms] [LOG] KIF-472b86e4-85d2-424d-a035-610fe2345c81: Launcher Rule Fired @ :1
+[   15514ms] [LOG] KIF-c66597f3-7752-4a26-9b1e-69987139d5e3: Launcher Rule Fired @ :1
+[   15517ms] [LOG] KIF-d5d407cb-9e1e-454a-b1f6-7ae14cf3b9e4: Launcher Rule Fired @ :1
+[   15520ms] [LOG] KIF-1d1be977-a70b-46a7-b9fd-0cdc192dd6de: Launcher Rule Fired @ :1
+[   15520ms] [LOG] KIF M365 Demo 1DS starts @ :1
+[   15590ms] [LOG] Clarity loaded @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:702
+[   15625ms] [LOG] Clarity consent granted @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[   18521ms] [LOG] M365 munchkin starts @ :1
+[   18522ms] [LOG] munchkin end @ :1
+[   18522ms] [LOG] Not a zh-cn page @ :1
+[   18522ms] [LOG] Pixels starts @ :1
+[   18523ms] [LOG] Pixels end - after old logic @ :1
+[  107693ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://res.public.onecdn.static.microsoft/owamail/hashed-v1/scripts/owa.94868.m.66d0b4eb.js:6
+[  107958ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://outlook.live.com/mail/oauthRedirect.html#error=login_required&error_description=Silent+authentication+was+denied.+The+user+must+first+sign+in+and+if+needed+grant+the+client+application+access+to+the+scope+'service::outlook.office.com::MBI_SSL+openid+profile+offline_access'.&state=eyJpZCI6IjAxOWQ3M2Q5LWE2ZjItNzQ2Mi04MmFlLTBlOGI1ZTYwNGZhOCIsIm1ldGEiOnsiaW50ZXJhY3Rpb25UeXBlIjoic2lsZW50In19%7caHR0cHM6Ly9vdXRsb29rLmxpdmUuY29tL21haWwv:0
+[  109201ms] Identifier 'LocalStorageUtil' has already been declared
+[  109203ms] Identifier 'LocalStorageUtil' has already been declared
+[  109205ms] Identifier 'LocalStorageUtil' has already been declared
+[  109222ms] Identifier 'LocalStorageUtil' has already been declared
+[  109223ms] Identifier 'LocalStorageUtil' has already been declared
+[  109224ms] Identifier 'LocalStorageUtil' has already been declared
+[  109262ms] [LOG] 1DS Initialized.. @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/components/structure/page/clientlibs/custom-oneds.ACSHASHbf880242325f20f5b8644293f4586135.min.js:0
+[  109280ms] [LOG] [] @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-market-layer.ACSHASHfa7ef0087a55d700bf6dc4a7849436a2.min.js:1
+[  109658ms] [LOG] MWF v2.8.1 @ https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-mwf-new/main-light.ACSHASHfe9d5283cc0a38f995b64bf0f39192eb.min.js:13154
+[  110082ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[  110082ms] [WARNING] [OCR][ProductPricingManager] creation error:  Error: [OCR][ProductPricingManager] Invalid pricing component element. Missing data-ocr-pricing-identifier or data-ocr-sku-request attribute.
+    at ProductPricingManager.findPricingRequestElement (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2891:19)
+    at new ProductPricingRendering (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2168:89)
+    at ProductPricingManager.createProductPriceRenderInstance (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3123:13)
+    at ProductPricingManager.createProductPricingRequests (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3044:30)
+    at ProductPricingManager.initializePricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2710:14)
+    at new ProductPricingManager (https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:2659:14)
+    at initializeProductPriceModule (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:649:17)
+    at HTMLDocument.<anonymous> (https://www.microsoft.com/golf/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:673:9) @ https://www.microsoft.com/etc.clientlibs/onecloud/clientlibs/clientlib-product-pricing.ACSHASHf9c4f2ed4e61ec88e9a455f543919e32.min.js:3045
+[  110207ms] [LOG] gpc opt-in @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[  110207ms] [LOG] Clarity consent conditions not met @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[  110232ms] [INFO] [WC Visibility Fix] None of the target tags were found in the DOM. @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:730
+[  110418ms] [LOG] KIF-9a6a4551-d7ca-492e-83b8-a679497175ba: Launcher Rule Fired @ :1
+[  110425ms] [LOG] new condition found @ https://assets.adobedtm.com/launch-ENc0cbffaf0f8248c3a934a56818d7737e.min.js:7
+[  110438ms] [LOG] KIF-472b86e4-85d2-424d-a035-610fe2345c81: Launcher Rule Fired @ :1
+[  110525ms] [LOG] KIF-c66597f3-7752-4a26-9b1e-69987139d5e3: Launcher Rule Fired @ :1
+[  110547ms] [LOG] KIF-d5d407cb-9e1e-454a-b1f6-7ae14cf3b9e4: Launcher Rule Fired @ :1
+[  110568ms] [LOG] KIF-1d1be977-a70b-46a7-b9fd-0cdc192dd6de: Launcher Rule Fired @ :1
+[  110568ms] [LOG] KIF M365 Demo 1DS starts @ :1
+[  110684ms] [LOG] Clarity loaded @ https://www.microsoft.com/msonecloudapi/assets/msocbody.js:702
+[  110700ms] [LOG] Clarity consent granted @ https://www.microsoft.com/golf/etc.clientlibs/microsoft/clientlibs/cookie-compliance-manager.ACSHASHd471cafc5d23f4577f5cf2676dcc276a.min.js:4
+[  113571ms] [LOG] M365 munchkin starts @ :1
+[  113572ms] [LOG] munchkin end @ :1
+[  113572ms] [LOG] Not a zh-cn page @ :1
+[  113572ms] [LOG] Pixels starts @ :1
+[  113573ms] [LOG] Pixels end - after old logic @ :1
